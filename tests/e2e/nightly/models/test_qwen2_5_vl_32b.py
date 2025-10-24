@@ -80,22 +80,12 @@ async def test_models(model: str, tp_size: int) -> None:
         "HCCL_OP_EXPANSION_MODE": "AIV"
     }
     server_args = [
-        "--no-enable-prefix-caching",
-        "--disable-mm-preprocessor-cache",
+        "--no-enable-prefix-caching", "--disable-mm-preprocessor-cache",
         "--tensor-parallel-size",
-        str(tp_size),
-        "--port",
-        str(port),
-        "--max-model-len",
-        "30000",
-        "--max-num-batched-tokens",
-        "40000",
-        "--max-num-seqs",
-        "400",
-        "--trust-remote-code",
-        "--gpu-memory-utilization",
-        "0.8",
-        "--additional-config",
+        str(tp_size), "--port",
+        str(port), "--max-model-len", "30000", "--max-num-batched-tokens",
+        "40000", "--max-num-seqs", "400", "--trust-remote-code",
+        "--gpu-memory-utilization", "0.8", "--additional-config",
         '{"ascend_scheduler_config":{"enabled":false}}'
     ]
     request_keyword_args: dict[str, Any] = {
