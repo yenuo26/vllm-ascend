@@ -5,8 +5,8 @@ from PIL import Image
 import pytest
 from vllm import SamplingParams
 from vllm.multimodal.image import convert_image_mode
-from tests.epd.conftest import RemoteEPDServer
-from tests.epd.tools.aisbench import run_aisbench_cases
+from tests.e2e.conftest import RemoteEPDServer
+from tools.aisbench import run_aisbench_cases
 
 MODELS = [
     "/data/models/Qwen2.5-VL-7B-Instruct",

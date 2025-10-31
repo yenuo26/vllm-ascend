@@ -18,28 +18,26 @@ import json
 import os
 import re
 import subprocess
+import importlib
 import yaml
 
 import pandas as pd
 
-def load_config():
-    """读取配置文件"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(current_dir, '../configs', 'test_config.yaml')
-    print(config_path)
-    config_path = os.getenv('TEST_CONFIG', config_path)
+def get_module_path(module_name):
     try:
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(f'配置文件不存在：{config_path}')
-        with open(config_path, 'r', encoding='utf-8') as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print("no config find")
+        spec = importlib.util.find_spec(module_name)
+        if spec is not None:
+            return spec.origin
+        else:
+            return None
+    except ImportError:
+        return None
 
-config = load_config()
-DATASET_CONF_DIR = config.get("benchmark_path") + "ais_bench/benchmark/configs/datasets"
-REQUEST_CONF_DIR = config.get("benchmark_path") + "ais_bench/benchmark/configs/models/vllm_api"
-DATASET_DIR = config.get("benchmark_path") + "ais_bench/datasets"
+benchmark_path = get_module_path("ais_bench_benchmark")
+print(benchmark_path)
+DATASET_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/datasets"
+REQUEST_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/models/vllm_api"
+DATASET_DIR = benchmark_path + "ais_bench/datasets"
 
 class AisbenchRunner:
     RESULT_MSG = {
