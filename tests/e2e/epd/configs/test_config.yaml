@@ -1,0 +1,5 @@
+model_path: "/data/models/"
+image_path: "/workspace/w00613184/textvqa_subset/train_images/"
+dataset_path: "/workspace/w00613184/"
+addr_prefix: "/tmp/"
+benchmark_path: "/vllm-workspace/benchmark/"

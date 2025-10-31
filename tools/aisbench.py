@@ -18,14 +18,28 @@ import json
 import os
 import re
 import subprocess
+import yaml
 
 import pandas as pd
-from modelscope import snapshot_download  # type: ignore
 
-DATASET_CONF_DIR = "benchmark/ais_bench/benchmark/configs/datasets"
-REQUEST_CONF_DIR = "benchmark/ais_bench/benchmark/configs/models/vllm_api"
-DATASET_DIR = "benchmark/ais_bench/datasets"
+def load_config():
+    """读取配置文件"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(current_dir, '../configs', 'test_config.yaml')
+    print(config_path)
+    config_path = os.getenv('TEST_CONFIG', config_path)
+    try:
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f'配置文件不存在：{config_path}')
+        with open(config_path, 'r', encoding='utf-8') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        print("no config find")
 
+config = load_config()
+DATASET_CONF_DIR = config.get("benchmark_path") + "ais_bench/benchmark/configs/datasets"
+REQUEST_CONF_DIR = config.get("benchmark_path") + "ais_bench/benchmark/configs/models/vllm_api"
+DATASET_DIR = config.get("benchmark_path") + "ais_bench/datasets"
 
 class AisbenchRunner:
     RESULT_MSG = {
@@ -42,13 +56,13 @@ class AisbenchRunner:
         dataset_conf = self.dataset_conf.split('/')[-1]
         if self.task_type == "accuracy":
             aisbench_cmd = [
-                'ais_bench', '--models', f'{self.request_conf}_custom',
+                'ais_bench', '--models', self.request_conf,
                 '--datasets', f'{dataset_conf}'
             ]
         if self.task_type == "performance":
             aisbench_cmd = [
-                'ais_bench', '--models', f'{self.request_conf}_custom',
-                '--datasets', f'{dataset_conf}_custom', '--mode', 'perf'
+                'ais_bench', '--models', self.request_conf,
+                '--datasets', f'{dataset_conf}', '--mode', 'perf'
             ]
             if self.num_prompts:
                 aisbench_cmd.extend(['--num-prompts', str(self.num_prompts)])
@@ -62,15 +76,14 @@ class AisbenchRunner:
                  model: str,
                  port: int,
                  aisbench_config: dict,
-                 verify=True):
-        self.dataset_path = snapshot_download(aisbench_config["dataset_path"],
-                                              repo_type='dataset')
+                 verify=True,
+                 save=True):
         self.model = model
-        self.model_path = snapshot_download(model)
         self.port = port
         self.task_type = aisbench_config["case_type"]
         self.request_conf = aisbench_config["request_conf"]
         self.dataset_conf = aisbench_config.get("dataset_conf")
+        self.dataset_path = config.get("dataset_path") + aisbench_config.get("dataset_path")
         self.num_prompts = aisbench_config.get("num_prompts")
         self.max_out_len = aisbench_config["max_out_len"]
         self.batch_size = aisbench_config["batch_size"]
@@ -95,6 +108,7 @@ class AisbenchRunner:
                 self.threshold = aisbench_config.get("threshold", 0.97)
                 self._performance_verify()
 
+
     def _init_dataset_conf(self):
         if self.task_type == "accuracy":
             dataset_name = os.path.basename(self.dataset_path)
@@ -113,7 +127,7 @@ class AisbenchRunner:
             content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
                              content)
             conf_path_new = os.path.join(DATASET_CONF_DIR,
-                                         f'{self.dataset_conf}_custom.py')
+                                         f'{self.dataset_conf}.py')
             with open(conf_path_new, 'w', encoding='utf-8') as f:
                 f.write(content)
 
@@ -131,7 +145,7 @@ class AisbenchRunner:
         content = content.replace("seed", "#seed")
         content = content.replace("repetition_penalty", "#repetition_penalty")
         if self.task_type == "performance":
-            content = re.sub(r'path=.*', f'path="{self.model_path}",', content)
+            content = re.sub(r'path=.*', f'path="{self.model}",', content)
             content = re.sub(r'request_rate.*',
                              f'request_rate = {self.request_rate},', content)
             content = re.sub(
@@ -148,15 +162,15 @@ class AisbenchRunner:
         if self.top_p:
             content = re.sub(r"#?top_p.*", f"top_p = {self.top_p},", content)
         if self.top_k:
-            content = re.sub(r"#top_k.*", f"top_k = {self.top_k},", content)
+            content = re.sub(r"#?top_k.*", f"top_k = {self.top_k},", content)
         if self.seed:
-            content = re.sub(r"#seed.*", f"seed = {self.seed},", content)
+            content = re.sub(r"#?seed.*", f"seed = {self.seed},", content)
         if self.repetition_penalty:
             content = re.sub(
-                r"#repetition_penalty.*",
+                r"#?repetition_penalty.*",
                 f"repetition_penalty = {self.repetition_penalty},", content)
         conf_path_new = os.path.join(REQUEST_CONF_DIR,
-                                     f'{self.request_conf}_custom.py')
+                                     f'{self.request_conf}.py')
         with open(conf_path_new, 'w', encoding='utf-8') as f:
             f.write(content)
         print(f"The request config is\n {content}")
