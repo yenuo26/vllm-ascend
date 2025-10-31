@@ -23,17 +23,14 @@ import yaml
 
 import pandas as pd
 
-def get_module_path(module_name):
+def get_package_location(package_name):
     try:
-        spec = importlib.util.find_spec(module_name)
-        if spec is not None:
-            return spec.origin
-        else:
-            return None
-    except ImportError:
+        distribution = importlib.metadata.distribution(package_name)
+        return distribution.locate_file('')
+    except importlib.metadata.PackageNotFoundError:
         return None
 
-benchmark_path = get_module_path("ais_bench_benchmark")
+benchmark_path = get_package_location("ais_bench_benchmark")
 print(benchmark_path)
 DATASET_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/datasets"
 REQUEST_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/models/vllm_api"
