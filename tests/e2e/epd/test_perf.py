@@ -20,12 +20,10 @@ TENSOR_PARALLELS = [1]
 
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_base_001(model: str, tp_size: int, load_config):
+async def test_base_001(model: str, tp_size: int):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",

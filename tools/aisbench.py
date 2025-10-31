@@ -31,9 +31,9 @@ def get_package_location(package_name):
         return None
 
 benchmark_path = get_package_location("ais_bench_benchmark")
-DATASET_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/datasets"
-REQUEST_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/models/vllm_api"
-DATASET_DIR = benchmark_path + "ais_bench/datasets"
+DATASET_CONF_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/configs/datasets")
+REQUEST_CONF_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/configs/models/vllm_api")
+DATASET_DIR = os.path.join(benchmark_path, "ais_bench/datasets")
 
 class AisbenchRunner:
     RESULT_MSG = {
@@ -135,18 +135,16 @@ class AisbenchRunner:
                          f'max_out_len = {self.max_out_len},', content)
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
-        content = content.replace("top_k", "#top_k")
-        content = content.replace("seed", "#seed")
-        content = content.replace("repetition_penalty", "#repetition_penalty")
         if self.task_type == "performance":
             content = re.sub(r'path=.*', f'path="{self.model}",', content)
             content = re.sub(r'request_rate.*',
                              f'request_rate = {self.request_rate},', content)
+            #TODO:判断是否已存在ignore_eos
             content = re.sub(
                 r"temperature.*",
                 "temperature = 0,\n            ignore_eos = True,", content)
-            content = content.replace("top_p", "#top_p")
         if self.task_type == "accuracy":
+            # TODO:判断是否已存在ignore_eos
             content = re.sub(
                 r"temperature.*",
                 "temperature = 0.6,\n            ignore_eos = False,", content)
@@ -154,14 +152,14 @@ class AisbenchRunner:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)
         if self.top_p:
-            content = re.sub(r"#?top_p.*", f"top_p = {self.top_p},", content)
+            content = re.sub(r"top_p.*", f"top_p = {self.top_p},", content)
         if self.top_k:
-            content = re.sub(r"#?top_k.*", f"top_k = {self.top_k},", content)
+            content = re.sub(r"top_k.*", f"top_k = {self.top_k},", content)
         if self.seed:
-            content = re.sub(r"#?seed.*", f"seed = {self.seed},", content)
+            content = re.sub(r"seed.*", f"seed = {self.seed},", content)
         if self.repetition_penalty:
             content = re.sub(
-                r"#?repetition_penalty.*",
+                r"repetition_penalty.*",
                 f"repetition_penalty = {self.repetition_penalty},", content)
         conf_path_new = os.path.join(REQUEST_CONF_DIR,
                                      f'{self.request_conf}.py')

@@ -17,9 +17,11 @@ from vllm.disaggregated.proxy import Proxy
 from vllm.multimodal.image import convert_image_mode
 from vllm.sampling_params import SamplingParams
 
+from pathlib import Path
+
 app = FastAPI()
 
-IMAGE_PATH = "tools/512p.jpg"
+IMAGE_PATH = Path(__file__).parent / "224.png"
 image = convert_image_mode(Image.open(IMAGE_PATH), "RGB")
 IMAGE_ARRAY = np.array(image)
 
@@ -294,10 +296,7 @@ async def completions(request: Request):
 @app.get("/health")
 async def health_check():
     """健康检查接口"""
-    return {
-        "status": "healthy",
-        "timestamp": asyncio.get_event_loop().time()
-    }
+    return {"status": "healthy", "timestamp": asyncio.get_event_loop().time()}
 
 
 if __name__ == "__main__":
