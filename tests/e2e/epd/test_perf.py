@@ -3,36 +3,29 @@ import numpy as np
 from PIL import Image
 
 import pytest
+import os
 from vllm import SamplingParams
 from vllm.multimodal.image import convert_image_mode
 from tests.e2e.conftest import RemoteEPDServer
+from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 
+model_path = load_config().get("model_path")
 MODELS = [
-    "/data/models/Qwen2.5-VL-7B-Instruct",
+    os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")
 ]
+DATASET_PATH = load_config().get("dataset_path")
 
 TENSOR_PARALLELS = [1]
 
-PROMPT_TEMPLATE = ("<|im_start|>system\n"
-                   "You are a helpful assistant.<|im_end|>\n"
-                   "<|im_start|>user\n"
-                   "<|vision_start|><|image_pad|><|vision_end|>"
-                   "what is the brand of this camera?<|im_end|>\n"
-                   "<|im_start|>assistant\n")
-SAMPLING_PARAMS = SamplingParams(max_tokens=128, temperature=0.0)
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
-image = convert_image_mode(
-    Image.open("/workspace/w00613184/testvqa_val/train_images/224p.jpg"),
-    "RGB")
-IMAGE_ARRAY = np.array(image)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_base_001(model: str, tp_size: int):
+async def test_base_001(model: str, tp_size: int, load_config):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -57,7 +50,7 @@ async def test_base_001(model: str, tp_size: int):
 
     aisbench_cases = [{
         "case_type": "performance",
-        "dataset_path": "textvqa",
+        "dataset_path": os.path.join(DATASET_PATH, "textvqa"),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "num_prompts": 512,
