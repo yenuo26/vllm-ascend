@@ -4,7 +4,6 @@ import shlex
 import subprocess
 import sys
 import time
-from typing import Optional, Union
 
 import psutil
 import pytest
@@ -12,24 +11,10 @@ import yaml
 import threading
 import requests
 
+from pathlib import Path
+from typing import Optional, Union
 from vllm.disaggregated.protocol import ServerType
 from vllm.disaggregated.proxy import Proxy
-
-
-@pytest.fixture
-def load_config():
-    """读取配置文件"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(current_dir, 'configs', 'test_config.yaml')
-    print(config_path)
-    config_path = os.getenv('TEST_CONFIG', config_path)
-    try:
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(f'配置文件不存在：{config_path}')
-        with open(config_path, 'r', encoding='utf-8') as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print("no config find")
 
 
 class RemoteEPDServer:
@@ -106,7 +91,9 @@ class RemoteEPDServer:
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
-        api_server_args = ["python", "tools/api_server.py", *api_server_args]
+        api_server_path = Path(
+            __file__).parent.parent.parent/ "tools" / "api_server.py"
+        api_server_args = ["python", api_server_path, *api_server_args]
         self._run_server_new_session(api_server_args, None)
 
     def _start_vllm(self):
@@ -190,14 +177,14 @@ class RemoteEPDServer:
                 asyncio.create_task(
                     asyncio.wait_for(self.p.check_health(
                         ServerType.E_INSTANCE, iid),
-                        timeout=timeout_times))
+                                     timeout=timeout_times))
                 for iid in range(self.e_num)
             ]
             tasks_1 = [
                 asyncio.create_task(
                     asyncio.wait_for(self.p.check_health(
                         ServerType.PD_INSTANCE, iid),
-                        timeout=timeout_times))
+                                     timeout=timeout_times))
                 for iid in range(self.pd_num)
             ]
             tasks = tasks_0 + tasks_1

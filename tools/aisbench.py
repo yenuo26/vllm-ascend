@@ -26,12 +26,11 @@ import pandas as pd
 def get_package_location(package_name):
     try:
         distribution = importlib.metadata.distribution(package_name)
-        return distribution.locate_file('')
+        return str(distribution.locate_file(''))
     except importlib.metadata.PackageNotFoundError:
         return None
 
 benchmark_path = get_package_location("ais_bench_benchmark")
-print(benchmark_path)
 DATASET_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/datasets"
 REQUEST_CONF_DIR = benchmark_path + "ais_bench/benchmark/configs/models/vllm_api"
 DATASET_DIR = benchmark_path + "ais_bench/datasets"
@@ -78,7 +77,7 @@ class AisbenchRunner:
         self.task_type = aisbench_config["case_type"]
         self.request_conf = aisbench_config["request_conf"]
         self.dataset_conf = aisbench_config.get("dataset_conf")
-        self.dataset_path = config.get("dataset_path") + aisbench_config.get("dataset_path")
+        self.dataset_path = aisbench_config.get("dataset_path")
         self.num_prompts = aisbench_config.get("num_prompts")
         self.max_out_len = aisbench_config["max_out_len"]
         self.batch_size = aisbench_config["batch_size"]
