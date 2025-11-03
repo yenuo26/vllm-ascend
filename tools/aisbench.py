@@ -139,15 +139,15 @@ class AisbenchRunner:
             content = re.sub(r'path=.*', f'path="{self.model}",', content)
             content = re.sub(r'request_rate.*',
                              f'request_rate = {self.request_rate},', content)
-            #TODO:判断是否已存在ignore_eos
-            content = re.sub(
-                r"temperature.*",
-                "temperature = 0,\n            ignore_eos = True,", content)
+            if "ignore_eos" not in content:
+                content = re.sub(
+                    r"temperature.*",
+                    "temperature = 0,\n            ignore_eos = True,", content)
         if self.task_type == "accuracy":
-            # TODO:判断是否已存在ignore_eos
-            content = re.sub(
-                r"temperature.*",
-                "temperature = 0.6,\n            ignore_eos = False,", content)
+            if "ignore_eos" not in content:
+                content = re.sub(
+                    r"temperature.*",
+                    "temperature = 0.6,\n            ignore_eos = False,", content)
         if self.temperature:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)
