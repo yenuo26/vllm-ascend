@@ -14,6 +14,7 @@ from typing import Optional, Union
 from vllm.disaggregated.protocol import ServerType
 from vllm.disaggregated.proxy import Proxy
 
+
 class RemoteEPDServer:
 
     def get_proxy(self) -> Proxy:
@@ -89,7 +90,7 @@ class RemoteEPDServer:
         if self.is_image_load:
             api_server_args.append("--is-load-image")
         api_server_path = Path(
-            __file__).parent.parent.parent/ "tools" / "api_server.py"
+            __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
         self._run_server_new_session(api_server_args, None)
 
@@ -137,21 +138,28 @@ class RemoteEPDServer:
             self.model = self.e_serve_args[index_e + 1]
 
         for i in range(self.e_num):
-            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+            if self.is_e_same_card:
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = "0"
+            else:
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             if "--worker-addr" not in self.e_serve_args:
                 # defaut encode-addr is /tmp/encode_{i}
                 self.e_serve_args = self.e_serve_args + [
                     "--worker-addr",
                     self._default_addr_prefix + "encoder_" + str(i)
                 ]
-                self.e_addr_list.append(self._default_addr_prefix + "encoder_" +
-                                        str(i))
+                self.e_addr_list.append(self._default_addr_prefix +
+                                        "encoder_" + str(i))
             else:
                 index_e = self.e_serve_args.index("--worker-addr")
                 self.e_addr_list.append(self.e_serve_args[index_e + 1])
             self._run_server(self.e_serve_args, self.env_dict)
         for i in range(self.pd_num):
-            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i + self.e_num)
+            if self.is_epd_same_card:
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+            else:
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
+                                                                 self.e_num)
             if "--worker-addr" not in self.pd_serve_args:
                 # defaut worker-addr is /tmp/pd_{i}
                 self.pd_serve_args = self.pd_serve_args + [
@@ -266,13 +274,17 @@ class RemoteEPDServer:
                  e_serve_args: Union[list[str], str],
                  pd_serve_args: Union[list[str], str],
                  api_server_port: Optional[int] = 10001,
-                 is_image_load: Optional[bool] = False,
+                 is_image_load: Optional[bool] = True,
+                 is_epd_same_card: Optional[bool] = False,
+                 is_e_same_card: Optional[bool] = False,
                  env_dict: Optional[dict[str, str]] = None) -> None:
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
         self.start_mode = start_mode
         self.is_image_load = is_image_load
+        self.is_epd_same_card = is_epd_same_card
+        self.is_e_same_card = is_e_same_card
         self.api_server_port = api_server_port
         self.e_addr_list = list()
         self.pd_addr_list = list()

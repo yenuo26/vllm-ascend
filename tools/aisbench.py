@@ -120,7 +120,6 @@ class AisbenchRunner:
             df = pd.read_csv(f"./{self.result_file_name}.csv")
             x = df['Request rate']
 
-
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
             # TTFT
@@ -146,14 +145,20 @@ class AisbenchRunner:
             axes[0, 2].set_ylim(-5, 5)
 
             # Request Throughput
-            axes[1, 0].plot(x, df['Request Throughput_total'], 'm-', linewidth=2)
+            axes[1, 0].plot(x,
+                            df['Request Throughput_total'],
+                            'm-',
+                            linewidth=2)
             axes[1, 0].set_title('Request Throughput')
             axes[1, 0].set_xlabel('Request rate')
             axes[1, 0].set_ylabel('Request Throughput')
             axes[1, 0].grid(True, alpha=0.3)
 
             # Total Token Throughput
-            axes[1, 1].plot(x, df['Total Token Throughput_total'], 'c-', linewidth=2)
+            axes[1, 1].plot(x,
+                            df['Total Token Throughput_total'],
+                            'c-',
+                            linewidth=2)
             axes[1, 1].set_title('Total Token Throughput')
             axes[1, 1].set_xlabel('Request rate')
             axes[1, 1].set_ylabel('Total Token Throughput')
@@ -165,8 +170,10 @@ class AisbenchRunner:
 
             fig.suptitle('', fontsize=16, y=0.98)
 
-            plt.savefig(f'./{self.result_file_name}.png', dpi=300, bbox_inches='tight')
-
+            plt.savefig(f'./{self.result_file_name}.png',
+                        dpi=300,
+                        bbox_inches='tight')
+            print(f"Result figure is locate in {self.result_file_name}.png")
 
         except Exception as e:
             print(f"ERROR: {str(e)}")
