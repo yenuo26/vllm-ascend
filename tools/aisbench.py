@@ -17,11 +17,13 @@
 import json
 import os
 import re
+import datetime
 import subprocess
 import importlib
 import yaml
 
 import pandas as pd
+from collections import defaultdict
 
 def get_package_location(package_name):
     try:
@@ -84,6 +86,7 @@ class AisbenchRunner:
         self.request_rate = aisbench_config.get("request_rate", 0)
         self.temperature = aisbench_config.get("temperature")
         self.top_k = aisbench_config.get("top_k")
+        self.result_file_name = aisbench_config.get("result_file_name")
         self.top_p = aisbench_config.get("top_p")
         self.seed = aisbench_config.get("seed")
         self.repetition_penalty = aisbench_config.get("repetition_penalty")
@@ -101,6 +104,64 @@ class AisbenchRunner:
             if self.task_type == "performance":
                 self.threshold = aisbench_config.get("threshold", 0.97)
                 self._performance_verify()
+        if save:
+            self._performance_result_save()
+
+
+    def _performance_result_save(self):
+        csv_result = defaultdict(dict)
+        for index, row in self.result_csv.iterrows():
+            performance_param = row('Perf')
+            data = {
+                'Average': str(row['Average']) if pd.notna(row['Average']) else None,
+                'Min': str(row['Min']) if pd.notna(row['Min']) else None,
+                'Max': str(row['Max']) if pd.notna(row['Max']) else None,
+                'Median': str(row['Median']) if pd.notna(row['Median']) else None,
+                'P75': str(row['P75']) if pd.notna(row['P75']) else None,
+                'P90': str(row['P90']) if pd.notna(row['P90']) else None,
+                'P99': str(row['P99']) if pd.notna(row['P99']) else None
+            }
+
+            if performance_param not in csv_result:
+                csv_result[performance_param] = {}
+
+            csv_result[performance_param] = data
+            csv_result = dict(csv_result)
+        merged_json = self.result_json
+        merged_json.update(csv_result)
+        self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
+
+    def _flatten_dict(self, data, parent_key, sep="_"):
+        items = []
+        for key, value in data.items():
+            new_key = f"{parent_key}{sep}{key}" if parent_key else key
+            if isinstance(value, dict):
+                items.extend(self._flatten_dict(value, new_key, sep=sep).items())
+            elif isinstance(value, list):
+                for i, item in enumerate(value):
+                    items.append((f"{new_key}{sep}{i}", item))
+            else:
+                items.append((new_key, value))
+        return dict(items)
+
+
+    def _write_to_execl(self, data, path):
+        data = self._flatten_dict(data)
+        if path is not None:
+            if not os.path.exists(path):
+                df = pd.DataFrame(data, index=[0])
+                df.to_csv(path, index=False)
+            else:
+                existing_df = pd.read_csv(path)
+                new_df = pd.DataFrame(data, index=[0])
+                combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+                combined_df.to_csv(path, index=False)
+
+
+
+
+
+
 
 
     def _init_dataset_conf(self):
