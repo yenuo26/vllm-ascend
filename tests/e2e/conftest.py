@@ -145,9 +145,9 @@ class RemoteEPDServer:
                 # defaut encode-addr is /tmp/encode_{i}
                 self.e_serve_args = self.e_serve_args + [
                     "--worker-addr",
-                    self._default_addr_prefix + "encode_" + str(i)
+                    self._default_addr_prefix + "encoder_" + str(i)
                 ]
-                self.e_addr_list.append(self._default_addr_prefix + "encode_" +
+                self.e_addr_list.append(self._default_addr_prefix + "encoder_" +
                                         str(i))
             else:
                 index_e = self.e_serve_args.index("--worker-addr")
