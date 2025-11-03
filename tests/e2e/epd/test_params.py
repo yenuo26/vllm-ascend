@@ -29,7 +29,7 @@ SAMPLING_PARAMS = SamplingParams(
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 image = convert_image_mode(
-    Image.open(Path(__file__).parent.parent.parent / "tools" / "224.png"),
+    Image.open(Path(__file__).parent.parent.parent.parent / "tools" / "224.png"),
     "RGB")
 IMAGE_ARRAY = np.array(image)
 
@@ -38,7 +38,7 @@ PD_ADDR_LIST = ["/tmp/pd_0"]
 PROXY_ADDR = "/tmp/proxy"
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="class")
 async def setup_teardown():
     e_server_args = [
         "--no-enable-prefix-caching", "--model", MODEL,
@@ -54,7 +54,7 @@ async def setup_teardown():
     pd_server_args = [
         "--no-enable-prefix-caching", "--model", MODEL, "--max-model-len",
         "30000", "--tensor-parallel-size",
-        1, "--max-num-batched-tokens", "40000", "--max-num-seqs",
+        "1", "--max-num-batched-tokens", "40000", "--max-num-seqs",
         "400", "--gpu-memory-utilization", "0.9", "--enforce-eager",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
@@ -83,7 +83,7 @@ class CustomRouter():
 
 class TestEPDProxy:
     @pytest.mark.asyncio
-    async def test_proxy_proxy_addr_001(self):
+    async def test_proxy_proxy_addr_001(self, setup_teardown):
         """proxy_addr设置为非有效地址，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -115,7 +115,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_proxy_addr_002(self):
+    async def test_proxy_proxy_addr_002(self, setup_teardown):
         """proxy_addr不携带，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -146,7 +146,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_proxy_addr_003(self):
+    async def test_proxy_proxy_addr_003(self, setup_teardown):
         """proxy_addr为空，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -177,7 +177,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_proxy_addr_004(self):
+    async def test_proxy_proxy_addr_004(self, setup_teardown):
         """proxy_addr为aaa，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -210,7 +210,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_proxy_addr_005(self):
+    async def test_proxy_proxy_addr_005(self, setup_teardown):
         """proxy_addr为非字符串，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -240,7 +240,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_encode_addr_list_001(self):
+    async def test_proxy_encode_addr_list_001(self, setup_teardown):
         """encode_addr_list不携带，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -270,7 +270,7 @@ class TestEPDProxy:
             assert "missing 1 required positional argument" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_encode_addr_list_002(self):
+    async def test_proxy_encode_addr_list_002(self, setup_teardown):
         """encode_addr_list为空，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -301,7 +301,7 @@ class TestEPDProxy:
             assert "Invalid argument" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_encode_addr_list_003(self):
+    async def test_proxy_encode_addr_list_003(self, setup_teardown):
         """encode_addr_list为aaa，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -332,7 +332,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_encode_addr_list_004(self):
+    async def test_proxy_encode_addr_list_004(self, setup_teardown):
         """encode_addr_list为空，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -363,7 +363,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_encode_addr_list_005(self):
+    async def test_proxy_encode_addr_list_005(self, setup_teardown):
         """encode_addr_list为非数组，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -394,7 +394,7 @@ class TestEPDProxy:
             assert "object is not iterable" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_pd_addr_list_001(self):
+    async def test_proxy_pd_addr_list_001(self, setup_teardown):
         """pd_addr_list不携带，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -425,7 +425,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_pd_addr_list_002(self):
+    async def test_proxy_pd_addr_list_002(self, setup_teardown):
         """pd_addr_list为空，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -456,7 +456,7 @@ class TestEPDProxy:
             assert "Invalid argument" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_pd_addr_list_003(self):
+    async def test_proxy_pd_addr_list_003(self, setup_teardown):
         """pd_addr_list为aaa，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -487,7 +487,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_pd_addr_list_004(self):
+    async def test_proxy_pd_addr_list_004(self, setup_teardown):
         """pd_addr_list非有效地址，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -519,7 +519,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_pd_addr_list_005(self):
+    async def test_proxy_pd_addr_list_005(self, setup_teardown):
         """pd_addr_list非数组，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -550,7 +550,7 @@ class TestEPDProxy:
             assert "object is not iterable" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_model_name_001(self):
+    async def test_proxy_model_name_001(self, setup_teardown):
         """model_name不携带，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -580,7 +580,7 @@ class TestEPDProxy:
             assert "missing 1 required positional argument" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_model_name_002(self):
+    async def test_proxy_model_name_002(self, setup_teardown):
         """model_name为空，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -611,7 +611,7 @@ class TestEPDProxy:
             assert "validation error" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_model_name_003(self):
+    async def test_proxy_model_name_003(self, setup_teardown):
         """model_name为aaa，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -642,7 +642,7 @@ class TestEPDProxy:
             assert "validation error" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_proxy_model_name_004(self):
+    async def test_proxy_model_name_004(self, setup_teardown):
         """model_name为非字符串，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -673,7 +673,7 @@ class TestEPDProxy:
             assert "validation error" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_prompt_prompt_001(self):
+    async def test_generate_prompt_prompt_001(self, setup_teardown):
         """prompt不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -704,7 +704,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_prompt_prompt_002(self):
+    async def test_generate_prompt_prompt_002(self, setup_teardown):
         """prompt为空，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -736,7 +736,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_prompt_prompt_003(self):
+    async def test_generate_prompt_prompt_003(self, setup_teardown):
         """prompt为非字符串，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -768,7 +768,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_multi_model_data_001(self):
+    async def test_generate_multi_model_data_001(self, setup_teardown):
         """multi_model_data不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -799,7 +799,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_multi_model_data_002(self):
+    async def test_generate_multi_model_data_002(self, setup_teardown):
         """multi_model_data为空，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -830,7 +830,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_multi_model_data_003(self):
+    async def test_generate_multi_model_data_003(self, setup_teardown):
         """multi_model_data为非image字段，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -861,7 +861,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_multi_model_data_004(self):
+    async def test_generate_multi_model_data_004(self, setup_teardown):
         """multi_model_data为image字段为空，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -892,7 +892,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_multi_model_data_005(self):
+    async def test_generate_multi_model_data_005(self, setup_teardown):
         """multi_model_data未np转化，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -923,7 +923,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_prompt_001(self):
+    async def test_generate_prompt_001(self, setup_teardown):
         """prompt为空，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -951,7 +951,7 @@ class TestEPDProxy:
             assert "KeyError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_prompt_002(self):
+    async def test_generate_prompt_002(self, setup_teardown):
         """prompt不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -979,7 +979,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_max_tokens_001(self):
+    async def test_generate_sampling_params_max_tokens_001(self, setup_teardown):
         """max_tokens不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1012,7 +1012,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_max_tokens_002(self):
+    async def test_generate_sampling_params_max_tokens_002(self, setup_teardown):
         """max_tokens为None，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1046,7 +1046,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_max_tokens_003(self):
+    async def test_generate_sampling_params_max_tokens_003(self, setup_teardown):
         """max_tokens为0，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1080,7 +1080,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_max_tokens_004(self):
+    async def test_generate_sampling_params_max_tokens_004(self, setup_teardown):
         """max_tokens为2.1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1114,7 +1114,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_max_tokens_005(self):
+    async def test_generate_sampling_params_max_tokens_005(self, setup_teardown):
         """max_tokens为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1148,7 +1148,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_max_tokens_006(self):
+    async def test_generate_sampling_params_max_tokens_006(self, setup_teardown):
         """max_tokens为20，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1183,11 +1183,11 @@ class TestEPDProxy:
 
     @pytest.mark.asyncio
     @pytest.mark.xfail
-    async def test_proxy_router_001(self):
+    async def test_proxy_router_001(self, setup_teardown):
         """router设置为None，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             Proxy(
-                proxy_addr=load_config.get("addr_prefix") + "proxy",
+                proxy_addr=PROXY_ADDR,
                 encode_addr_list=E_ADDR_LIST,
                 pd_addr_list=PD_ADDR_LIST,
                 model_name=MODEL,
@@ -1199,10 +1199,10 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_router_002(self):
+    async def test_proxy_router_002(self, setup_teardown):
         """不携带router，初始化Proxy, 初始化成功，默认为random策略"""
         p=Proxy(
-                proxy_addr=load_config.get("addr_prefix") + "proxy",
+                proxy_addr=PROXY_ADDR,
                 encode_addr_list=E_ADDR_LIST,
                 pd_addr_list=PD_ADDR_LIST,
                 model_name=MODEL,
@@ -1231,11 +1231,11 @@ class TestEPDProxy:
 
     @pytest.mark.asyncio
     @pytest.mark.xfail
-    async def test_proxy_router_003(self):
+    async def test_proxy_router_003(self, setup_teardown):
         """router为字符串，初始化Proxy, 初始化失败，返回对应报错信息"""
         try:
             Proxy(
-                proxy_addr=load_config.get("addr_prefix") + "proxy",
+                proxy_addr=PROXY_ADDR,
                 encode_addr_list=E_ADDR_LIST,
                 pd_addr_list=PD_ADDR_LIST,
                 model_name=MODEL,
@@ -1248,10 +1248,10 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_router_004(self):
+    async def test_proxy_router_004(self, setup_teardown):
         """router为自定义类，初始化Proxy, 初始化成功"""
         p=Proxy(
-            proxy_addr=load_config.get("addr_prefix") + "proxy",
+            proxy_addr=PROXY_ADDR,
             encode_addr_list=E_ADDR_LIST,
             pd_addr_list=PD_ADDR_LIST,
             model_name=MODEL,
@@ -1278,10 +1278,10 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_proxy_enable_health_monitor_001(self):
+    async def test_proxy_enable_health_monitor_001(self, setup_teardown):
         """enable_health_monitor不携带，初始化Proxy, 初始化成功，默认为开启状态"""
         p=Proxy(
-            proxy_addr=load_config.get("addr_prefix") + "proxy",
+            proxy_addr=PROXY_ADDR,
             encode_addr_list=E_ADDR_LIST,
             pd_addr_list=PD_ADDR_LIST,
             model_name=MODEL,
