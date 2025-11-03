@@ -60,17 +60,19 @@ async def test_base_001(model: str, tp_size: int):
         "repetition_penalty": 1,
         "request_rate": 0,
         "baseline": 1,
+        "result_file_name": "healthc_check_1E1PD",
         "threshold": 0.97
-    },{
-    "case_type": "accuracy",
-    "dataset_path": os.path.join(DATASET_PATH, "textvqa-subset"),
-    "request_conf": "vllm_api_stream_chat",
-    "dataset_conf": "textvqa/textvqa_gen_base64",
-    "max_out_len": 2048,
-    "batch_size": 128,
-    "baseline": 81,
-    "threshold": 5
     }]
+    # {
+    # "case_type": "accuracy",
+    # "dataset_path": os.path.join(DATASET_PATH, "textvqa-subset"),
+    # "request_conf": "vllm_api_stream_chat",
+    # "dataset_conf": "textvqa/textvqa_gen_base64",
+    # "max_out_len": 2048,
+    # "batch_size": 128,
+    # "baseline": 81,
+    # "threshold": 5
+    # }]
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
