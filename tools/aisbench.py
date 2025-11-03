@@ -117,8 +117,8 @@ class AisbenchRunner:
         plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
 
         try:
-            df = pd.read_csv(f"./{self.result_file_name}")
-            x = df['request rate']
+            df = pd.read_csv(f"./{self.result_file_name}.csv")
+            x = df['Request rate']
 
 
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -126,21 +126,21 @@ class AisbenchRunner:
             # TTFT
             axes[0, 0].plot(x, df['TTFT_Average'], 'b-', linewidth=2)
             axes[0, 0].set_title('TTFT')
-            axes[0, 0].set_xlabel('request rate')
+            axes[0, 0].set_xlabel('Request rate')
             axes[0, 0].set_ylabel('TTFT')
             axes[0, 0].grid(True, alpha=0.3)
 
             # TPOT
             axes[0, 1].plot(x, df['TPOT_Average'], 'r-', linewidth=2)
             axes[0, 1].set_title('TPOT')
-            axes[0, 1].set_xlabel('request rate')
+            axes[0, 1].set_xlabel('Request rate')
             axes[0, 1].set_ylabel('TPOT')
             axes[0, 1].grid(True, alpha=0.3)
 
             # E2E
             axes[0, 2].plot(x, df['E2EL_Average'], 'g-', linewidth=2)
             axes[0, 2].set_title('E2E')
-            axes[0, 2].set_xlabel('request rate')
+            axes[0, 2].set_xlabel('Request rate')
             axes[0, 2].set_ylabel('E2E')
             axes[0, 2].grid(True, alpha=0.3)
             axes[0, 2].set_ylim(-5, 5)
@@ -148,14 +148,14 @@ class AisbenchRunner:
             # Request Throughput
             axes[1, 0].plot(x, df['Request Throughput_total'], 'm-', linewidth=2)
             axes[1, 0].set_title('Request Throughput')
-            axes[1, 0].set_xlabel('request rate')
+            axes[1, 0].set_xlabel('Request rate')
             axes[1, 0].set_ylabel('Request Throughput')
             axes[1, 0].grid(True, alpha=0.3)
 
             # Total Token Throughput
             axes[1, 1].plot(x, df['Total Token Throughput_total'], 'c-', linewidth=2)
             axes[1, 1].set_title('Total Token Throughput')
-            axes[1, 1].set_xlabel('request rate')
+            axes[1, 1].set_xlabel('Request rate')
             axes[1, 1].set_ylabel('Total Token Throughput')
             axes[1, 1].grid(True, alpha=0.3)
 
@@ -198,7 +198,8 @@ class AisbenchRunner:
 
                 csv_result[performance_param] = data
                 csv_result = dict(csv_result)
-            merged_json = self.result_json
+            merged_json = {"Request rate": self.request_rate}
+            merged_json.update(self.result_json)
             merged_json.update(csv_result)
             self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
             print(f"Result csv file is locate in {self.result_file_name}.csv")
