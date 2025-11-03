@@ -61,6 +61,15 @@ async def test_base_001(model: str, tp_size: int):
         "request_rate": 0,
         "baseline": 1,
         "threshold": 0.97
+    },{
+    "case_type": "accuracy",
+    "dataset_path": os.path.join(DATASET_PATH, "textvqa-subset"),
+    "request_conf": "vllm_api_stream_chat",
+    "dataset_conf": "textvqa/textvqa_gen_base64",
+    "max_out_len": 2048,
+    "batch_size": 128,
+    "baseline": 81,
+    "threshold": 5
     }]
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",

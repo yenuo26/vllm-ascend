@@ -6,8 +6,6 @@ import sys
 import time
 
 import psutil
-import pytest
-import yaml
 import threading
 import requests
 
@@ -15,7 +13,6 @@ from pathlib import Path
 from typing import Optional, Union
 from vllm.disaggregated.protocol import ServerType
 from vllm.disaggregated.proxy import Proxy
-
 
 class RemoteEPDServer:
 
