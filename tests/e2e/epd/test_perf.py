@@ -60,7 +60,8 @@ async def test_base_001(model: str, tp_size: int):
         "repetition_penalty": 1,
         "request_rate": 0,
         "baseline": 1,
-        "result_file_name": "healthc_check_1E1PD.csv",
+        "seed": 77,
+        "result_file_name": "healthc_check_1E1PD",
         "threshold": 0.97
     }]
     # {

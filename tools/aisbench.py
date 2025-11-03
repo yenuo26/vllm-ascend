@@ -14,16 +14,17 @@
 # limitations under the License.
 # This file is a part of the vllm-ascend project.
 #
+import importlib
 import json
 import os
 import re
-import datetime
 import subprocess
-import importlib
-import yaml
-
-import pandas as pd
+import traceback
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
 
 def get_package_location(package_name):
     try:
@@ -32,10 +33,14 @@ def get_package_location(package_name):
     except importlib.metadata.PackageNotFoundError:
         return None
 
+
 benchmark_path = get_package_location("ais_bench_benchmark")
-DATASET_CONF_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/configs/datasets")
-REQUEST_CONF_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/configs/models/vllm_api")
+DATASET_CONF_DIR = os.path.join(benchmark_path,
+                                "ais_bench/benchmark/configs/datasets")
+REQUEST_CONF_DIR = os.path.join(benchmark_path,
+                                "ais_bench/benchmark/configs/models/vllm_api")
 DATASET_DIR = os.path.join(benchmark_path, "ais_bench/datasets")
+
 
 class AisbenchRunner:
     RESULT_MSG = {
@@ -52,13 +57,13 @@ class AisbenchRunner:
         dataset_conf = self.dataset_conf.split('/')[-1]
         if self.task_type == "accuracy":
             aisbench_cmd = [
-                'ais_bench', '--models', self.request_conf,
-                '--datasets', f'{dataset_conf}'
+                'ais_bench', '--models', self.request_conf, '--datasets',
+                f'{dataset_conf}'
             ]
         if self.task_type == "performance":
             aisbench_cmd = [
-                'ais_bench', '--models', self.request_conf,
-                '--datasets', f'{dataset_conf}', '--mode', 'perf'
+                'ais_bench', '--models', self.request_conf, '--datasets',
+                f'{dataset_conf}', '--mode', 'perf'
             ]
             if self.num_prompts:
                 aisbench_cmd.extend(['--num-prompts', str(self.num_prompts)])
@@ -106,44 +111,115 @@ class AisbenchRunner:
                 self._performance_verify()
         if save:
             self._performance_result_save()
+            self._create_result_plot()
 
+    def _create_result_plot(self):
+        plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+
+        try:
+            df = pd.read_csv(f"./{self.result_file_name}")
+            x = df['request rate']
+
+
+            fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+            # TTFT
+            axes[0, 0].plot(x, df['TTFT_Average'], 'b-', linewidth=2)
+            axes[0, 0].set_title('TTFT')
+            axes[0, 0].set_xlabel('request rate')
+            axes[0, 0].set_ylabel('TTFT')
+            axes[0, 0].grid(True, alpha=0.3)
+
+            # TPOT
+            axes[0, 1].plot(x, df['TPOT_Average'], 'r-', linewidth=2)
+            axes[0, 1].set_title('TPOT')
+            axes[0, 1].set_xlabel('request rate')
+            axes[0, 1].set_ylabel('TPOT')
+            axes[0, 1].grid(True, alpha=0.3)
+
+            # E2E
+            axes[0, 2].plot(x, df['E2EL_Average'], 'g-', linewidth=2)
+            axes[0, 2].set_title('E2E')
+            axes[0, 2].set_xlabel('request rate')
+            axes[0, 2].set_ylabel('E2E')
+            axes[0, 2].grid(True, alpha=0.3)
+            axes[0, 2].set_ylim(-5, 5)
+
+            # Request Throughput
+            axes[1, 0].plot(x, df['Request Throughput_total'], 'm-', linewidth=2)
+            axes[1, 0].set_title('Request Throughput')
+            axes[1, 0].set_xlabel('request rate')
+            axes[1, 0].set_ylabel('Request Throughput')
+            axes[1, 0].grid(True, alpha=0.3)
+
+            # Total Token Throughput
+            axes[1, 1].plot(x, df['Total Token Throughput_total'], 'c-', linewidth=2)
+            axes[1, 1].set_title('Total Token Throughput')
+            axes[1, 1].set_xlabel('request rate')
+            axes[1, 1].set_ylabel('Total Token Throughput')
+            axes[1, 1].grid(True, alpha=0.3)
+
+            axes[1, 2].set_visible(False)
+
+            plt.tight_layout()
+
+            fig.suptitle('', fontsize=16, y=0.98)
+
+            plt.savefig(f'./{self.result_file_name}.png', dpi=300, bbox_inches='tight')
+
+
+        except Exception as e:
+            print(f"ERROR: {str(e)}")
 
     def _performance_result_save(self):
-        csv_result = defaultdict(dict)
-        for index, row in self.result_csv.iterrows():
-            performance_param = row('Perf')
-            data = {
-                'Average': str(row['Average']) if pd.notna(row['Average']) else None,
-                'Min': str(row['Min']) if pd.notna(row['Min']) else None,
-                'Max': str(row['Max']) if pd.notna(row['Max']) else None,
-                'Median': str(row['Median']) if pd.notna(row['Median']) else None,
-                'P75': str(row['P75']) if pd.notna(row['P75']) else None,
-                'P90': str(row['P90']) if pd.notna(row['P90']) else None,
-                'P99': str(row['P99']) if pd.notna(row['P99']) else None
-            }
+        try:
+            csv_result = defaultdict(dict)
+            for index, row in self.result_csv.iterrows():
+                performance_param = row['Performance Parameters']
+                data = {
+                    'Average':
+                    str(row['Average']) if pd.notna(row['Average']) else None,
+                    'Min':
+                    str(row['Min']) if pd.notna(row['Min']) else None,
+                    'Max':
+                    str(row['Max']) if pd.notna(row['Max']) else None,
+                    'Median':
+                    str(row['Median']) if pd.notna(row['Median']) else None,
+                    'P75':
+                    str(row['P75']) if pd.notna(row['P75']) else None,
+                    'P90':
+                    str(row['P90']) if pd.notna(row['P90']) else None,
+                    'P99':
+                    str(row['P99']) if pd.notna(row['P99']) else None
+                }
 
-            if performance_param not in csv_result:
-                csv_result[performance_param] = {}
+                if performance_param not in csv_result:
+                    csv_result[performance_param] = {}
 
-            csv_result[performance_param] = data
-            csv_result = dict(csv_result)
-        merged_json = self.result_json
-        merged_json.update(csv_result)
-        self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
+                csv_result[performance_param] = data
+                csv_result = dict(csv_result)
+            merged_json = self.result_json
+            merged_json.update(csv_result)
+            self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
+            print(f"Result csv file is locate in {self.result_file_name}.csv")
+        except Exception as e:
+            print(
+                f"save result failed, reason is: {str(e)}, traceback is: {traceback.print_exc()}"
+            )
 
-    def _flatten_dict(self, data, parent_key, sep="_"):
+    def _flatten_dict(self, data, parent_key='', sep="_"):
         items = []
         for key, value in data.items():
             new_key = f"{parent_key}{sep}{key}" if parent_key else key
             if isinstance(value, dict):
-                items.extend(self._flatten_dict(value, new_key, sep=sep).items())
+                items.extend(
+                    self._flatten_dict(value, new_key, sep=sep).items())
             elif isinstance(value, list):
                 for i, item in enumerate(value):
                     items.append((f"{new_key}{sep}{i}", item))
             else:
                 items.append((new_key, value))
         return dict(items)
-
 
     def _write_to_execl(self, data, path):
         data = self._flatten_dict(data)
@@ -154,15 +230,9 @@ class AisbenchRunner:
             else:
                 existing_df = pd.read_csv(path)
                 new_df = pd.DataFrame(data, index=[0])
-                combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+                combined_df = pd.concat([existing_df, new_df],
+                                        ignore_index=True)
                 combined_df.to_csv(path, index=False)
-
-
-
-
-
-
-
 
     def _init_dataset_conf(self):
         if self.task_type == "accuracy":
@@ -203,12 +273,14 @@ class AisbenchRunner:
             if "ignore_eos" not in content:
                 content = re.sub(
                     r"temperature.*",
-                    "temperature = 0,\n            ignore_eos = True,", content)
+                    "temperature = 0,\n            ignore_eos = True,",
+                    content)
         if self.task_type == "accuracy":
             if "ignore_eos" not in content:
                 content = re.sub(
                     r"temperature.*",
-                    "temperature = 0.6,\n            ignore_eos = False,", content)
+                    "temperature = 0.6,\n            ignore_eos = False,",
+                    content)
         if self.temperature:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)
@@ -302,10 +374,10 @@ def run_aisbench_cases(model, port, aisbench_cases):
             with AisbenchRunner(model, port, aisbench_case):
                 pass
         except Exception as e:
-            aisbench_errors.append([aisbench_case, e])
+            aisbench_errors.append([aisbench_case, e, traceback.print_exc()])
             print(e)
-    for failed_case, error_info in aisbench_errors:
+    for failed_case, error_info, error_traceback in aisbench_errors:
         print(
-            f"The following aisbench case failed: {failed_case}, reason is {error_info}."
+            f"The following aisbench case failed: {failed_case}, reason is {error_info}, traceback is: {error_traceback}."
         )
     assert not aisbench_errors, "some aisbench cases failed, info were shown above."
