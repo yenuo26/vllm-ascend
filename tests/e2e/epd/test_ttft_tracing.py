@@ -40,6 +40,8 @@ async def test_base_001(model: str, tp_size: int):
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
 
+    env_dict = {"TIMECOUNT_ENABLED": "1"}
+
     aisbench_cases = [{
         "case_type":
         "performance",
@@ -178,6 +180,7 @@ async def test_base_001(model: str, tp_size: int):
                                api_server_port=api_port,
                                pd_num=1,
                                e_num=1,
+                               env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # aisbench test
