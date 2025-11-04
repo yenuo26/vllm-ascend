@@ -88,11 +88,15 @@ async def chat_completions(request: Request):
         }
 
         # Create sampling params
+        if app.state.is_custom_max_token:
+            max_token = int(image_num*7.47)
+        else:
+            max_token = request_data.get("max_tokens", 100)
         sampling_params = SamplingParams(
             temperature=request_data.get("temperature", 0.7),
             top_p=request_data.get("top_p", 1.0),
             top_k=request_data.get("top_k", 10),
-            max_tokens=request_data.get("max_tokens", 100),
+            max_tokens=max_token,
             stop=request_data.get("stop", None),
             seed=request_data.get("seed", 77),
             repetition_penalty=request_data.get("repetition_penalty", 1.0),
@@ -223,6 +227,9 @@ if __name__ == "__main__":
     parser.add_argument("--is-load-image",
                         action='store_true',
                         help="load image from path")
+    parser.add_argument("--is-custom-max-token",
+                        action='store_true',
+                        help="load image from path")
 
     args = parser.parse_args()
     app.state.proxy = Proxy(proxy_addr=args.proxy_addr,
@@ -231,6 +238,7 @@ if __name__ == "__main__":
                             enable_health_monitor=True,
                             model_name=args.model)
     app.state.is_load_image = args.is_load_image
+    app.state.is_custom_max_token = args.is_custom_max_token
     print(f"Starting API server on {args.host}:{args.port}")
     uvicorn.run(app=app,
                 host=args.host,

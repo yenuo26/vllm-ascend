@@ -89,6 +89,8 @@ class RemoteEPDServer:
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
+        if self.is_custom_max_token:
+            api_server_args.append("--is-custom-max-token")
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
@@ -277,12 +279,14 @@ class RemoteEPDServer:
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
                  is_e_same_card: Optional[bool] = False,
+                 is_custom_max_token: Optional[bool] = False,
                  env_dict: Optional[dict[str, str]] = None) -> None:
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
         self.start_mode = start_mode
         self.is_image_load = is_image_load
+        self.is_custom_max_token = is_custom_max_token
         self.is_epd_same_card = is_epd_same_card
         self.is_e_same_card = is_e_same_card
         self.api_server_port = api_server_port
