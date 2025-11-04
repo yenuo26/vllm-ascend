@@ -11,8 +11,8 @@ import requests
 
 from pathlib import Path
 from typing import Optional, Union
-from vllm.disaggregated.protocol import ServerType
-from vllm.disaggregated.proxy import Proxy
+from llm_service.protocol.protocol import ServerType
+from llm_service.apis.vllm.proxy import Proxy
 
 
 class RemoteEPDServer:
