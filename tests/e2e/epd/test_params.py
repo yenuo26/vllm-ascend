@@ -1720,6 +1720,264 @@ class TestEPDProxy:
             print(f"error message is: {str(message)}")
             assert "TypeError" in str(message), "init success"
 
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_001(self, load_config):
+        """seed不携带，调用generate接口，调用成功"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "instance 0 is unhealthy" in str(message), "init success"
+
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_002(self, load_config):
+        """seed为None，调用generate接口，调用成功"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0,
+                    seed=None
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "instance 0 is unhealthy" in str(message), "init success"
+
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_003(self, load_config):
+        """seed为0，调用generate接口，调用失败，返回对应报错信息"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0,
+                    seed=0
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "instance 0 is unhealthy" in str(message), "init success"
+
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_004(self, load_config):
+        """seed为-1，调用generate接口，调用失败，返回对应报错信息"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0,
+                    seed=-1
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "instance 0 is unhealthy" in str(message), "init success"
+
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_005(self, load_config):
+        """seed为1，调用generate接口，调用失败，返回对应报错信息"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0,
+                    seed=1
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "instance 0 is unhealthy" in str(message), "init success"
+
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_006(self, load_config):
+        """seed为2.1，调用generate接口，调用失败，返回对应报错信息"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0,
+                    seed=2.1
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "ValidationError" in str(message), "init success"
+
+
+    @pytest.mark.asyncio
+    async def test_generate_sampling_params_seed_001(self, load_config):
+        """seed为aaa，调用generate接口，调用失败，返回对应报错信息"""
+        try:
+            p = Proxy(
+                proxy_addr="/tmp/proxy",
+                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
+                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
+                              load_config.get("addr_prefix") + "prefill_decode_1"],
+                model_name=load_config.get("model_path") + MODEL_NAME,
+                enable_health_monitor=True
+            )
+            outputs = p.generate(
+                prompt={
+                    "prompt": PROMPT_TEMPLATE,
+                    "multi_modal_data": {"image": IMAGE_ARRAY},
+                },
+                sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0,
+                    seed="aaa"
+                ),
+                request_id=str(uuid.uuid4())
+
+            )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
+            assert output.outputs[0].finish_reason == "stop", "request is success"
+            p.shutdown()
+        except Exception as message:
+            print(f"error message is: {str(message)}")
+            assert "instance 0 is unhealthy" in str(message), "init success"
+
     @pytest.mark.asyncio
     @pytest.mark.xfail
     async def test_proxy_router_001(self, setup_teardown):
