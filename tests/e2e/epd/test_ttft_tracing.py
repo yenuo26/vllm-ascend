@@ -52,7 +52,7 @@ async def test_base_001(model: str, tp_size: int):
         "dataset_conf":
         "textvqa/textvqa_gen",
         "num_prompts":
-        1,
+        200,
         "max_out_len":
         256,
         "batch_size":
