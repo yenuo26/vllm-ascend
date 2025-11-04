@@ -1186,11 +1186,10 @@ class TestEPDProxy:
         """top_p不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1221,11 +1220,10 @@ class TestEPDProxy:
         """top_p为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1257,11 +1255,10 @@ class TestEPDProxy:
         """top_p为0，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1293,11 +1290,10 @@ class TestEPDProxy:
         """top_p为-1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1329,11 +1325,10 @@ class TestEPDProxy:
         """top_p为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1365,11 +1360,10 @@ class TestEPDProxy:
         """top_p为0.5，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1401,11 +1395,10 @@ class TestEPDProxy:
         """top_p为2，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1437,11 +1430,10 @@ class TestEPDProxy:
         """top_p为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1473,11 +1465,10 @@ class TestEPDProxy:
         """top_k不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1508,11 +1499,10 @@ class TestEPDProxy:
         """top_k为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1544,11 +1534,10 @@ class TestEPDProxy:
         """top_k为0，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1580,11 +1569,10 @@ class TestEPDProxy:
         """top_k为-1，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1616,11 +1604,10 @@ class TestEPDProxy:
         """top_k为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1652,11 +1639,10 @@ class TestEPDProxy:
         """top_k为2.1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1689,11 +1675,10 @@ class TestEPDProxy:
         """top_k为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1726,11 +1711,10 @@ class TestEPDProxy:
         """seed不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1762,11 +1746,10 @@ class TestEPDProxy:
         """seed为None，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1799,11 +1782,10 @@ class TestEPDProxy:
         """seed为0，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1836,11 +1818,10 @@ class TestEPDProxy:
         """seed为-1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1873,11 +1854,10 @@ class TestEPDProxy:
         """seed为1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1910,11 +1890,10 @@ class TestEPDProxy:
         """seed为2.1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1946,11 +1925,10 @@ class TestEPDProxy:
         """seed为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -1983,11 +1961,10 @@ class TestEPDProxy:
         """temperature不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2018,11 +1995,10 @@ class TestEPDProxy:
         """temperature为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2054,11 +2030,10 @@ class TestEPDProxy:
         """temperature为0，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2090,11 +2065,10 @@ class TestEPDProxy:
         """temperature为-1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2126,11 +2100,10 @@ class TestEPDProxy:
         """temperature为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2162,11 +2135,10 @@ class TestEPDProxy:
         """temperature为0.5，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2198,11 +2170,10 @@ class TestEPDProxy:
         """temperature为aaa，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2234,11 +2205,10 @@ class TestEPDProxy:
         """repetition_penalty不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2270,11 +2240,10 @@ class TestEPDProxy:
         """repetition_penalty为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2307,11 +2276,10 @@ class TestEPDProxy:
         """repetition_penalty为0，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2344,11 +2312,10 @@ class TestEPDProxy:
         """repetition_penalty为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2381,11 +2348,10 @@ class TestEPDProxy:
         """repetition_penalty为1.5，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2418,11 +2384,10 @@ class TestEPDProxy:
         """repetition_penalty为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2454,11 +2419,10 @@ class TestEPDProxy:
         """sampling_params不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2485,11 +2449,10 @@ class TestEPDProxy:
         """sampling_params为空，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2517,11 +2480,10 @@ class TestEPDProxy:
         """request_id不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2548,11 +2510,10 @@ class TestEPDProxy:
         """request_id为空，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2580,11 +2541,10 @@ class TestEPDProxy:
         """request_id为非字符串，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs = p.generate(
@@ -2613,11 +2573,10 @@ class TestEPDProxy:
         """request_id重复id，调用generate接口，调用成功"""
         try:
             p = Proxy(
-                proxy_addr="/tmp/proxy",
-                encode_addr_list=[load_config.get("addr_prefix") + "encoder_0"],
-                pd_addr_list=[load_config.get("addr_prefix") + "prefill_decode_0",
-                              load_config.get("addr_prefix") + "prefill_decode_1"],
-                model_name=load_config.get("model_path") + MODEL_NAME,
+                proxy_addr=PROXY_ADDR,
+                encode_addr_list=E_ADDR_LIST,
+                pd_addr_list=PD_ADDR_LIST,
+                model_name=MODEL,
                 enable_health_monitor=True
             )
             outputs1 = p.generate(
