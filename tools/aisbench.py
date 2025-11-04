@@ -91,7 +91,7 @@ class AisbenchRunner:
         self.request_rate = aisbench_config.get("request_rate", 0)
         self.temperature = aisbench_config.get("temperature")
         self.top_k = aisbench_config.get("top_k")
-        self.result_file_name = aisbench_config.get("result_file_name")
+        self.result_file_name = aisbench_config.get("result_file_name", "test")
         self.top_p = aisbench_config.get("top_p")
         self.seed = aisbench_config.get("seed")
         self.repetition_penalty = aisbench_config.get("repetition_penalty")
@@ -375,11 +375,11 @@ class AisbenchRunner:
         assert self.baseline - self.threshold <= acc_value <= self.baseline + self.threshold, f"Accuracy verification failed. The accuracy of {self.dataset_path} is {acc_value}, which is not within {self.threshold} relative to baseline {self.baseline}."
 
 
-def run_aisbench_cases(model, port, aisbench_cases):
+def run_aisbench_cases(model, port, aisbench_cases, verify=True, save=True):
     aisbench_errors = []
     for aisbench_case in aisbench_cases:
         try:
-            with AisbenchRunner(model, port, aisbench_case):
+            with AisbenchRunner(model, port, aisbench_case, verify, save):
                 pass
         except Exception as e:
             aisbench_errors.append([aisbench_case, e, traceback.print_exc()])
