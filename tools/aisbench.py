@@ -147,6 +147,16 @@ class AisbenchRunner:
             axes[0, 0].grid(True, alpha=0.3)
             axes[0, 0].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
+            # display num for data point
+            for i, (xi, yi) in enumerate(zip(x, df['TTFT_Average'])):
+                axes[0, 0].annotate(f'{yi:.2f}',
+                                    (xi, yi),
+                                    textcoords="offset points",
+                                    xytext=(0, 10),  # 在点上方10像素显示
+                                    ha='center',  # 水平居中
+                                    va='bottom',  # 垂直底部对齐
+                                    fontsize=8,
+                                    color='black')
 
             # TPOT
             axes[0, 1].plot(x, df['TPOT_Average'], 'r-', linewidth=2)
@@ -157,6 +167,15 @@ class AisbenchRunner:
             axes[0, 1].grid(True, alpha=0.3)
             axes[0, 1].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
+            for i, (xi, yi) in enumerate(zip(x, df['TPOT_Average'])):
+                axes[0, 1].annotate(f'{yi:.2f}',
+                                    (xi, yi),
+                                    textcoords="offset points",
+                                    xytext=(0, 10),  # 在点上方10像素显示
+                                    ha='center',  # 水平居中
+                                    va='bottom',  # 垂直底部对齐
+                                    fontsize=8,
+                                    color='black')
 
             # E2E
             axes[0, 2].plot(x, df['E2EL_Average'], 'g-', linewidth=2)
@@ -167,6 +186,15 @@ class AisbenchRunner:
             axes[0, 2].grid(True, alpha=0.3)
             axes[0, 2].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 2].xaxis.set_major_formatter(ticker.ScalarFormatter())
+            for i, (xi, yi) in enumerate(zip(x, df['E2EL_Average'])):
+                axes[0, 2].annotate(f'{yi:.2f}',
+                                    (xi, yi),
+                                    textcoords="offset points",
+                                    xytext=(0, 10),  # 在点上方10像素显示
+                                    ha='center',  # 水平居中
+                                    va='bottom',  # 垂直底部对齐
+                                    fontsize=8,
+                                    color='black')
 
             # Request Throughput
             axes[1, 0].plot(x,
@@ -183,6 +211,16 @@ class AisbenchRunner:
             axes[1, 0].grid(True, alpha=0.3)
             axes[1, 0].xaxis.set_major_locator(ticker.AutoLocator())
             axes[1, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
+            for i, (xi, yi) in enumerate(zip(x, df['Request Throughput_total'])):
+                axes[1, 0].annotate(f'{yi:.2f}',
+                                    (xi, yi),
+                                    textcoords="offset points",
+                                    xytext=(0, 10),  # 在点上方10像素显示
+                                    ha='center',  # 水平居中
+                                    va='bottom',  # 垂直底部对齐
+                                    fontsize=8,
+                                    color='black')
+
 
             # Total Token Throughput
             axes[1, 1].plot(x,
@@ -199,6 +237,15 @@ class AisbenchRunner:
             axes[1, 1].grid(True, alpha=0.3)
             axes[1, 1].xaxis.set_major_locator(ticker.AutoLocator())
             axes[1, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
+            for i, (xi, yi) in enumerate(zip(x, df['Total Token Throughput_total'])):
+                axes[1, 1].annotate(f'{yi:.2f}',
+                                    (xi, yi),
+                                    textcoords="offset points",
+                                    xytext=(0, 10),  # 在点上方10像素显示
+                                    ha='center',  # 水平居中
+                                    va='bottom',  # 垂直底部对齐
+                                    fontsize=8,
+                                    color='black')
 
             axes[1, 2].set_visible(False)
 
