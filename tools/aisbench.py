@@ -121,43 +121,50 @@ class AisbenchRunner:
         try:
             df = pd.read_csv(f"./{self.result_file_name}.csv")
             x = df['Request rate']
-            
+
             #remove data unit
-            df['TTFT_Average'] = df['TTFT_Average'].str.extract('(\d+\.?\d*)').astype(float)
-            df['TPOT_Average'] = df['TPOT_Average'].str.extract('(\d+\.?\d*)').astype(float)
-            df['E2EL_Average'] = df['E2EL_Average'].str.extract('(\d+\.?\d*)').astype(float)
-            df['Request Throughput_total'] = df['Request Throughput_total'].str.extract('(\d+\.?\d*)').astype(float)
-            df['Total Token Throughput_total'] = df['Total Token Throughput_total'].str.extract('(\d+\.?\d*)').astype(float)
+            df['TTFT_Average'] = df['TTFT_Average'].str.extract(
+                '(\d+\.?\d*)').astype(float)
+            df['TPOT_Average'] = df['TPOT_Average'].str.extract(
+                '(\d+\.?\d*)').astype(float)
+            df['E2EL_Average'] = df['E2EL_Average'].str.extract(
+                '(\d+\.?\d*)').astype(float)
+            df['Request Throughput_total'] = df[
+                'Request Throughput_total'].str.extract('(\d+\.?\d*)').astype(
+                    float)
+            df['Total Token Throughput_total'] = df[
+                'Total Token Throughput_total'].str.extract(
+                    '(\d+\.?\d*)').astype(float)
 
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
-
             # TTFT
             axes[0, 0].plot(x, df['TTFT_Average'], 'b-', linewidth=2)
+            axes[0, 0].plot(x, df['TTFT_Average'], 'bo', markersize=4)
             axes[0, 0].set_title('TTFT')
-            axes[0, 0].set_xlabel('Request rate')
-            axes[0, 0].set_ylabel('TTFT')
+            axes[0, 0].set_xlabel('Request Rate(req/s)')
+            axes[0, 0].set_ylabel('TTFT(ms)')
             axes[0, 0].grid(True, alpha=0.3)
             axes[0, 0].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
-
             # TPOT
             axes[0, 1].plot(x, df['TPOT_Average'], 'r-', linewidth=2)
+            axes[0, 1].plot(x, df['TPOT_Average'], 'ro', markersize=4)
             axes[0, 1].set_title('TPOT')
-            axes[0, 1].set_xlabel('Request rate')
-            axes[0, 1].set_ylabel('TPOT')
+            axes[0, 1].set_xlabel('Request Rate(req/s)')
+            axes[0, 1].set_ylabel('TPOT(ms)')
             axes[0, 1].grid(True, alpha=0.3)
             axes[0, 1].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
             # E2E
             axes[0, 2].plot(x, df['E2EL_Average'], 'g-', linewidth=2)
+            axes[0, 2].plot(x, df['E2EL_Average'], 'go', markersize=4)
             axes[0, 2].set_title('E2E')
-            axes[0, 2].set_xlabel('Request rate')
-            axes[0, 2].set_ylabel('E2E')
+            axes[0, 2].set_xlabel('Request Rate(req/s)')
+            axes[0, 2].set_ylabel('E2E(ms)')
             axes[0, 2].grid(True, alpha=0.3)
-            axes[0, 2].set_ylim(-5, 5)
             axes[0, 2].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 2].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
@@ -166,9 +173,13 @@ class AisbenchRunner:
                             df['Request Throughput_total'],
                             'm-',
                             linewidth=2)
+            axes[1, 0].plot(x,
+                            df['Request Throughput_total'],
+                            'mo',
+                            markersize=4)
             axes[1, 0].set_title('Request Throughput')
-            axes[1, 0].set_xlabel('Request rate')
-            axes[1, 0].set_ylabel('Request Throughput')
+            axes[1, 0].set_xlabel('Request Rate(req/s)')
+            axes[1, 0].set_ylabel('Request Throughput(req/s)')
             axes[1, 0].grid(True, alpha=0.3)
             axes[1, 0].xaxis.set_major_locator(ticker.AutoLocator())
             axes[1, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
@@ -178,9 +189,13 @@ class AisbenchRunner:
                             df['Total Token Throughput_total'],
                             'c-',
                             linewidth=2)
+            axes[1, 1].plot(x,
+                            df['Total Token Throughput_total'],
+                            'co',
+                            markersize=4)
             axes[1, 1].set_title('Total Token Throughput')
-            axes[1, 1].set_xlabel('Request rate')
-            axes[1, 1].set_ylabel('Total Token Throughput')
+            axes[1, 1].set_xlabel('Request Rate(req/s)')
+            axes[1, 1].set_ylabel('Total Token Throughput(token/s)')
             axes[1, 1].grid(True, alpha=0.3)
             axes[1, 1].xaxis.set_major_locator(ticker.AutoLocator())
             axes[1, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
