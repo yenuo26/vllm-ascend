@@ -9,10 +9,10 @@ from vllm import SamplingParams
 from llm_service.apis.vllm.proxy import Proxy
 from vllm.multimodal.image import convert_image_mode
 from tests.e2e.conftest import RemoteEPDServer
-from tests.e2e.epd.conftest import setup_teardown
+from tests.e2e.epd.conftest import load_config
 from pathlib import Path
 
-model_path = setup_teardown().get("model_path")
+model_path = load_config().get("model_path")
 MODEL = os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")
 PROMPT_TEMPLATE=(
             "<|im_start|>system\n"
