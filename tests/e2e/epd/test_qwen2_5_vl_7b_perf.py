@@ -24,9 +24,9 @@ async def test_pd_merge_001(model: str, tp_size: int):
     vllm_server_args = [
         "--no-enable-prefix-caching",
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "128", "--enforce-eager",
-        "--gpu-memory-utilization", "0.95"
+        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
+        "30000", "--max-num-seqs", "100", "--enforce-eager",
+        "--gpu-memory-utilization", "0.98"
     ]
 
     warmup_cases = [{
@@ -119,8 +119,8 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "1", "--enforce-eager",
+        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
+        "30000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -128,10 +128,10 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
     ]
 
     pd_server_args = [
-        "--model", model, "--max-model-len", "30000",
-        "--max-num-batched-tokens", "40000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "128", "--gpu-memory-utilization",
-        "0.95", "--enforce-eager", "--ec-transfer-config",
+        "--model", model, "--max-model-len", "20000",
+        "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
+        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
+        "0.98", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
@@ -234,8 +234,8 @@ async def test_1e1pd_001(model: str, tp_size: int):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "1", "--enforce-eager",
+        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
+        "30000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -243,10 +243,10 @@ async def test_1e1pd_001(model: str, tp_size: int):
     ]
 
     pd_server_args = [
-        "--model", model, "--max-model-len", "30000",
-        "--max-num-batched-tokens", "40000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "128", "--gpu-memory-utilization",
-        "0.95", "--enforce-eager", "--ec-transfer-config",
+        "--model", model, "--max-model-len", "20000",
+        "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
+        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
+        "0.98", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
@@ -347,8 +347,8 @@ async def test_1e2pd_001(model: str, tp_size: int):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "1", "--enforce-eager",
+        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
+        "30000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -356,9 +356,9 @@ async def test_1e2pd_001(model: str, tp_size: int):
     ]
 
     pd_server_args = [
-        "--model", model, "--max-model-len", "30000",
-        "--max-num-batched-tokens", "40000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "128", "--gpu-memory-utilization",
+        "--model", model, "--max-model-len", "20000",
+        "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
+        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
         "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
