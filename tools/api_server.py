@@ -229,13 +229,16 @@ if __name__ == "__main__":
                         help="load image from path")
     parser.add_argument("--is-custom-max-token",
                         action='store_true',
-                        help="load image from path")
+                        help="max token")
+    parser.add_argument("--enable-health-monitor",
+                        action='store_true',
+                        help="enable health monitor")
 
     args = parser.parse_args()
     app.state.proxy = Proxy(proxy_addr=args.proxy_addr,
                             encode_addr_list=args.e_addr_list.split(","),
                             pd_addr_list=args.pd_addr_list.split(","),
-                            enable_health_monitor=True,
+                            enable_health_monitor=args.enable_health_monitor,
                             model_name=args.model)
     app.state.is_load_image = args.is_load_image
     app.state.is_custom_max_token = args.is_custom_max_token

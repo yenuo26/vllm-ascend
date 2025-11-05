@@ -155,6 +155,8 @@ class RemoteEPDServer:
             api_server_args.append("--is-load-image")
         if self.is_custom_max_token:
             api_server_args.append("--is-custom-max-token")
+        if self.enable_health_monitor:
+            api_server_args.append("--enable-health-monitor")
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
@@ -344,6 +346,7 @@ class RemoteEPDServer:
                  is_epd_same_card: Optional[bool] = False,
                  is_e_same_card: Optional[bool] = False,
                  is_custom_max_token: Optional[bool] = False,
+                 enable_health_monitor: Optional[bool] = False,
                  env_dict: Optional[dict[str, str]] = None) -> None:
         self._proc_list = list()
         self.e_num = e_num
@@ -354,6 +357,7 @@ class RemoteEPDServer:
         self.is_epd_same_card = is_epd_same_card
         self.is_e_same_card = is_e_same_card
         self.api_server_port = api_server_port
+        self.enable_health_monitor = enable_health_monitor
         self.e_addr_list = list()
         self.pd_addr_list = list()
 
@@ -371,7 +375,7 @@ class RemoteEPDServer:
         self.p = Proxy(proxy_addr=self.proxy_addr,
                        encode_addr_list=self.e_addr_list,
                        pd_addr_list=self.pd_addr_list,
-                       enable_health_monitor=True,
+                       enable_health_monitor=self.enable_health_monitor,
                        model_name=self.model)
         await self._wait_for_vllm_server(max_wait_seconds=max_wait_seconds)
         if self.start_mode == "http":
