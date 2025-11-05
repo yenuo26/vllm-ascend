@@ -1,5 +1,5 @@
 import os
-
+import copy
 import pytest
 
 from tests.e2e.conftest import RemoteEPDServer
@@ -42,139 +42,75 @@ async def test_base_001(model: str, tp_size: int):
 
     env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_LOG_STATS_INTERVAL": "10"}
 
-    aisbench_cases = [{
+    warmup_cases = [{
         "case_type":
-        "performance",
+            "performance",
         "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth"),
         "request_conf":
-        "vllm_api_stream_chat",
+            "vllm_api_stream_chat",
         "dataset_conf":
-        "textvqa/textvqa_gen",
+            "textvqa/textvqa_gen",
         "num_prompts":
-        200,
+            100,
         "max_out_len":
-        256,
+            256,
         "batch_size":
-        128,
+            16,
         "temperature":
-        0.5,
+            0.5,
         "top_k":
-        10,
+            10,
         "top_p":
-        0.7,
+            0.7,
         "repetition_penalty":
-        1.2,
+            1.2,
         "request_rate":
-        0.28,
-        "baseline":
-        1,
+            0,
         "seed":
-        77,
-        "result_file_name":
-        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-        "threshold":
-        0.97
-    }, {
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen",
-        "num_prompts":
-        200,
-        "max_out_len":
-        256,
-        "batch_size":
-        128,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        0.78,
-        "baseline":
-        1,
-        "seed":
-        77,
-        "result_file_name":
-        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-        "threshold":
-        0.97
-    }, {
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen",
-        "num_prompts":
-        200,
-        "max_out_len":
-        256,
-        "batch_size":
-        128,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        1.28,
-        "baseline":
-        1,
-        "seed":
-        77,
-        "result_file_name":
-        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-        "threshold":
-        0.97
-    }, {
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen",
-        "num_prompts":
-        200,
-        "max_out_len":
-        256,
-        "batch_size":
-        128,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        1.78,
-        "baseline":
-        1,
-        "seed":
-        77,
-        "result_file_name":
-        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-        "threshold":
-        0.97
+            77,
     }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78, 2.28, 2.78, 3.28]
+    case_dict = {
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            200,
+        "max_out_len":
+            256,
+        "batch_size":
+            128,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0.28,
+        "baseline":
+            1,
+        "seed":
+            77,
+        "result_file_name":
+            "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+        "threshold":
+            0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
@@ -183,6 +119,10 @@ async def test_base_001(model: str, tp_size: int):
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases, verify=False, save=False)
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
