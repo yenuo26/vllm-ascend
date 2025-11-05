@@ -9,10 +9,10 @@ from vllm import SamplingParams
 from llm_service.apis.vllm.proxy import Proxy
 from vllm.multimodal.image import convert_image_mode
 from tests.e2e.conftest import RemoteEPDServer
-from tests.e2e.epd.conftest import load_config
+from tests.e2e.epd.conftest import setup_teardown
 from pathlib import Path
 
-model_path = load_config().get("model_path")
+model_path = setup_teardown().get("model_path")
 MODEL = os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")
 PROMPT_TEMPLATE=(
             "<|im_start|>system\n"
@@ -1182,7 +1182,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_001(self, load_config):
+    async def test_generate_sampling_params_top_p_001(self, setup_teardown):
         """top_p不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1216,7 +1216,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_002(self, load_config):
+    async def test_generate_sampling_params_top_p_002(self, setup_teardown):
         """top_p为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1251,7 +1251,7 @@ class TestEPDProxy:
             assert "TypeError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_003(self, load_config):
+    async def test_generate_sampling_params_top_p_003(self, setup_teardown):
         """top_p为0，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1286,7 +1286,7 @@ class TestEPDProxy:
             assert "ValueError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_004(self, load_config):
+    async def test_generate_sampling_params_top_p_004(self, setup_teardown):
         """top_p为-1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1321,7 +1321,7 @@ class TestEPDProxy:
             assert "ValueError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_005(self, load_config):
+    async def test_generate_sampling_params_top_p_005(self, setup_teardown):
         """top_p为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1356,7 +1356,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_006(self, load_config):
+    async def test_generate_sampling_params_top_p_006(self, setup_teardown):
         """top_p为0.5，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1391,7 +1391,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_007(self, load_config):
+    async def test_generate_sampling_params_top_p_007(self, setup_teardown):
         """top_p为2，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1426,7 +1426,7 @@ class TestEPDProxy:
             assert "ValueError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_p_008(self, load_config):
+    async def test_generate_sampling_params_top_p_008(self, setup_teardown):
         """top_p为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1461,7 +1461,7 @@ class TestEPDProxy:
             assert "TypeError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_001(self, load_config):
+    async def test_generate_sampling_params_top_k_001(self, setup_teardown):
         """top_k不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1495,7 +1495,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_002(self, load_config):
+    async def test_generate_sampling_params_top_k_002(self, setup_teardown):
         """top_k为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1530,7 +1530,7 @@ class TestEPDProxy:
             assert "TypeError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_003(self, load_config):
+    async def test_generate_sampling_params_top_k_003(self, setup_teardown):
         """top_k为0，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1565,7 +1565,7 @@ class TestEPDProxy:
             assert "ValueError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_004(self, load_config):
+    async def test_generate_sampling_params_top_k_004(self, setup_teardown):
         """top_k为-1，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1600,7 +1600,7 @@ class TestEPDProxy:
             assert "ValueError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_005(self, load_config):
+    async def test_generate_sampling_params_top_k_005(self, setup_teardown):
         """top_k为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1635,7 +1635,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_006(self, load_config):
+    async def test_generate_sampling_params_top_k_006(self, setup_teardown):
         """top_k为2.1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1671,7 +1671,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_top_k_007(self, load_config):
+    async def test_generate_sampling_params_top_k_007(self, setup_teardown):
         """top_k为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1707,7 +1707,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_001(self, load_config):
+    async def test_generate_sampling_params_seed_001(self, setup_teardown):
         """seed不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1742,7 +1742,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_002(self, load_config):
+    async def test_generate_sampling_params_seed_002(self, setup_teardown):
         """seed为None，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1778,7 +1778,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_003(self, load_config):
+    async def test_generate_sampling_params_seed_003(self, setup_teardown):
         """seed为0，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1814,7 +1814,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_004(self, load_config):
+    async def test_generate_sampling_params_seed_004(self, setup_teardown):
         """seed为-1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1850,7 +1850,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_005(self, load_config):
+    async def test_generate_sampling_params_seed_005(self, setup_teardown):
         """seed为1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1886,7 +1886,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_006(self, load_config):
+    async def test_generate_sampling_params_seed_006(self, setup_teardown):
         """seed为2.1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1921,7 +1921,7 @@ class TestEPDProxy:
             assert "ValidationError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_seed_007(self, load_config):
+    async def test_generate_sampling_params_seed_007(self, setup_teardown):
         """seed为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -1957,7 +1957,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_001(self, load_config):
+    async def test_generate_sampling_params_temperature_001(self, setup_teardown):
         """temperature不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -1991,7 +1991,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_002(self, load_config):
+    async def test_generate_sampling_params_temperature_002(self, setup_teardown):
         """temperature为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2026,7 +2026,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_003(self, load_config):
+    async def test_generate_sampling_params_temperature_003(self, setup_teardown):
         """temperature为0，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2061,7 +2061,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_004(self, load_config):
+    async def test_generate_sampling_params_temperature_004(self, setup_teardown):
         """temperature为-1，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2096,7 +2096,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_005(self, load_config):
+    async def test_generate_sampling_params_temperature_005(self, setup_teardown):
         """temperature为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2131,7 +2131,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_006(self, load_config):
+    async def test_generate_sampling_params_temperature_006(self, setup_teardown):
         """temperature为0.5，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2166,7 +2166,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_temperature_007(self, load_config):
+    async def test_generate_sampling_params_temperature_007(self, setup_teardown):
         """temperature为aaa，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2201,7 +2201,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_repetition_penalty_001(self, load_config):
+    async def test_generate_sampling_params_repetition_penalty_001(self, setup_teardown):
         """repetition_penalty不携带，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2236,7 +2236,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_repetition_penalty_002(self, load_config):
+    async def test_generate_sampling_params_repetition_penalty_002(self, setup_teardown):
         """repetition_penalty为None，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2272,7 +2272,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_repetition_penalty_003(self, load_config):
+    async def test_generate_sampling_params_repetition_penalty_003(self, setup_teardown):
         """repetition_penalty为0，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2308,7 +2308,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_repetition_penalty_004(self, load_config):
+    async def test_generate_sampling_params_repetition_penalty_004(self, setup_teardown):
         """repetition_penalty为1，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2344,7 +2344,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_repetition_penalty_005(self, load_config):
+    async def test_generate_sampling_params_repetition_penalty_005(self, setup_teardown):
         """repetition_penalty为1.5，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2380,7 +2380,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_repetition_penalty_006(self, load_config):
+    async def test_generate_sampling_params_repetition_penalty_006(self, setup_teardown):
         """repetition_penalty为aaa，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2415,7 +2415,7 @@ class TestEPDProxy:
             assert "TypeError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_001(self, load_config):
+    async def test_generate_sampling_params_001(self, setup_teardown):
         """sampling_params不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2445,7 +2445,7 @@ class TestEPDProxy:
             assert "missing 1 required positional argument" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_sampling_params_002(self, load_config):
+    async def test_generate_sampling_params_002(self, setup_teardown):
         """sampling_params为空，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2476,7 +2476,7 @@ class TestEPDProxy:
             assert "TypeError" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_request_id_001(self, load_config):
+    async def test_generate_request_id_001(self, setup_teardown):
         """request_id不携带，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2506,7 +2506,7 @@ class TestEPDProxy:
             assert "missing 1 required positional argument" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_request_id_002(self, load_config):
+    async def test_generate_request_id_002(self, setup_teardown):
         """request_id为空，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2537,7 +2537,7 @@ class TestEPDProxy:
             assert "instance 0 is unhealthy" in str(message), "init success"
 
     @pytest.mark.asyncio
-    async def test_generate_request_id_003(self, load_config):
+    async def test_generate_request_id_003(self, setup_teardown):
         """request_id为非字符串，调用generate接口，调用失败，返回对应报错信息"""
         try:
             p = Proxy(
@@ -2569,7 +2569,7 @@ class TestEPDProxy:
 
 
     @pytest.mark.asyncio
-    async def test_generate_request_id_004(self, load_config):
+    async def test_generate_request_id_004(self, setup_teardown):
         """request_id重复id，调用generate接口，调用成功"""
         try:
             p = Proxy(
@@ -2639,7 +2639,7 @@ class TestEPDProxy:
                 model_name=MODEL,
             )
         try:
-            image = Image.open(load_config.get("image_path") + "003a8ae2ef43b901.jpg")
+            image = Image.open(setup_teardown.get("image_path") + "003a8ae2ef43b901.jpg")
             image_array = np.array(image)
 
             outputs = p.generate(
