@@ -21,10 +21,10 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 async def test_pd_merge_001(model: str, tp_size: int):
     vllm_server_args = [
-        "--no-enable-prefix-caching", "--model", model,
+        "--no-enable-prefix-caching",
         "--tensor-parallel-size",
         str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "1", "--enforce-eager",
+        "40000", "--max-num-seqs", "128", "--enforce-eager",
         "--gpu-memory-utilization", "0.95"
     ]
 
