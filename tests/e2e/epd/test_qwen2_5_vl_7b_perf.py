@@ -100,9 +100,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    async with RemoteOpenAIServer(
-                                model,
-                               vllm_server_args,server_port=api_port,auto_port=False) as server:
+    with RemoteOpenAIServer(model,vllm_server_args,server_port=api_port,auto_port=False) as server:
 
         # warm up
         run_aisbench_cases(model=model,

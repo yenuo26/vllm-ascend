@@ -160,7 +160,7 @@ class RemoteEPDServer:
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, None)
+        self._run_server_new_session(api_server_args, self.env_dict)
 
     def _start_vllm(self):
         if self.env_dict is None:
