@@ -391,8 +391,6 @@ class RemoteEPDServer:
         print("proxy is stoping")
 
 
-
-
 class RemoteOpenAIServer:
     DUMMY_API_KEY = "token-abc123"  # vLLM's OpenAI server does not need API key
 
@@ -430,7 +428,10 @@ class RemoteOpenAIServer:
         if isinstance(vllm_serve_args, str):
             vllm_serve_args = shlex.split(vllm_serve_args)
         else:
-            vllm_serve_args = ["vllm", "serve", model, *vllm_serve_args]
+            vllm_serve_args = [
+                "taskset", "-c", "0-96", "vllm", "serve", model,
+                *vllm_serve_args
+            ]
         if auto_port:
             if "-p" in vllm_serve_args or "--port" in vllm_serve_args:
                 raise ValueError("You have manually specified the port "
@@ -923,4 +924,3 @@ PROMPT_TEMPLATES = {
 @pytest.fixture(params=list(PROMPT_TEMPLATES.keys()))
 def prompt_template(request):
     return PROMPT_TEMPLATES[request.param]
-

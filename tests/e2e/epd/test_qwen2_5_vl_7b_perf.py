@@ -20,7 +20,6 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 async def test_pd_merge_001(model: str, tp_size: int):
-    #TODO PD合并脚本待调试
     vllm_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
