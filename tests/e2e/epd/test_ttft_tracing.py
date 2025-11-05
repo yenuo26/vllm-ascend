@@ -40,7 +40,7 @@ async def test_base_001(model: str, tp_size: int):
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
 
-    env_dict = {"TIMECOUNT_ENABLED": "1"}
+    env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_LOG_STATS_INTERVAL": "10"}
 
     aisbench_cases = [{
         "case_type":
