@@ -4,6 +4,7 @@ import pytest
 import copy
 
 from tests.e2e.conftest import RemoteOpenAIServer
+from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 
@@ -57,7 +58,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
             77,
         }]
 
-    request_rate = [0.28, 0.78, 1.28, 1.78, 2.28, 2.78, 3.28]
+    request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
     case_dict = {
         "case_type":
         "performance",
@@ -167,8 +168,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
 #             77,
 #         }]
 #
-#     request_rate = [0.28, 0.78, 1.28, 1.78, 2.28, 2.78, 3.28]
-#     case_dict = {
+#     request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
 #         "case_type":
 #         "performance",
 #         "dataset_path":
@@ -282,7 +282,7 @@ async def test_1e1pd_001(model: str, tp_size: int):
             77,
     }]
 
-    request_rate = [0.56, 1.56, 2.56, 3.56, 4.56, 5.56, 6.56]
+    request_rate = [0.56, 1.36, 2.16, 2.96, 3.76, 4.56, 5.36]
     case_dict = {
         "case_type":
             "performance",
@@ -394,7 +394,7 @@ async def test_1e2pd_001(model: str, tp_size: int):
         "seed":
             77,
     }]
-    request_rate = [0.84, 1.84, 2.84, 3.84, 4.84, 5.84, 6.84]
+    request_rate = [0.84, 2.04, 3.24, 4.44, 5.64, 6.84, 8.04]
     case_dict = {
         "case_type":
             "performance",

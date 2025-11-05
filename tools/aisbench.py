@@ -115,13 +115,22 @@ class AisbenchRunner:
             self._create_result_plot()
 
     def _create_result_plot(self):
+        import matplotlib.ticker as ticker
         plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
 
         try:
             df = pd.read_csv(f"./{self.result_file_name}.csv")
             x = df['Request rate']
+            
+            #remove data unit
+            df['TTFT_Average'] = df['TTFT_Average'].str.extract('(\d+\.?\d*)').astype(float)
+            df['TPOT_Average'] = df['TPOT_Average'].str.extract('(\d+\.?\d*)').astype(float)
+            df['E2EL_Average'] = df['E2EL_Average'].str.extract('(\d+\.?\d*)').astype(float)
+            df['Request Throughput_total'] = df['Request Throughput_total'].str.extract('(\d+\.?\d*)').astype(float)
+            df['Total Token Throughput_total'] = df['Total Token Throughput_total'].str.extract('(\d+\.?\d*)').astype(float)
 
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
 
             # TTFT
             axes[0, 0].plot(x, df['TTFT_Average'], 'b-', linewidth=2)
@@ -129,6 +138,9 @@ class AisbenchRunner:
             axes[0, 0].set_xlabel('Request rate')
             axes[0, 0].set_ylabel('TTFT')
             axes[0, 0].grid(True, alpha=0.3)
+            axes[0, 0].xaxis.set_major_locator(ticker.AutoLocator())
+            axes[0, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
+
 
             # TPOT
             axes[0, 1].plot(x, df['TPOT_Average'], 'r-', linewidth=2)
@@ -136,6 +148,8 @@ class AisbenchRunner:
             axes[0, 1].set_xlabel('Request rate')
             axes[0, 1].set_ylabel('TPOT')
             axes[0, 1].grid(True, alpha=0.3)
+            axes[0, 1].xaxis.set_major_locator(ticker.AutoLocator())
+            axes[0, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
             # E2E
             axes[0, 2].plot(x, df['E2EL_Average'], 'g-', linewidth=2)
@@ -144,6 +158,8 @@ class AisbenchRunner:
             axes[0, 2].set_ylabel('E2E')
             axes[0, 2].grid(True, alpha=0.3)
             axes[0, 2].set_ylim(-5, 5)
+            axes[0, 2].xaxis.set_major_locator(ticker.AutoLocator())
+            axes[0, 2].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
             # Request Throughput
             axes[1, 0].plot(x,
@@ -154,6 +170,8 @@ class AisbenchRunner:
             axes[1, 0].set_xlabel('Request rate')
             axes[1, 0].set_ylabel('Request Throughput')
             axes[1, 0].grid(True, alpha=0.3)
+            axes[1, 0].xaxis.set_major_locator(ticker.AutoLocator())
+            axes[1, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
             # Total Token Throughput
             axes[1, 1].plot(x,
@@ -164,6 +182,8 @@ class AisbenchRunner:
             axes[1, 1].set_xlabel('Request rate')
             axes[1, 1].set_ylabel('Total Token Throughput')
             axes[1, 1].grid(True, alpha=0.3)
+            axes[1, 1].xaxis.set_major_locator(ticker.AutoLocator())
+            axes[1, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
 
             axes[1, 2].set_visible(False)
 
