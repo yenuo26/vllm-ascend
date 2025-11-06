@@ -2565,7 +2565,7 @@ class TestEPDProxy:
             p.shutdown()
         except Exception as message:
             print(f"error message is: {str(message)}")
-            assert "ValidationError" in str(message), "init success"
+            assert "Invalid Parameters" in str(message), "init success"
 
 
     @pytest.mark.asyncio
@@ -2602,11 +2602,11 @@ class TestEPDProxy:
             async for o1 in outputs1:
                 output = o1
                 print(f"{o1.outputs}", flush=True)
-            assert output.outputs1[0].finish_reason == "stop", "request is success"
+            assert output.outputs[0].finish_reason == "stop", "request is success"
             async for o2 in outputs2:
                 output = o2
                 print(f"{o2.outputs}", flush=True)
-            assert output.outputs1[0].finish_reason == "stop", "request is success"
+            assert output.outputs[0].finish_reason == "stop", "request is success"
             p.shutdown()
         except Exception as message:
             print(f"error message is: {str(message)}")
