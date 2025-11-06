@@ -143,8 +143,7 @@ async def chat_completions(request: Request):
                 # End of stream
                 yield "data: [DONE]\n\n"
                 if llm_service_envs.TIMECOUNT_ENABLED:
-                    await asyncio.sleep(envs.VLLM_LOG_STATS_INTERVAL)
-                    await app.state.proxy.log_metrics()
+                    asyncio.create_task(app.state.proxy.log_metrics())
 
             return StreamingResponse(stream_generator(),
                                      media_type="text/event-stream")
