@@ -229,7 +229,7 @@ async def test_timeout_enabled_001(model: str, tp_size: int):
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
@@ -343,7 +343,7 @@ async def test_timeout_enabled_002(model: str, tp_size: int):
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
@@ -457,7 +457,7 @@ async def test_vllm_log_stats_interval_001(model: str, tp_size: int):
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
@@ -570,7 +570,7 @@ async def test_performance_001(model: str, tp_size: int):
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
@@ -683,7 +683,7 @@ async def test_performance_002(model: str, tp_size: int):
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
@@ -796,7 +796,7 @@ async def test_longterm_001(model: str, tp_size: int):
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
