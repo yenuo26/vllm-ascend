@@ -187,7 +187,6 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
                                pd_num=1,
                                e_num=1,
                                is_epd_same_card=True,
-                               is_custom_max_token=True,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
 
@@ -287,7 +286,6 @@ async def test_1e1pd_001(model: str, tp_size: int):
                                api_server_port=api_port,
                                pd_num=1,
                                e_num=1,
-                               is_custom_max_token=True,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # warm up
@@ -385,7 +383,6 @@ async def test_1e2pd_001(model: str, tp_size: int):
                                api_server_port=api_port,
                                pd_num=2,
                                e_num=1,
-                               is_custom_max_token=True,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # warm up
