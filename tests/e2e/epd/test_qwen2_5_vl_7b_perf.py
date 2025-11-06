@@ -21,10 +21,12 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 @pytest_asyncio.fixture(scope="module")
 async def teardown():
-        yield
-        create_result_plot(result_file_names=["qwen2_5_vl_7b_perf_custom_PD_merge", "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-                                              "qwen2_5_vl_7b_perf_custom_1E2PD", "qwen2_5_vl_7b_perf_custom_1E1PD"])
-
+    yield
+    create_result_plot(result_file_names=[
+        "qwen2_5_vl_7b_perf_custom_PD_merge",
+        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+        "qwen2_5_vl_7b_perf_custom_1E2PD", "qwen2_5_vl_7b_perf_custom_1E1PD"
+    ])
 
 
 @pytest.mark.asyncio

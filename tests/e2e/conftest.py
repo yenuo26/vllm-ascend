@@ -95,8 +95,9 @@ class RemoteEPDServer:
         except Exception as e:
             print(f"error: {e}")
 
-    def _run_server(self, server_cmd: list[str],
-                    env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
+    def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
+                                                                         str]],
+                    log_prefix: str) -> None:
         """Subclasses override this method to customize server process launch
         """
         env = os.environ.copy()
@@ -110,8 +111,7 @@ class RemoteEPDServer:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,  # 文本模式
-            bufsize=1
-        )
+            bufsize=1)
         # 创建线程读取输出
         stdout_thread = threading.Thread(target=self._read_output,
                                          args=(proc.stdout, log_prefix),
@@ -125,7 +125,8 @@ class RemoteEPDServer:
         self._proc_list.append(proc)
 
     def _run_server_new_session(self, server_cmd: list[str],
-                                env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
+                                env_dict: Optional[dict[str, str]],
+                                log_prefix: str) -> None:
         """Subclasses override this method to customize server process launch
         """
         env = os.environ.copy()
@@ -171,7 +172,8 @@ class RemoteEPDServer:
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, self.env_dict, "[PRXOY] ")
+        self._run_server_new_session(api_server_args, self.env_dict,
+                                     "[PRXOY] ")
 
     def _start_vllm(self):
         if self.env_dict is None:
@@ -230,16 +232,17 @@ class RemoteEPDServer:
                             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = "0"
                         else:
                             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                            # defaut encode-addr is /tmp/encode_{i}
-                            e_serve_args = copy.deepcopy(self.e_serve_args)
-                            e_serve_args = e_serve_args + [
-                                "--worker-addr",
-                                self._default_addr_prefix + "encoder_" + str(i)
-                            ]
-                            self.e_addr_list.append(self._default_addr_prefix +
-                                                    "encoder_" + str(i))
+                        # defaut encode-addr is /tmp/encode_{i}
+                        e_serve_args = copy.deepcopy(self.e_serve_args)
+                        e_serve_args = e_serve_args + [
+                            "--worker-addr",
+                            self._default_addr_prefix + "encoder_" + str(i)
+                        ]
+                        self.e_addr_list.append(self._default_addr_prefix +
+                                                "encoder_" + str(i))
 
-                        self._run_server(e_serve_args, self.env_dict, f"[ENCODE_{i}] ")
+                        self._run_server(e_serve_args, self.env_dict,
+                                         f"[ENCODE_{i}] ")
         else:
             raise RuntimeError("e_serve_args must be a list")
 
@@ -256,17 +259,19 @@ class RemoteEPDServer:
                         if self.is_epd_same_card:
                             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                         else:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
-                                                                             self.e_num)
-                            # defaut worker-addr is /tmp/pd_{i}
-                            pd_serve_args = copy.deepcopy(self.pd_serve_args)
-                            pd_serve_args = pd_serve_args + [
-                                "--worker-addr", self._default_addr_prefix + "pd_" + str(i)
-                            ]
-                            self.pd_addr_list.append(self._default_addr_prefix + "pd_" +
-                                                     str(i))
+                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
+                                i + self.e_num)
+                        # defaut worker-addr is /tmp/pd_{i}
+                        pd_serve_args = copy.deepcopy(self.pd_serve_args)
+                        pd_serve_args = pd_serve_args + [
+                            "--worker-addr",
+                            self._default_addr_prefix + "pd_" + str(i)
+                        ]
+                        self.pd_addr_list.append(self._default_addr_prefix +
+                                                 "pd_" + str(i))
 
-                        self._run_server(pd_serve_args, self.env_dict, f"[PD_{i}] ")
+                        self._run_server(pd_serve_args, self.env_dict,
+                                         f"[PD_{i}] ")
         else:
             raise RuntimeError("pd_serve_args must be a list")
 
