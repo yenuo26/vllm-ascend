@@ -84,23 +84,6 @@ class RemoteEPDServer:
     def get_proxy(self) -> Proxy:
         return self.p
 
-    def _run_server(self, server_cmd: list[str],
-                    env_dict: Optional[dict[str, str]]) -> None:
-        """Subclasses override this method to customize server process launch
-        """
-        env = os.environ.copy()
-        # the current process might initialize npu,
-        # to be safe, we should use spawn method
-        if env_dict is not None:
-            env.update(env_dict)
-        proc = subprocess.Popen(
-            server_cmd,
-            env=env,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        )
-        self._proc_list.append(proc)
-
     def _read_output(self, pipe, prefix):
         """在单独线程中读取输出"""
         try:
@@ -111,8 +94,37 @@ class RemoteEPDServer:
         except Exception as e:
             print(f"error: {e}")
 
+    def _run_server(self, server_cmd: list[str],
+                    env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
+        """Subclasses override this method to customize server process launch
+        """
+        env = os.environ.copy()
+        # the current process might initialize npu,
+        # to be safe, we should use spawn method
+        if env_dict is not None:
+            env.update(env_dict)
+        proc = subprocess.Popen(
+            server_cmd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,  # 文本模式
+            bufsize=1
+        )
+        # 创建线程读取输出
+        stdout_thread = threading.Thread(target=self._read_output,
+                                         args=(proc.stdout, log_prefix),
+                                         daemon=True)
+        stderr_thread = threading.Thread(target=self._read_output,
+                                         args=(proc.stderr, log_prefix),
+                                         daemon=True)
+
+        stdout_thread.start()
+        stderr_thread.start()
+        self._proc_list.append(proc)
+
     def _run_server_new_session(self, server_cmd: list[str],
-                                env_dict: Optional[dict[str, str]]) -> None:
+                                env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
         """Subclasses override this method to customize server process launch
         """
         env = os.environ.copy()
@@ -134,10 +146,10 @@ class RemoteEPDServer:
 
         # 创建线程读取输出
         stdout_thread = threading.Thread(target=self._read_output,
-                                         args=(proc.stdout, "UVICORN-STDOUT"),
+                                         args=(proc.stdout, log_prefix),
                                          daemon=True)
         stderr_thread = threading.Thread(target=self._read_output,
-                                         args=(proc.stderr, "UVICORN-STDERR"),
+                                         args=(proc.stderr, log_prefix),
                                          daemon=True)
 
         stdout_thread.start()
@@ -160,7 +172,7 @@ class RemoteEPDServer:
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, self.env_dict)
+        self._run_server_new_session(api_server_args, self.env_dict, "[PRXOY] ")
 
     def _start_vllm(self):
         if self.env_dict is None:
@@ -221,7 +233,7 @@ class RemoteEPDServer:
             else:
                 index_e = self.e_serve_args.index("--worker-addr")
                 self.e_addr_list.append(self.e_serve_args[index_e + 1])
-            self._run_server(self.e_serve_args, self.env_dict)
+            self._run_server(self.e_serve_args, self.env_dict, f"[ENCODE_{i}] ")
         for i in range(self.pd_num):
             if self.is_epd_same_card:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
@@ -238,7 +250,7 @@ class RemoteEPDServer:
             else:
                 index_pd = self.pd_serve_args.index("--worker-addr")
                 self.pd_addr_list.append(self.pd_serve_args[index_pd + 1])
-            self._run_server(self.pd_serve_args, self.env_dict)
+            self._run_server(self.pd_serve_args, self.env_dict, f"[PD_{i}] ")
 
     async def _wait_for_vllm_server(self, max_wait_seconds) -> None:
         sleep_times = 10
