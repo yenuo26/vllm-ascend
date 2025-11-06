@@ -22,44 +22,13 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 async def test_pd_merge_001(model: str, tp_size: int):
     vllm_server_args = [
-        "--no-enable-prefix-caching",
-        "--tensor-parallel-size",
+        "--no-enable-prefix-caching", "--tensor-parallel-size",
         str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
         "30000", "--max-num-seqs", "100", "--enforce-eager",
         "--gpu-memory-utilization", "0.98"
     ]
 
     warmup_cases = [{
-        "case_type":
-            "performance",
-        "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-            "vllm_api_stream_chat",
-        "dataset_conf":
-            "textvqa/textvqa_gen",
-        "num_prompts":
-            100,
-        "max_out_len":
-            256,
-        "batch_size":
-            16,
-        "temperature":
-            0.5,
-        "top_k":
-            10,
-        "top_p":
-            0.7,
-        "repetition_penalty":
-            1.2,
-        "request_rate":
-            0,
-        "seed":
-            77,
-        }]
-
-    request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
-    case_dict = {
         "case_type":
         "performance",
         "dataset_path":
@@ -69,11 +38,11 @@ async def test_pd_merge_001(model: str, tp_size: int):
         "dataset_conf":
         "textvqa/textvqa_gen",
         "num_prompts":
-        200,
+        100,
         "max_out_len":
         256,
         "batch_size":
-        128,
+        16,
         "temperature":
         0.5,
         "top_k":
@@ -83,16 +52,30 @@ async def test_pd_merge_001(model: str, tp_size: int):
         "repetition_penalty":
         1.2,
         "request_rate":
-        0.28,
-        "baseline":
-        1,
+        0,
         "seed":
         77,
-        "result_file_name":
-        "qwen2_5_vl_7b_perf_custom_PD_merge",
-        "threshold":
-        0.97
-        }
+    }]
+
+    request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 256,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": "qwen2_5_vl_7b_perf_custom_PD_merge",
+        "threshold": 0.97
+    }
     aisbench_cases = []
     for i in range(len(request_rate)):
         case_dict["request_rate"] = request_rate[i]
@@ -100,12 +83,18 @@ async def test_pd_merge_001(model: str, tp_size: int):
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    with RemoteOpenAIServer(model,vllm_server_args,server_port=api_port,auto_port=False) as server:
+    with RemoteOpenAIServer(model,
+                            vllm_server_args,
+                            server_host="127.0.0.1",
+                            server_port=api_port,
+                            auto_port=False) as server:
 
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=warmup_cases,verify=False,save=False)
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -139,67 +128,51 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
 
     warmup_cases = [{
         "case_type":
-            "performance",
+        "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, "simulate_truth"),
         "request_conf":
-            "vllm_api_stream_chat",
+        "vllm_api_stream_chat",
         "dataset_conf":
-            "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+        100,
         "max_out_len":
-            256,
+        256,
         "batch_size":
-            16,
+        16,
         "temperature":
-            0.5,
+        0.5,
         "top_k":
-            10,
+        10,
         "top_p":
-            0.7,
+        0.7,
         "repetition_penalty":
-            1.2,
+        1.2,
         "request_rate":
-            0,
+        0,
         "seed":
-            77,
+        77,
     }]
 
     request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
     case_dict = {
-        "case_type":
-            "performance",
-        "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-            "vllm_api_stream_chat",
-        "dataset_conf":
-            "textvqa/textvqa_gen",
-        "num_prompts":
-            200,
-        "max_out_len":
-            256,
-        "batch_size":
-            128,
-        "temperature":
-            0.5,
-        "top_k":
-            10,
-        "top_p":
-            0.7,
-        "repetition_penalty":
-            1.2,
-        "request_rate":
-            0.28,
-        "baseline":
-            1,
-        "seed":
-            77,
-        "result_file_name":
-            "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-        "threshold":
-            0.97
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 256,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+        "threshold": 0.97
     }
     aisbench_cases = []
     for i in range(len(request_rate)):
@@ -220,7 +193,9 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=warmup_cases,verify=False,save=False)
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -254,67 +229,51 @@ async def test_1e1pd_001(model: str, tp_size: int):
 
     warmup_cases = [{
         "case_type":
-            "performance",
+        "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, "simulate_truth"),
         "request_conf":
-            "vllm_api_stream_chat",
+        "vllm_api_stream_chat",
         "dataset_conf":
-            "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+        100,
         "max_out_len":
-            256,
+        256,
         "batch_size":
-            16,
+        16,
         "temperature":
-            0.5,
+        0.5,
         "top_k":
-            10,
+        10,
         "top_p":
-            0.7,
+        0.7,
         "repetition_penalty":
-            1.2,
+        1.2,
         "request_rate":
-            0,
+        0,
         "seed":
-            77,
+        77,
     }]
 
     request_rate = [0.56, 1.36, 2.16, 2.96, 3.76, 4.56, 5.36]
     case_dict = {
-        "case_type":
-            "performance",
-        "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-            "vllm_api_stream_chat",
-        "dataset_conf":
-            "textvqa/textvqa_gen",
-        "num_prompts":
-            200,
-        "max_out_len":
-            256,
-        "batch_size":
-            128,
-        "temperature":
-            0.5,
-        "top_k":
-            10,
-        "top_p":
-            0.7,
-        "repetition_penalty":
-            1.2,
-        "request_rate":
-            0.28,
-        "baseline":
-            1,
-        "seed":
-            77,
-        "result_file_name":
-            "qwen2_5_vl_7b_perf_custom_1E1PD",
-        "threshold":
-            0.97
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 256,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E1PD",
+        "threshold": 0.97
     }
     aisbench_cases = []
     for i in range(len(request_rate)):
@@ -333,7 +292,9 @@ async def test_1e1pd_001(model: str, tp_size: int):
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=warmup_cases, verify=False, save=False)
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -367,66 +328,50 @@ async def test_1e2pd_001(model: str, tp_size: int):
 
     warmup_cases = [{
         "case_type":
-            "performance",
+        "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, "simulate_truth"),
         "request_conf":
-            "vllm_api_stream_chat",
+        "vllm_api_stream_chat",
         "dataset_conf":
-            "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+        100,
         "max_out_len":
-            256,
+        256,
         "batch_size":
-            16,
+        16,
         "temperature":
-            0.5,
+        0.5,
         "top_k":
-            10,
+        10,
         "top_p":
-            0.7,
+        0.7,
         "repetition_penalty":
-            1.2,
+        1.2,
         "request_rate":
-            0,
+        0,
         "seed":
-            77,
+        77,
     }]
     request_rate = [0.84, 2.04, 3.24, 4.44, 5.64, 6.84, 8.04]
     case_dict = {
-        "case_type":
-            "performance",
-        "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-            "vllm_api_stream_chat",
-        "dataset_conf":
-            "textvqa/textvqa_gen",
-        "num_prompts":
-            200,
-        "max_out_len":
-            256,
-        "batch_size":
-            128,
-        "temperature":
-            0.5,
-        "top_k":
-            10,
-        "top_p":
-            0.7,
-        "repetition_penalty":
-            1.2,
-        "request_rate":
-            0.28,
-        "baseline":
-            1,
-        "seed":
-            77,
-        "result_file_name":
-            "qwen2_5_vl_7b_perf_custom_1E2PD",
-        "threshold":
-            0.97
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 256,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E2PD",
+        "threshold": 0.97
     }
     aisbench_cases = []
     for i in range(len(request_rate)):
@@ -445,7 +390,9 @@ async def test_1e2pd_001(model: str, tp_size: int):
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=warmup_cases, verify=False, save=False)
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,

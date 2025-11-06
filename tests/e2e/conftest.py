@@ -406,6 +406,8 @@ class RemoteOpenAIServer:
         # the current process might initialize npu,
         # to be safe, we should use spawn method
         env['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
+        env['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
+        env['VLLM_USE_V1'] = "1"
         if env_dict is not None:
             env.update(env_dict)
         self.proc: subprocess.Popen = subprocess.Popen(
@@ -414,50 +416,6 @@ class RemoteOpenAIServer:
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
-
-    def _start_server_new_session(self, server_cmd: list[str],
-                                env_dict: Optional[dict[str, str]]) -> None:
-        """Subclasses override this method to customize server process launch
-        """
-        env = os.environ.copy()
-        # the current process might initialize npu,
-        # to be safe, we should use spawn method
-        if env_dict is not None:
-            env.update(env_dict)
-        env['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
-        self.proc: subprocess.Popen = subprocess.Popen(
-            server_cmd,
-            cwd=None,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL,
-            start_new_session=True,
-            text=True,
-            bufsize=1,  # 行缓冲
-            universal_newlines=True)
-
-        # 创建线程读取输出
-        stdout_thread = threading.Thread(target=self._read_output,
-                                         args=(self.proc.stdout, "UVICORN-STDOUT"),
-                                         daemon=True)
-        stderr_thread = threading.Thread(target=self._read_output,
-                                         args=(self.proc.stderr, "UVICORN-STDERR"),
-                                         daemon=True)
-
-        stdout_thread.start()
-        stderr_thread.start()
-
-
-    def _read_output(self, pipe, prefix):
-        """在单独线程中读取输出"""
-        try:
-            with pipe:
-                for line in iter(pipe.readline, ''):
-                    if line:  # 避免空行
-                        print(f"{prefix}: {line}", end='')
-        except Exception as e:
-            print(f"error: {e}")
 
     def __init__(self,
                  model: str,
@@ -512,7 +470,7 @@ class RemoteOpenAIServer:
         self.cur_index = os.getenv("LWS_WORKER_INDEX", 0)
         self.proxy_port = proxy_port
 
-        self._start_server_new_session(model, vllm_serve_args, env_dict)
+        self._start_server(model, vllm_serve_args, env_dict)
         max_wait_seconds = max_wait_seconds or 1800
         if self.disaggregated_prefill:
             assert proxy_port is not None, "for disaggregated_prefill, proxy port must be provided"
