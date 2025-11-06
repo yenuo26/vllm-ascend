@@ -149,7 +149,7 @@ class AisbenchRunner:
             axes[0, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
             # display num for data point
             for i, (xi, yi) in enumerate(zip(x, df['TTFT_Average'])):
-                axes[0, 0].annotate(f'{yi:.2f}',
+                axes[0, 0].annotate(f'{yi:.4f}',
                                     (xi, yi),
                                     textcoords="offset points",
                                     xytext=(0, 10),  # 在点上方10像素显示
@@ -168,7 +168,7 @@ class AisbenchRunner:
             axes[0, 1].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
             for i, (xi, yi) in enumerate(zip(x, df['TPOT_Average'])):
-                axes[0, 1].annotate(f'{yi:.2f}',
+                axes[0, 1].annotate(f'{yi:.4f}',
                                     (xi, yi),
                                     textcoords="offset points",
                                     xytext=(0, 10),  # 在点上方10像素显示
@@ -187,7 +187,7 @@ class AisbenchRunner:
             axes[0, 2].xaxis.set_major_locator(ticker.AutoLocator())
             axes[0, 2].xaxis.set_major_formatter(ticker.ScalarFormatter())
             for i, (xi, yi) in enumerate(zip(x, df['E2EL_Average'])):
-                axes[0, 2].annotate(f'{yi:.2f}',
+                axes[0, 2].annotate(f'{yi:.4f}',
                                     (xi, yi),
                                     textcoords="offset points",
                                     xytext=(0, 10),  # 在点上方10像素显示
@@ -212,7 +212,7 @@ class AisbenchRunner:
             axes[1, 0].xaxis.set_major_locator(ticker.AutoLocator())
             axes[1, 0].xaxis.set_major_formatter(ticker.ScalarFormatter())
             for i, (xi, yi) in enumerate(zip(x, df['Request Throughput_total'])):
-                axes[1, 0].annotate(f'{yi:.2f}',
+                axes[1, 0].annotate(f'{yi:.4f}',
                                     (xi, yi),
                                     textcoords="offset points",
                                     xytext=(0, 10),  # 在点上方10像素显示
@@ -238,7 +238,7 @@ class AisbenchRunner:
             axes[1, 1].xaxis.set_major_locator(ticker.AutoLocator())
             axes[1, 1].xaxis.set_major_formatter(ticker.ScalarFormatter())
             for i, (xi, yi) in enumerate(zip(x, df['Total Token Throughput_total'])):
-                axes[1, 1].annotate(f'{yi:.2f}',
+                axes[1, 1].annotate(f'{yi:.4f}',
                                     (xi, yi),
                                     textcoords="offset points",
                                     xytext=(0, 10),  # 在点上方10像素显示
