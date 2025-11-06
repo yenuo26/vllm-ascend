@@ -1,12 +1,14 @@
 import os
 
 import pytest
+import pytest_asyncio
 import copy
 
 from tests.e2e.conftest import RemoteOpenAIServer
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
+from tools.aisbench import create_result_plot
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -17,10 +19,18 @@ TENSOR_PARALLELS = [1]
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 
+@pytest_asyncio.fixture(scope="module")
+async def teardown():
+        yield
+        create_result_plot(result_file_names=["qwen2_5_vl_7b_perf_custom_PD_merge", "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+                                              "qwen2_5_vl_7b_perf_custom_1E2PD", "qwen2_5_vl_7b_perf_custom_1E1PD"])
+
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_pd_merge_001(model: str, tp_size: int):
+async def test_pd_merge_001(model: str, tp_size: int, teardown):
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -105,7 +115,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e1pd_merge_001(model: str, tp_size: int):
+async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -205,7 +215,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e1pd_001(model: str, tp_size: int):
+async def test_1e1pd_001(model: str, tp_size: int, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -303,7 +313,7 @@ async def test_1e1pd_001(model: str, tp_size: int):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e2pd_001(model: str, tp_size: int):
+async def test_1e2pd_001(model: str, tp_size: int, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
