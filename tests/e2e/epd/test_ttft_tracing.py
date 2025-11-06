@@ -558,7 +558,7 @@ async def test_performance_001(model: str, tp_size: int):
         "seed":
             77,
         "result_file_name":
-            "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+            "94_performance_001_open",
         "threshold":
             0.97
     }
@@ -671,7 +671,7 @@ async def test_performance_002(model: str, tp_size: int):
         "seed":
             77,
         "result_file_name":
-            "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+            "94_performance_001_close",
         "threshold":
             0.97
     }
@@ -784,7 +784,7 @@ async def test_longterm_001(model: str, tp_size: int):
         "seed":
             77,
         "result_file_name":
-            "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+            "94_longterm_001",
         "threshold":
             0.97
     }
