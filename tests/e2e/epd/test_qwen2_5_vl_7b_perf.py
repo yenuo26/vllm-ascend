@@ -27,7 +27,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
         str(api_port), "--tensor-parallel-size",
         str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
         "40000", "--max-num-seqs", "100", "--enforce-eager",
-        "--gpu-memory-utilization", "0.98"
+        "--gpu-memory-utilization", "0.95"
     ]
 
     warmup_cases = [{
