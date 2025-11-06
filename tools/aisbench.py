@@ -37,7 +37,8 @@ def get_package_location(package_name):
 
 
 def create_result_plot(result_file_names):
-    prop_cycle = plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
 
     try:
