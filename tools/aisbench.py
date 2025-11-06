@@ -56,15 +56,6 @@ def create_result_plot(result_file_names):
         axes[1, 1].set_title('Total Token Throughput')
         axes[1, 1].set_ylabel('Total Token Throughput(token/s)')
 
-        axes_indexs = [
-            axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
-        ]
-        for axes_obj in axes_indexs:
-            axes_obj.set_xlabel('Request Rate(req/s)')
-            axes_obj.grid(True, alpha=0.3)
-            axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
-            axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
-
         for name in result_file_names:
             df = pd.read_csv(f"./{name}.csv")
             x = df['Request rate']
@@ -85,10 +76,9 @@ def create_result_plot(result_file_names):
             # TTFT
             axes[0, 0].plot(x,
                             df['TTFT_Average'],
-                            'b-',
                             linewidth=2,
                             label=name)
-            axes[0, 0].plot(x, df['TTFT_Average'], 'bo', markersize=4)
+            axes[0, 0].plot(x, df['TTFT_Average'], markersize=4)
             # display num for data point
             for i, (xi, yi) in enumerate(zip(x, df['TTFT_Average'])):
                 axes[0, 0].annotate(
@@ -103,10 +93,9 @@ def create_result_plot(result_file_names):
             # TPOT
             axes[0, 1].plot(x,
                             df['TPOT_Average'],
-                            'r-',
                             linewidth=2,
                             label=name)
-            axes[0, 1].plot(x, df['TPOT_Average'], 'ro', markersize=4)
+            axes[0, 1].plot(x, df['TPOT_Average'], markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x, df['TPOT_Average'])):
                 axes[0, 1].annotate(
@@ -122,10 +111,9 @@ def create_result_plot(result_file_names):
             # E2E
             axes[0, 2].plot(x,
                             df['E2EL_Average'],
-                            'g-',
                             linewidth=2,
                             label=name)
-            axes[0, 2].plot(x, df['E2EL_Average'], 'go', markersize=4)
+            axes[0, 2].plot(x, df['E2EL_Average'], markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x, df['E2EL_Average'])):
                 axes[0, 2].annotate(
@@ -141,12 +129,10 @@ def create_result_plot(result_file_names):
             # Request Throughput
             axes[1, 0].plot(x,
                             df['Request Throughput_total'],
-                            'm-',
                             linewidth=2,
                             label=name)
             axes[1, 0].plot(x,
                             df['Request Throughput_total'],
-                            'mo',
                             markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x,
@@ -164,12 +150,10 @@ def create_result_plot(result_file_names):
             # Total Token Throughput
             axes[1, 1].plot(x,
                             df['Total Token Throughput_total'],
-                            'c-',
                             linewidth=2,
                             label=name)
             axes[1, 1].plot(x,
                             df['Total Token Throughput_total'],
-                            'co',
                             markersize=4)
 
             for i, (xi,
@@ -184,6 +168,16 @@ def create_result_plot(result_file_names):
                     va='bottom',  # 垂直底部对齐
                     fontsize=8,
                     color='black')
+
+        axes_indexs = [
+            axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
+        ]
+        for axes_obj in axes_indexs:
+            axes_obj.set_xlabel('Request Rate(req/s)')
+            axes_obj.grid(True, alpha=0.3)
+            axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
+            axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
+            axes_obj.legend()
 
         axes[1, 2].set_visible(False)
         plt.tight_layout()
