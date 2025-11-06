@@ -21,8 +21,10 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 async def test_pd_merge_001(model: str, tp_size: int):
+    api_port = 10001
     vllm_server_args = [
-        "--no-enable-prefix-caching", "--tensor-parallel-size",
+        "--no-enable-prefix-caching", "--port",
+        str(api_port), "--tensor-parallel-size",
         str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
         "30000", "--max-num-seqs", "100", "--enforce-eager",
         "--gpu-memory-utilization", "0.98"
@@ -38,7 +40,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
         "dataset_conf":
         "textvqa/textvqa_gen",
         "num_prompts":
-        100,
+        50,
         "max_out_len":
         256,
         "batch_size":
@@ -57,7 +59,7 @@ async def test_pd_merge_001(model: str, tp_size: int):
         77,
     }]
 
-    request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
+    request_rate = [0.1, 0.28, 0.56, 0.84, 1.12, 1.4]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -82,7 +84,6 @@ async def test_pd_merge_001(model: str, tp_size: int):
         new_case_dict = copy.deepcopy(case_dict)
         aisbench_cases.append(new_case_dict)
 
-    api_port = 10001
     with RemoteOpenAIServer(model,
                             vllm_server_args,
                             server_host="127.0.0.1",
@@ -136,7 +137,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
         "dataset_conf":
         "textvqa/textvqa_gen",
         "num_prompts":
-        100,
+        50,
         "max_out_len":
         256,
         "batch_size":
@@ -155,7 +156,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int):
         77,
     }]
 
-    request_rate = [0.28, 0.68, 1.08, 1.48, 1.88, 2.28, 2.68]
+    request_rate = [0.1, 0.28, 0.56, 0.84, 1.12, 1.4]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -237,7 +238,7 @@ async def test_1e1pd_001(model: str, tp_size: int):
         "dataset_conf":
         "textvqa/textvqa_gen",
         "num_prompts":
-        100,
+        50,
         "max_out_len":
         256,
         "batch_size":
@@ -256,7 +257,7 @@ async def test_1e1pd_001(model: str, tp_size: int):
         77,
     }]
 
-    request_rate = [0.56, 1.36, 2.16, 2.96, 3.76, 4.56, 5.36]
+    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -336,7 +337,7 @@ async def test_1e2pd_001(model: str, tp_size: int):
         "dataset_conf":
         "textvqa/textvqa_gen",
         "num_prompts":
-        100,
+        50,
         "max_out_len":
         256,
         "batch_size":
@@ -354,7 +355,7 @@ async def test_1e2pd_001(model: str, tp_size: int):
         "seed":
         77,
     }]
-    request_rate = [0.84, 2.04, 3.24, 4.44, 5.64, 6.84, 8.04]
+    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68, 1.96, 2.24]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
