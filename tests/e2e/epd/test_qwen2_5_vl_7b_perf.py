@@ -23,10 +23,10 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 async def test_pd_merge_001(model: str, tp_size: int):
     api_port = 10001
     vllm_server_args = [
-        "--no-enable-prefix-caching", "--port",
+        "--port",
         str(api_port), "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
-        "30000", "--max-num-seqs", "100", "--enforce-eager",
+        str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
+        "40000", "--max-num-seqs", "100", "--enforce-eager",
         "--gpu-memory-utilization", "0.98"
     ]
 
