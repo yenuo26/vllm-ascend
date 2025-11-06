@@ -4,6 +4,7 @@ import gc
 import json
 import os
 import shlex
+import copy
 import subprocess
 import sys
 import threading
@@ -217,40 +218,59 @@ class RemoteEPDServer:
             index_e = self.e_serve_args.index("--model")
             self.model = self.e_serve_args[index_e + 1]
 
-        for i in range(self.e_num):
-            if self.is_e_same_card:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = "0"
+        if isinstance(self.e_serve_args, list):
+            if all(isinstance(item, list) for item in self.e_serve_args):
+                #TODO 处理多维数组
+                pass
             else:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-            if "--worker-addr" not in self.e_serve_args:
-                # defaut encode-addr is /tmp/encode_{i}
-                self.e_serve_args = self.e_serve_args + [
-                    "--worker-addr",
-                    self._default_addr_prefix + "encoder_" + str(i)
-                ]
-                self.e_addr_list.append(self._default_addr_prefix +
-                                        "encoder_" + str(i))
+                if "--worker-addr" in self.e_serve_args:
+                    index_e = self.e_serve_args.index("--worker-addr")
+                    self.e_addr_list.append(self.e_serve_args[index_e + 1])
+                else:
+                    for i in range(self.e_num):
+                        if self.is_e_same_card:
+                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = "0"
+                        else:
+                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                            # defaut encode-addr is /tmp/encode_{i}
+                            e_serve_args = copy.deepcopy(self.e_serve_args)
+                            e_serve_args = e_serve_args + [
+                                "--worker-addr",
+                                self._default_addr_prefix + "encoder_" + str(i)
+                            ]
+                            self.e_addr_list.append(self._default_addr_prefix +
+                                                    "encoder_" + str(i))
+
+                        self._run_server(e_serve_args, self.env_dict, f"[ENCODE_{i}] ")
+        else:
+            raise RuntimeError("e_serve_args must be a list")
+
+        if isinstance(self.pd_serve_args, list):
+            if all(isinstance(item, list) for item in self.pd_serve_args):
+                # TODO 处理多维数组
+                pass
             else:
-                index_e = self.e_serve_args.index("--worker-addr")
-                self.e_addr_list.append(self.e_serve_args[index_e + 1])
-            self._run_server(self.e_serve_args, self.env_dict, f"[ENCODE_{i}] ")
-        for i in range(self.pd_num):
-            if self.is_epd_same_card:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-            else:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
-                                                                 self.e_num)
-            if "--worker-addr" not in self.pd_serve_args:
-                # defaut worker-addr is /tmp/pd_{i}
-                self.pd_serve_args = self.pd_serve_args + [
-                    "--worker-addr", self._default_addr_prefix + "pd_" + str(i)
-                ]
-                self.pd_addr_list.append(self._default_addr_prefix + "pd_" +
-                                         str(i))
-            else:
-                index_pd = self.pd_serve_args.index("--worker-addr")
-                self.pd_addr_list.append(self.pd_serve_args[index_pd + 1])
-            self._run_server(self.pd_serve_args, self.env_dict, f"[PD_{i}] ")
+                if "--worker-addr" in self.pd_serve_args:
+                    index_pd = self.pd_serve_args.index("--worker-addr")
+                    self.pd_addr_list.append(self.pd_serve_args[index_pd + 1])
+                else:
+                    for i in range(self.pd_num):
+                        if self.is_epd_same_card:
+                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                        else:
+                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
+                                                                             self.e_num)
+                            # defaut worker-addr is /tmp/pd_{i}
+                            pd_serve_args = copy.deepcopy(self.pd_serve_args)
+                            pd_serve_args = pd_serve_args + [
+                                "--worker-addr", self._default_addr_prefix + "pd_" + str(i)
+                            ]
+                            self.pd_addr_list.append(self._default_addr_prefix + "pd_" +
+                                                     str(i))
+
+                        self._run_server(pd_serve_args, self.env_dict, f"[PD_{i}] ")
+        else:
+            raise RuntimeError("pd_serve_args must be a list")
 
     async def _wait_for_vllm_server(self, max_wait_seconds) -> None:
         sleep_times = 10
