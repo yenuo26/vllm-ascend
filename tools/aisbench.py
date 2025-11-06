@@ -37,7 +37,8 @@ def get_package_location(package_name):
 
 
 def create_result_plot(result_file_names):
-    plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    prop_cycle = plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    colors = prop_cycle.by_key()['color']
 
     try:
         fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -56,7 +57,7 @@ def create_result_plot(result_file_names):
         axes[1, 1].set_title('Total Token Throughput')
         axes[1, 1].set_ylabel('Total Token Throughput(token/s)')
 
-        for name in result_file_names:
+        for i, name in enumerate(result_file_names):
             df = pd.read_csv(f"./{name}.csv")
             x = df['Request rate']
             #remove data unit
@@ -77,8 +78,9 @@ def create_result_plot(result_file_names):
             axes[0, 0].plot(x,
                             df['TTFT_Average'],
                             linewidth=2,
+                            color=colors[i % len(colors)],
                             label=name)
-            axes[0, 0].plot(x, df['TTFT_Average'], markersize=4)
+            axes[0, 0].plot(x, df['TTFT_Average'], color=colors[i % len(colors)], markersize=4)
             # display num for data point
             for i, (xi, yi) in enumerate(zip(x, df['TTFT_Average'])):
                 axes[0, 0].annotate(
@@ -94,8 +96,9 @@ def create_result_plot(result_file_names):
             axes[0, 1].plot(x,
                             df['TPOT_Average'],
                             linewidth=2,
+                            color=colors[i % len(colors)],
                             label=name)
-            axes[0, 1].plot(x, df['TPOT_Average'], markersize=4)
+            axes[0, 1].plot(x, df['TPOT_Average'], color=colors[i % len(colors)], markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x, df['TPOT_Average'])):
                 axes[0, 1].annotate(
@@ -112,8 +115,9 @@ def create_result_plot(result_file_names):
             axes[0, 2].plot(x,
                             df['E2EL_Average'],
                             linewidth=2,
+                            color=colors[i % len(colors)],
                             label=name)
-            axes[0, 2].plot(x, df['E2EL_Average'], markersize=4)
+            axes[0, 2].plot(x, df['E2EL_Average'], color=colors[i % len(colors)], markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x, df['E2EL_Average'])):
                 axes[0, 2].annotate(
@@ -130,9 +134,11 @@ def create_result_plot(result_file_names):
             axes[1, 0].plot(x,
                             df['Request Throughput_total'],
                             linewidth=2,
+                            color=colors[i % len(colors)],
                             label=name)
             axes[1, 0].plot(x,
                             df['Request Throughput_total'],
+                            color=colors[i % len(colors)],
                             markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x,
@@ -151,9 +157,11 @@ def create_result_plot(result_file_names):
             axes[1, 1].plot(x,
                             df['Total Token Throughput_total'],
                             linewidth=2,
+                            color=colors[i % len(colors)],
                             label=name)
             axes[1, 1].plot(x,
                             df['Total Token Throughput_total'],
+                            color=colors[i % len(colors)],
                             markersize=4)
 
             for i, (xi,
