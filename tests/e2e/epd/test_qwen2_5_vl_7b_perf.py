@@ -28,6 +28,7 @@ async def teardown():
         "qwen2_5_vl_7b_perf_custom_1E2PD", "qwen2_5_vl_7b_perf_custom_1E1PD"
     ])
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
