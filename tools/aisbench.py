@@ -70,12 +70,6 @@ def create_result_plot(result_file_names):
                 r'(\d+\.?\d*)').astype(float)
             df['E2EL_Average'] = df['E2EL_Average'].str.extract(
                 r'(\d+\.?\d*)').astype(float)
-            df['Request Throughput_total/Card'] = df[
-                'Request Throughput_total/Card'].str.extract(r'(\d+\.?\d*)').astype(
-                    float)
-            df['Total Token Throughput_total/Card'] = df[
-                'Total Token Throughput_total/Card'].str.extract(
-                    r'(\d+\.?\d*)').astype(float)
 
             color = color_map[name]
             # TTFT
@@ -325,10 +319,8 @@ class AisbenchRunner:
             merged_json["Request rate/Card"] = round(self.request_rate / self.card_num, 2)
             merged_json.update(self.result_json)
             merged_json.update(csv_result)
-            merged_json["Total Token Throughput/Card"] = round(merged_json.get("Total Token Throughput").get("total").str.extract(
-                r'(\d+\.?\d*)').astype(float) / self.card_num, 2)
-            merged_json["Request Throughput/Card"] = round(merged_json.get("Request Throughput").get("total").str.extract(
-                r'(\d+\.?\d*)').astype(float) / self.card_num, 2)
+            merged_json["Total Token Throughput/Card"] = round(float(merged_json.get("Total Token Throughput").get("total").split(" ")[0]) / self.card_num, 4)
+            merged_json["Request Throughput/Card"] = round(float(merged_json.get("Request Throughput").get("total").split(" ")[0]) / self.card_num, 4)
             self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
             print(f"Result csv file is locate in {self.result_file_name}.csv")
         except Exception as e:
