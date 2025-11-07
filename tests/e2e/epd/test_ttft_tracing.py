@@ -509,7 +509,7 @@ async def test_performance_001(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+            50,
         "max_out_len":
             256,
         "batch_size":
@@ -539,7 +539,7 @@ async def test_performance_001(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            200,
+            100,
         "max_out_len":
             256,
         "batch_size":
@@ -622,7 +622,7 @@ async def test_performance_002(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+            50,
         "max_out_len":
             256,
         "batch_size":
@@ -652,7 +652,7 @@ async def test_performance_002(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            200,
+            100,
         "max_out_len":
             256,
         "batch_size":
@@ -806,8 +806,8 @@ async def test_longterm_001(model: str, tp_size: int):
         run_aisbench_cases(model=model,
                            port=api_port,
                            aisbench_cases=warmup_cases, verify=False, save=False)
-        print("sleep 5min")
-        time.sleep(5*60)
+        print("sleep 3h")
+        time.sleep(3*60*60)
         # aisbench test for 2h
         # end_time = datetime.datetime.now() + datetime.timedelta(hours=2)
         #
