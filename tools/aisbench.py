@@ -62,7 +62,7 @@ def create_result_plot(result_file_names):
 
         for i, name in enumerate(result_file_names):
             df = pd.read_csv(f"./{name}.csv")
-            x = df['Request rate']
+            x = df['Request rate/Card']
             #remove data unit
             df['TTFT_Average'] = df['TTFT_Average'].str.extract(
                 r'(\d+\.?\d*)').astype(float)
@@ -136,17 +136,17 @@ def create_result_plot(result_file_names):
 
             # Request Throughput
             axes[1, 0].plot(x,
-                            df['Request Throughput_total/Card'],
+                            df['Request Throughput/Card'],
                             linewidth=2,
                             color=color,
                             label=name)
             axes[1, 0].plot(x,
-                            df['Request Throughput_total/Card'],
+                            df['Request Throughput/Card'],
                             color=color,
                             markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x,
-                                             df['Request Throughput_total/Card'])):
+                                             df['Request Throughput/Card'])):
                 axes[1, 0].annotate(
                     f'{yi:.3f}',
                     (xi, yi),
@@ -159,18 +159,18 @@ def create_result_plot(result_file_names):
 
             # Total Token Throughput
             axes[1, 1].plot(x,
-                            df['Total Token Throughput_total/Card'],
+                            df['Total Token Throughput/Card'],
                             linewidth=2,
                             color=color,
                             label=name)
             axes[1, 1].plot(x,
-                            df['Total Token Throughput_total/Card'],
+                            df['Total Token Throughput/Card'],
                             color=color,
                             markersize=4)
 
             for i, (xi,
                     yi) in enumerate(zip(x,
-                                         df['Total Token Throughput_total/Card'])):
+                                         df['Total Token Throughput/Card'])):
                 axes[1, 1].annotate(
                     f'{yi:.2f}',
                     (xi, yi),
@@ -325,9 +325,9 @@ class AisbenchRunner:
             merged_json["Request rate/Card"] = round(self.request_rate / self.card_num, 2)
             merged_json.update(self.result_json)
             merged_json.update(csv_result)
-            merged_json["Total Token Throughput_total/Card"] = round(merged_json["Total Token Throughput_total"].str.extract(
+            merged_json["Total Token Throughput/Card"] = round(merged_json.get("Total Token Throughput").get("total").str.extract(
                 r'(\d+\.?\d*)').astype(float) / self.card_num, 2)
-            merged_json["Request Throughput_total/Card"] = round(merged_json["Request Throughput_total"].str.extract(
+            merged_json["Request Throughput/Card"] = round(merged_json.get("Request Throughput").get("total").str.extract(
                 r'(\d+\.?\d*)').astype(float) / self.card_num, 2)
             self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
             print(f"Result csv file is locate in {self.result_file_name}.csv")
