@@ -23,8 +23,8 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 async def teardown():
     yield
     create_result_plot(result_file_names=[
-        "qwen2_5_vl_7b_perf_custom_PD_merge",
-        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+        "qwen2_5_vl_7b_perf_custom_PD_mix",
+        "qwen2_5_vl_7b_perf_custom_1E1PD_sc",
         "qwen2_5_vl_7b_perf_custom_1E2PD", "qwen2_5_vl_7b_perf_custom_1E1PD"
     ])
 
@@ -32,7 +32,7 @@ async def teardown():
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_pd_merge_001(model: str, tp_size: int, teardown):
+async def test_pd_mix_001(model: str, tp_size: int, teardown):
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -70,7 +70,7 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
         77,
     }]
 
-    request_rate = [0.1, 0.28, 0.56, 0.84, 1.12, 1.4]
+    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -86,7 +86,7 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": "qwen2_5_vl_7b_perf_custom_PD_merge",
+        "result_file_name": "qwen2_5_vl_7b_perf_custom_PD_mix",
         "threshold": 0.97
     }
     aisbench_cases = []
@@ -116,7 +116,7 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
+async def test_1e1pd_sharecard_001(model: str, tp_size: int, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -167,7 +167,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
         77,
     }]
 
-    request_rate = [0.1, 0.28, 0.56, 0.84, 1.12, 1.4]
+    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -183,7 +183,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E1PD_sc",
         "threshold": 0.97
     }
     aisbench_cases = []
@@ -267,7 +267,7 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         77,
     }]
 
-    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
+    request_rate = [0.56, 1.12, 1.68, 2.24, 2.8, 3.36]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -308,6 +308,7 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=2,
                            aisbench_cases=aisbench_cases)
 
 
@@ -364,7 +365,7 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
         "seed":
         77,
     }]
-    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68, 1.96, 2.24]
+    request_rate = [0.84, 1.68, 2.52, 3.36, 4.2, 5.04]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
@@ -405,4 +406,5 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=3,
                            aisbench_cases=aisbench_cases)

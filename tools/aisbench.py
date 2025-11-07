@@ -88,7 +88,7 @@ def create_result_plot(result_file_names):
             # display num for data point
             for i, (xi, yi) in enumerate(zip(x, df['TTFT_Average'])):
                 axes[0, 0].annotate(
-                    f'{yi:.4f}',
+                    f'{yi:.2f}',
                     (xi, yi),
                     textcoords="offset points",
                     xytext=(0, 10),  # 在点上方10像素显示
@@ -106,7 +106,7 @@ def create_result_plot(result_file_names):
 
             for i, (xi, yi) in enumerate(zip(x, df['TPOT_Average'])):
                 axes[0, 1].annotate(
-                    f'{yi:.4f}',
+                    f'{yi:.2f}',
                     (xi, yi),
                     textcoords="offset points",
                     xytext=(0, 10),  # 在点上方10像素显示
@@ -125,7 +125,7 @@ def create_result_plot(result_file_names):
 
             for i, (xi, yi) in enumerate(zip(x, df['E2EL_Average'])):
                 axes[0, 2].annotate(
-                    f'{yi:.4f}',
+                    f'{yi:.2f}',
                     (xi, yi),
                     textcoords="offset points",
                     xytext=(0, 10),  # 在点上方10像素显示
@@ -148,7 +148,7 @@ def create_result_plot(result_file_names):
             for i, (xi, yi) in enumerate(zip(x,
                                              df['Request Throughput_total'])):
                 axes[1, 0].annotate(
-                    f'{yi:.4f}',
+                    f'{yi:.3f}',
                     (xi, yi),
                     textcoords="offset points",
                     xytext=(0, 10),  # 在点上方10像素显示
@@ -172,7 +172,7 @@ def create_result_plot(result_file_names):
                     yi) in enumerate(zip(x,
                                          df['Total Token Throughput_total'])):
                 axes[1, 1].annotate(
-                    f'{yi:.4f}',
+                    f'{yi:.2f}',
                     (xi, yi),
                     textcoords="offset points",
                     xytext=(0, 10),  # 在点上方10像素显示
@@ -256,6 +256,7 @@ class AisbenchRunner:
                  model: str,
                  port: int,
                  aisbench_config: dict,
+                 card_num: int,
                  verify=True,
                  save=True):
         self.model = model
@@ -275,6 +276,7 @@ class AisbenchRunner:
         self.seed = aisbench_config.get("seed")
         self.repetition_penalty = aisbench_config.get("repetition_penalty")
         self.exp_folder = None
+        self.card_num = card_num
         self.result_line = None
         self._init_dataset_conf()
         self._init_request_conf()
@@ -320,8 +322,13 @@ class AisbenchRunner:
                 csv_result[performance_param] = data
                 csv_result = dict(csv_result)
             merged_json = {"Request rate": self.request_rate}
+            merged_json["Request rate/Card"] = round(self.request_rate / self.card_num, 2)
             merged_json.update(self.result_json)
             merged_json.update(csv_result)
+            merged_json["Total Token Throughput_total/Card"] = round(merged_json["Total Token Throughput_total"].str.extract(
+                r'(\d+\.?\d*)').astype(float) / self.card_num, 2)
+            merged_json["Request Throughput_total/Card"] = round(merged_json["Request Throughput_total"].str.extract(
+                r'(\d+\.?\d*)').astype(float) / self.card_num, 2)
             self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
             print(f"Result csv file is locate in {self.result_file_name}.csv")
         except Exception as e:
@@ -489,11 +496,11 @@ class AisbenchRunner:
         assert self.baseline - self.threshold <= acc_value <= self.baseline + self.threshold, f"Accuracy verification failed. The accuracy of {self.dataset_path} is {acc_value}, which is not within {self.threshold} relative to baseline {self.baseline}."
 
 
-def run_aisbench_cases(model, port, aisbench_cases, verify=True, save=True):
+def run_aisbench_cases(model, port, aisbench_cases, card_num=1, verify=True, save=True):
     aisbench_errors = []
     for aisbench_case in aisbench_cases:
         try:
-            with AisbenchRunner(model, port, aisbench_case, verify, save):
+            with AisbenchRunner(model, port, aisbench_case, verify=verify, save=save, card_num=card_num):
                 pass
         except Exception as e:
             aisbench_errors.append([aisbench_case, e, traceback.print_exc()])
