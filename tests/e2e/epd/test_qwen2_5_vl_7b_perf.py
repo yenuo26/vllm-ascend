@@ -227,7 +227,6 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
-
     pd_server_args = [
         "--model", model, "--max-model-len", "20000",
         "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
