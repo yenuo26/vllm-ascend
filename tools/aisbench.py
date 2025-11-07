@@ -14,17 +14,210 @@
 # limitations under the License.
 # This file is a part of the vllm-ascend project.
 #
+import importlib
 import json
 import os
 import re
 import subprocess
+import traceback
+from collections import defaultdict
+from datetime import date
 
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import pandas as pd
-from modelscope import snapshot_download  # type: ignore
 
-DATASET_CONF_DIR = "benchmark/ais_bench/benchmark/configs/datasets"
-REQUEST_CONF_DIR = "benchmark/ais_bench/benchmark/configs/models/vllm_api"
-DATASET_DIR = "benchmark/ais_bench/datasets"
+
+def get_package_location(package_name):
+    try:
+        distribution = importlib.metadata.distribution(package_name)
+        return str(distribution.locate_file(''))
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+def create_result_plot(result_file_names):
+    plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    color_map = {name: colors[i % len(colors)] for i, name in enumerate(result_file_names)}
+
+    try:
+        fig, axes = plt.subplots(2, 3, figsize=(18, 18))
+        axes[0, 0].set_title('TTFT')
+        axes[0, 0].set_ylabel('TTFT(ms)')
+
+        axes[0, 1].set_title('TPOT')
+        axes[0, 1].set_ylabel('TPOT(ms)')
+
+        axes[0, 2].set_ylabel('E2E(ms)')
+        axes[0, 2].set_title('E2E')
+
+        axes[1, 0].set_title('Request Throughput')
+        axes[1, 0].set_ylabel('Request Throughput(req/s)')
+
+        axes[1, 1].set_title('Total Token Throughput')
+        axes[1, 1].set_ylabel('Total Token Throughput(token/s)')
+
+
+        for i, name in enumerate(result_file_names):
+            df = pd.read_csv(f"./{name}.csv")
+            x = df['Request rate']
+            #remove data unit
+            df['TTFT_Average'] = df['TTFT_Average'].str.extract(
+                r'(\d+\.?\d*)').astype(float)
+            df['TPOT_Average'] = df['TPOT_Average'].str.extract(
+                r'(\d+\.?\d*)').astype(float)
+            df['E2EL_Average'] = df['E2EL_Average'].str.extract(
+                r'(\d+\.?\d*)').astype(float)
+            df['Request Throughput_total'] = df[
+                'Request Throughput_total'].str.extract(r'(\d+\.?\d*)').astype(
+                    float)
+            df['Total Token Throughput_total'] = df[
+                'Total Token Throughput_total'].str.extract(
+                    r'(\d+\.?\d*)').astype(float)
+
+            color = color_map[name]
+            # TTFT
+            axes[0, 0].plot(x,
+                            df['TTFT_Average'],
+                            linewidth=2,
+                            color=color,
+                            label=name)
+            axes[0, 0].plot(x, df['TTFT_Average'], color=color, markersize=4)
+            # display num for data point
+            for i, (xi, yi) in enumerate(zip(x, df['TTFT_Average'])):
+                axes[0, 0].annotate(
+                    f'{yi:.4f}',
+                    (xi, yi),
+                    textcoords="offset points",
+                    xytext=(0, 10),  # 在点上方10像素显示
+                    ha='center',  # 水平居中
+                    va='bottom',  # 垂直底部对齐
+                    fontsize=8,
+                    color='black')
+            # TPOT
+            axes[0, 1].plot(x,
+                            df['TPOT_Average'],
+                            linewidth=2,
+                            color=color,
+                            label=name)
+            axes[0, 1].plot(x, df['TPOT_Average'], color=color, markersize=4)
+
+            for i, (xi, yi) in enumerate(zip(x, df['TPOT_Average'])):
+                axes[0, 1].annotate(
+                    f'{yi:.4f}',
+                    (xi, yi),
+                    textcoords="offset points",
+                    xytext=(0, 10),  # 在点上方10像素显示
+                    ha='center',  # 水平居中
+                    va='bottom',  # 垂直底部对齐
+                    fontsize=8,
+                    color='black')
+
+            # E2E
+            axes[0, 2].plot(x,
+                            df['E2EL_Average'],
+                            linewidth=2,
+                            color=color,
+                            label=name)
+            axes[0, 2].plot(x, df['E2EL_Average'], color=color, markersize=4)
+
+            for i, (xi, yi) in enumerate(zip(x, df['E2EL_Average'])):
+                axes[0, 2].annotate(
+                    f'{yi:.4f}',
+                    (xi, yi),
+                    textcoords="offset points",
+                    xytext=(0, 10),  # 在点上方10像素显示
+                    ha='center',  # 水平居中
+                    va='bottom',  # 垂直底部对齐
+                    fontsize=8,
+                    color='black')
+
+            # Request Throughput
+            axes[1, 0].plot(x,
+                            df['Request Throughput_total'],
+                            linewidth=2,
+                            color=color,
+                            label=name)
+            axes[1, 0].plot(x,
+                            df['Request Throughput_total'],
+                            color=color,
+                            markersize=4)
+
+            for i, (xi, yi) in enumerate(zip(x,
+                                             df['Request Throughput_total'])):
+                axes[1, 0].annotate(
+                    f'{yi:.4f}',
+                    (xi, yi),
+                    textcoords="offset points",
+                    xytext=(0, 10),  # 在点上方10像素显示
+                    ha='center',  # 水平居中
+                    va='bottom',  # 垂直底部对齐
+                    fontsize=8,
+                    color='black')
+
+            # Total Token Throughput
+            axes[1, 1].plot(x,
+                            df['Total Token Throughput_total'],
+                            linewidth=2,
+                            color=color,
+                            label=name)
+            axes[1, 1].plot(x,
+                            df['Total Token Throughput_total'],
+                            color=color,
+                            markersize=4)
+
+            for i, (xi,
+                    yi) in enumerate(zip(x,
+                                         df['Total Token Throughput_total'])):
+                axes[1, 1].annotate(
+                    f'{yi:.4f}',
+                    (xi, yi),
+                    textcoords="offset points",
+                    xytext=(0, 10),  # 在点上方10像素显示
+                    ha='center',  # 水平居中
+                    va='bottom',  # 垂直底部对齐
+                    fontsize=8,
+                    color='black')
+
+        axes_indexs = [
+            axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
+        ]
+        for axes_obj in axes_indexs:
+            axes_obj.set_xlabel('Request Rate(req/s)')
+            axes_obj.grid(True, alpha=0.3)
+            axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
+            axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
+            axes_obj.legend()
+
+        axes[1, 2].set_visible(False)
+        plt.tight_layout()
+
+        fig.suptitle('', fontsize=16, y=0.98)
+
+        if len(result_file_names) == 1:
+            plt.savefig(f'./{result_file_names[0]}.png',
+                        dpi=200,
+                        bbox_inches='tight')
+            print(f"Result figure is locate in {result_file_names[0]}.png")
+        else:
+            today = date.today()
+            plt.savefig(f'./test_perf_result_{today}.png',
+                        dpi=200,
+                        bbox_inches='tight')
+            print(f"Result figure is locate in test_perf_result_{today}.png")
+
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+
+
+benchmark_path = get_package_location("ais_bench_benchmark")
+DATASET_CONF_DIR = os.path.join(benchmark_path,
+                                "ais_bench/benchmark/configs/datasets")
+REQUEST_CONF_DIR = os.path.join(benchmark_path,
+                                "ais_bench/benchmark/configs/models/vllm_api")
+DATASET_DIR = os.path.join(benchmark_path, "ais_bench/datasets")
 
 
 class AisbenchRunner:
@@ -42,13 +235,14 @@ class AisbenchRunner:
         dataset_conf = self.dataset_conf.split('/')[-1]
         if self.task_type == "accuracy":
             aisbench_cmd = [
-                'ais_bench', '--models', f'{self.request_conf}_custom',
-                '--datasets', f'{dataset_conf}'
+                "taskset", "-c", "97-192", 'ais_bench', '--models',
+                self.request_conf, '--datasets', f'{dataset_conf}'
             ]
         if self.task_type == "performance":
             aisbench_cmd = [
-                'ais_bench', '--models', f'{self.request_conf}_custom',
-                '--datasets', f'{dataset_conf}_custom', '--mode', 'perf'
+                "taskset", "-c", "97-192", 'ais_bench', '--models',
+                self.request_conf, '--datasets', f'{dataset_conf}', '--mode',
+                'perf'
             ]
             if self.num_prompts:
                 aisbench_cmd.extend(['--num-prompts', str(self.num_prompts)])
@@ -62,21 +256,21 @@ class AisbenchRunner:
                  model: str,
                  port: int,
                  aisbench_config: dict,
-                 verify=True):
-        self.dataset_path = snapshot_download(aisbench_config["dataset_path"],
-                                              repo_type='dataset')
+                 verify=True,
+                 save=True):
         self.model = model
-        self.model_path = snapshot_download(model)
         self.port = port
         self.task_type = aisbench_config["case_type"]
         self.request_conf = aisbench_config["request_conf"]
         self.dataset_conf = aisbench_config.get("dataset_conf")
+        self.dataset_path = aisbench_config.get("dataset_path")
         self.num_prompts = aisbench_config.get("num_prompts")
         self.max_out_len = aisbench_config["max_out_len"]
         self.batch_size = aisbench_config["batch_size"]
         self.request_rate = aisbench_config.get("request_rate", 0)
         self.temperature = aisbench_config.get("temperature")
         self.top_k = aisbench_config.get("top_k")
+        self.result_file_name = aisbench_config.get("result_file_name", "test")
         self.top_p = aisbench_config.get("top_p")
         self.seed = aisbench_config.get("seed")
         self.repetition_penalty = aisbench_config.get("repetition_penalty")
@@ -94,6 +288,73 @@ class AisbenchRunner:
             if self.task_type == "performance":
                 self.threshold = aisbench_config.get("threshold", 0.97)
                 self._performance_verify()
+        if save:
+            self._performance_result_save()
+            create_result_plot([self.result_file_name])
+
+    def _performance_result_save(self):
+        try:
+            csv_result = defaultdict(dict)
+            for index, row in self.result_csv.iterrows():
+                performance_param = row['Performance Parameters']
+                data = {
+                    'Average':
+                    str(row['Average']) if pd.notna(row['Average']) else None,
+                    'Min':
+                    str(row['Min']) if pd.notna(row['Min']) else None,
+                    'Max':
+                    str(row['Max']) if pd.notna(row['Max']) else None,
+                    'Median':
+                    str(row['Median']) if pd.notna(row['Median']) else None,
+                    'P75':
+                    str(row['P75']) if pd.notna(row['P75']) else None,
+                    'P90':
+                    str(row['P90']) if pd.notna(row['P90']) else None,
+                    'P99':
+                    str(row['P99']) if pd.notna(row['P99']) else None
+                }
+
+                if performance_param not in csv_result:
+                    csv_result[performance_param] = {}
+
+                csv_result[performance_param] = data
+                csv_result = dict(csv_result)
+            merged_json = {"Request rate": self.request_rate}
+            merged_json.update(self.result_json)
+            merged_json.update(csv_result)
+            self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
+            print(f"Result csv file is locate in {self.result_file_name}.csv")
+        except Exception as e:
+            print(
+                f"save result failed, reason is: {str(e)}, traceback is: {traceback.print_exc()}"
+            )
+
+    def _flatten_dict(self, data, parent_key='', sep="_"):
+        items = []
+        for key, value in data.items():
+            new_key = f"{parent_key}{sep}{key}" if parent_key else key
+            if isinstance(value, dict):
+                items.extend(
+                    self._flatten_dict(value, new_key, sep=sep).items())
+            elif isinstance(value, list):
+                for i, item in enumerate(value):
+                    items.append((f"{new_key}{sep}{i}", item))
+            else:
+                items.append((new_key, value))
+        return dict(items)
+
+    def _write_to_execl(self, data, path):
+        data = self._flatten_dict(data)
+        if path is not None:
+            if not os.path.exists(path):
+                df = pd.DataFrame(data, index=[0])
+                df.to_csv(path, index=False)
+            else:
+                existing_df = pd.read_csv(path)
+                new_df = pd.DataFrame(data, index=[0])
+                combined_df = pd.concat([existing_df, new_df],
+                                        ignore_index=True)
+                combined_df.to_csv(path, index=False)
 
     def _init_dataset_conf(self):
         if self.task_type == "accuracy":
@@ -113,7 +374,7 @@ class AisbenchRunner:
             content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
                              content)
             conf_path_new = os.path.join(DATASET_CONF_DIR,
-                                         f'{self.dataset_conf}_custom.py')
+                                         f'{self.dataset_conf}.py')
             with open(conf_path_new, 'w', encoding='utf-8') as f:
                 f.write(content)
 
@@ -127,36 +388,36 @@ class AisbenchRunner:
                          f'max_out_len = {self.max_out_len},', content)
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
-        content = content.replace("top_k", "#top_k")
-        content = content.replace("seed", "#seed")
-        content = content.replace("repetition_penalty", "#repetition_penalty")
         if self.task_type == "performance":
-            content = re.sub(r'path=.*', f'path="{self.model_path}",', content)
+            content = re.sub(r'path=.*', f'path="{self.model}",', content)
             content = re.sub(r'request_rate.*',
                              f'request_rate = {self.request_rate},', content)
-            content = re.sub(
-                r"temperature.*",
-                "temperature = 0,\n            ignore_eos = True,", content)
-            content = content.replace("top_p", "#top_p")
+            if "ignore_eos" not in content:
+                content = re.sub(
+                    r"temperature.*",
+                    "temperature = 0,\n            ignore_eos = True,",
+                    content)
         if self.task_type == "accuracy":
-            content = re.sub(
-                r"temperature.*",
-                "temperature = 0.6,\n            ignore_eos = False,", content)
+            if "ignore_eos" not in content:
+                content = re.sub(
+                    r"temperature.*",
+                    "temperature = 0.6,\n            ignore_eos = False,",
+                    content)
         if self.temperature:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)
         if self.top_p:
-            content = re.sub(r"#?top_p.*", f"top_p = {self.top_p},", content)
+            content = re.sub(r"top_p.*", f"top_p = {self.top_p},", content)
         if self.top_k:
-            content = re.sub(r"#top_k.*", f"top_k = {self.top_k},", content)
+            content = re.sub(r"top_k.*", f"top_k = {self.top_k},", content)
         if self.seed:
-            content = re.sub(r"#seed.*", f"seed = {self.seed},", content)
+            content = re.sub(r"seed.*", f"seed = {self.seed},", content)
         if self.repetition_penalty:
             content = re.sub(
-                r"#repetition_penalty.*",
+                r"repetition_penalty.*",
                 f"repetition_penalty = {self.repetition_penalty},", content)
         conf_path_new = os.path.join(REQUEST_CONF_DIR,
-                                     f'{self.request_conf}_custom.py')
+                                     f'{self.request_conf}.py')
         with open(conf_path_new, 'w', encoding='utf-8') as f:
             f.write(content)
         print(f"The request config is\n {content}")
@@ -228,17 +489,17 @@ class AisbenchRunner:
         assert self.baseline - self.threshold <= acc_value <= self.baseline + self.threshold, f"Accuracy verification failed. The accuracy of {self.dataset_path} is {acc_value}, which is not within {self.threshold} relative to baseline {self.baseline}."
 
 
-def run_aisbench_cases(model, port, aisbench_cases):
+def run_aisbench_cases(model, port, aisbench_cases, verify=True, save=True):
     aisbench_errors = []
     for aisbench_case in aisbench_cases:
         try:
-            with AisbenchRunner(model, port, aisbench_case):
+            with AisbenchRunner(model, port, aisbench_case, verify, save):
                 pass
         except Exception as e:
-            aisbench_errors.append([aisbench_case, e])
+            aisbench_errors.append([aisbench_case, e, traceback.print_exc()])
             print(e)
-    for failed_case, error_info in aisbench_errors:
+    for failed_case, error_info, error_traceback in aisbench_errors:
         print(
-            f"The following aisbench case failed: {failed_case}, reason is {error_info}."
+            f"The following aisbench case failed: {failed_case}, reason is {error_info}, traceback is: {error_traceback}."
         )
     assert not aisbench_errors, "some aisbench cases failed, info were shown above."
