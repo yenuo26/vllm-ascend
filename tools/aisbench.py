@@ -38,8 +38,7 @@ def get_package_location(package_name):
 
 def create_result_plot(result_file_names):
     plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
+    colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray']
 
     try:
         fig, axes = plt.subplots(2, 3, figsize=(15, 10))
