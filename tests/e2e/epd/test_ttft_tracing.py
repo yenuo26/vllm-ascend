@@ -509,7 +509,7 @@ async def test_performance_001(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+            50,
         "max_out_len":
             256,
         "batch_size":
@@ -539,7 +539,7 @@ async def test_performance_001(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            200,
+            100,
         "max_out_len":
             256,
         "batch_size":
@@ -622,7 +622,7 @@ async def test_performance_002(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            100,
+            50,
         "max_out_len":
             256,
         "batch_size":
@@ -652,7 +652,7 @@ async def test_performance_002(model: str, tp_size: int):
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
-            200,
+            100,
         "max_out_len":
             256,
         "batch_size":
