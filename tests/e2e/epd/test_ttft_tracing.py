@@ -806,8 +806,8 @@ async def test_longterm_001(model: str, tp_size: int):
         run_aisbench_cases(model=model,
                            port=api_port,
                            aisbench_cases=warmup_cases, verify=False, save=False)
-        print("sleep 5min")
-        time.sleep(5*60)
+        print("sleep 3h")
+        time.sleep(3*60*60)
         # aisbench test for 2h
         # end_time = datetime.datetime.now() + datetime.timedelta(hours=2)
         #
