@@ -186,11 +186,11 @@ class RemoteEPDServer:
             self.pd_serve_args = shlex.split(self.pd_serve_args)
         else:
             self.e_serve_args = [
-                "python", "-m", "llm_service.entrypoints.worker",
+                "taskset","-c", "0-96", "python", "-m", "llm_service.entrypoints.worker",
                 *self.e_serve_args
             ]
             self.pd_serve_args = [
-                "python", "-m", "llm_service.entrypoints.worker",
+                "taskset","-c", "0-96", "python", "-m", "llm_service.entrypoints.worker",
                 *self.pd_serve_args
             ]
 
