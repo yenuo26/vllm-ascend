@@ -41,7 +41,6 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
         "40000", "--max-num-seqs", "100", "--enforce-eager",
         "--gpu-memory-utilization", "0.95"
     ]
-
     warmup_cases = [{
         "case_type":
         "performance",

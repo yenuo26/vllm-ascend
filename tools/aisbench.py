@@ -43,7 +43,7 @@ def create_result_plot(result_file_names):
     color_map = {name: colors[i % len(colors)] for i, name in enumerate(result_file_names)}
 
     try:
-        fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+        fig, axes = plt.subplots(2, 3, figsize=(18, 18))
         axes[0, 0].set_title('TTFT')
         axes[0, 0].set_ylabel('TTFT(ms)')
 
@@ -198,13 +198,13 @@ def create_result_plot(result_file_names):
 
         if len(result_file_names) == 1:
             plt.savefig(f'./{result_file_names[0]}.png',
-                        dpi=300,
+                        dpi=200,
                         bbox_inches='tight')
             print(f"Result figure is locate in {result_file_names[0]}.png")
         else:
             today = date.today()
             plt.savefig(f'./test_perf_result_{today}.png',
-                        dpi=300,
+                        dpi=200,
                         bbox_inches='tight')
             print(f"Result figure is locate in test_perf_result_{today}.png")
 
