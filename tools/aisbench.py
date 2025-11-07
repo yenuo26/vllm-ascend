@@ -53,11 +53,11 @@ def create_result_plot(result_file_names):
         axes[0, 2].set_ylabel('E2E(ms)')
         axes[0, 2].set_title('E2E')
 
-        axes[1, 0].set_title('Request Throughput')
-        axes[1, 0].set_ylabel('Request Throughput(req/s)')
+        axes[1, 0].set_title('Request Throughput/Card')
+        axes[1, 0].set_ylabel('Request Throughput/Card(req/s)')
 
-        axes[1, 1].set_title('Total Token Throughput')
-        axes[1, 1].set_ylabel('Total Token Throughput(token/s)')
+        axes[1, 1].set_title('Total Token Throughput/Card')
+        axes[1, 1].set_ylabel('Total Token Throughput/Card(token/s)')
 
 
         for i, name in enumerate(result_file_names):
@@ -70,11 +70,11 @@ def create_result_plot(result_file_names):
                 r'(\d+\.?\d*)').astype(float)
             df['E2EL_Average'] = df['E2EL_Average'].str.extract(
                 r'(\d+\.?\d*)').astype(float)
-            df['Request Throughput_total'] = df[
-                'Request Throughput_total'].str.extract(r'(\d+\.?\d*)').astype(
+            df['Request Throughput_total/Card'] = df[
+                'Request Throughput_total/Card'].str.extract(r'(\d+\.?\d*)').astype(
                     float)
-            df['Total Token Throughput_total'] = df[
-                'Total Token Throughput_total'].str.extract(
+            df['Total Token Throughput_total/Card'] = df[
+                'Total Token Throughput_total/Card'].str.extract(
                     r'(\d+\.?\d*)').astype(float)
 
             color = color_map[name]
@@ -136,17 +136,17 @@ def create_result_plot(result_file_names):
 
             # Request Throughput
             axes[1, 0].plot(x,
-                            df['Request Throughput_total'],
+                            df['Request Throughput_total/Card'],
                             linewidth=2,
                             color=color,
                             label=name)
             axes[1, 0].plot(x,
-                            df['Request Throughput_total'],
+                            df['Request Throughput_total/Card'],
                             color=color,
                             markersize=4)
 
             for i, (xi, yi) in enumerate(zip(x,
-                                             df['Request Throughput_total'])):
+                                             df['Request Throughput_total/Card'])):
                 axes[1, 0].annotate(
                     f'{yi:.3f}',
                     (xi, yi),
@@ -159,18 +159,18 @@ def create_result_plot(result_file_names):
 
             # Total Token Throughput
             axes[1, 1].plot(x,
-                            df['Total Token Throughput_total'],
+                            df['Total Token Throughput_total/Card'],
                             linewidth=2,
                             color=color,
                             label=name)
             axes[1, 1].plot(x,
-                            df['Total Token Throughput_total'],
+                            df['Total Token Throughput_total/Card'],
                             color=color,
                             markersize=4)
 
             for i, (xi,
                     yi) in enumerate(zip(x,
-                                         df['Total Token Throughput_total'])):
+                                         df['Total Token Throughput_total/Card'])):
                 axes[1, 1].annotate(
                     f'{yi:.2f}',
                     (xi, yi),
@@ -185,7 +185,7 @@ def create_result_plot(result_file_names):
             axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
         ]
         for axes_obj in axes_indexs:
-            axes_obj.set_xlabel('Request Rate(req/s)')
+            axes_obj.set_xlabel('Request Rate/Card(req/s)')
             axes_obj.grid(True, alpha=0.3)
             axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
             axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
