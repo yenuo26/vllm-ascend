@@ -21,24 +21,14 @@ DATASET_NAME = ["image_2", "image_3", "image_4"]
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 
-@pytest_asyncio.fixture(scope="module")
-async def teardown():
+@pytest_asyncio.fixture(scope="module", params=DATASET_NAME)
+async def teardown(request):
     yield
     create_result_plot(result_file_names=[
-        "qwen2_5_vl_7b_image_2_PD_mix",
-        "qwen2_5_vl_7b_image_2_1E1PD_sc",
-        "qwen2_5_vl_7b_image_2_1E2PD", "qwen2_5_vl_7b_image_2_1E1PD"
-    ],result_figure_prefix="image_2")
-    create_result_plot(result_file_names=[
-        "qwen2_5_vl_7b_image_3_PD_mix",
-        "qwen2_5_vl_7b_image_3_1E1PD_sc",
-        "qwen2_5_vl_7b_image_3_1E2PD", "qwen2_5_vl_7b_image_3_1E1PD"
-    ], result_figure_prefix="image_3")
-    create_result_plot(result_file_names=[
-        "qwen2_5_vl_7b_image_4_PD_mix",
-        "qwen2_5_vl_7b_image_4_1E1PD_sc",
-        "qwen2_5_vl_7b_image_4_1E2PD", "qwen2_5_vl_7b_image_4_1E1PD"
-    ], result_figure_prefix="image_4")
+        f"qwen2_5_vl_7b_{request.param}_PD_mix",
+        f"qwen2_5_vl_7b_{request.param}_1E1PD_sc",
+        f"qwen2_5_vl_7b_{request.param}_1E2PD", f"qwen2_5_vl_7b_{request.param}_1E1PD"
+    ],result_figure_prefix=request.param)
 
 
 @pytest.mark.asyncio
