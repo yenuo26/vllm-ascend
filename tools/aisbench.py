@@ -36,7 +36,7 @@ def get_package_location(package_name):
         return None
 
 
-def create_result_plot(result_file_names):
+def create_result_plot(result_file_names, result_figure_prefix="test_perf_result"):
     plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
@@ -197,10 +197,10 @@ def create_result_plot(result_file_names):
             print(f"Result figure is locate in {result_file_names[0]}.png")
         else:
             today = date.today()
-            plt.savefig(f'./test_perf_result_{today}.png',
+            plt.savefig(f'./{result_figure_prefix}_{today}.png',
                         dpi=200,
                         bbox_inches='tight')
-            print(f"Result figure is locate in test_perf_result_{today}.png")
+            print(f"Result figure is locate in {result_figure_prefix}_{today}.png")
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
