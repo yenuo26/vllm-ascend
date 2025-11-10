@@ -1101,8 +1101,12 @@ class TestEPDProxy:
                     temperature=0.0
                 ),
                 request_id=str(uuid.uuid4())
-
             )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
             assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
@@ -1921,8 +1925,12 @@ class TestEPDProxy:
                     seed=2.1
                 ),
                 request_id=str(uuid.uuid4())
-
             )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
             assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
@@ -1938,7 +1946,6 @@ class TestEPDProxy:
                 seed=1
             ),
             request_id=str(uuid.uuid4())
-
         )
         output = None
         print("proxy is success")
@@ -2582,8 +2589,12 @@ class TestEPDProxy:
                 },
                 sampling_params=SAMPLING_PARAMS,
                 request_id=12345
-
             )
+            output = None
+            print("proxy is success")
+            async for o in outputs:
+                output = o
+                print(f"{o.outputs}", flush=True)
             assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
