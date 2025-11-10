@@ -1117,7 +1117,7 @@ class TestEPDProxy:
                 "multi_modal_data": {"image": IMAGE_ARRAY},
             },
             sampling_params=SamplingParams(
-                    max_tokens=2,
+                    max_tokens=128,
                     temperature=0.0
                 ),
             request_id=str(uuid.uuid4())
