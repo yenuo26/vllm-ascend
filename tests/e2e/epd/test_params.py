@@ -1106,7 +1106,7 @@ class TestEPDProxy:
             assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
-            assert "instance 0 is unhealthy" in str(message), "init success"
+            assert "Invalid Parameters" in str(message), "init success"
         outputs = p.generate(
             prompt={
                 "prompt": PROMPT_TEMPLATE,
@@ -1926,8 +1926,7 @@ class TestEPDProxy:
             assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
-            assert ("Invalid Parameters"
-                    "") in str(message), "init success"
+            assert "Invalid Parameters" in str(message), "init success"
         outputs = p.generate(
             prompt={
                 "prompt": PROMPT_TEMPLATE,
