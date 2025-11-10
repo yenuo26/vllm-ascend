@@ -2,6 +2,7 @@ import uuid
 import os
 import numpy as np
 from PIL import Image
+import time
 
 import pytest
 import pytest_asyncio
@@ -1112,6 +1113,7 @@ class TestEPDProxy:
         except Exception as message:
             print(f"error message is: {str(message)}")
             assert "instance 0 is unhealthy" in str(message), "init success"
+            time.sleep(180)
 
     @pytest.mark.asyncio
     async def test_generate_sampling_params_max_tokens_005(self, setup_teardown):
@@ -1920,6 +1922,7 @@ class TestEPDProxy:
             print(f"error message is: {str(message)}")
             assert ("Invalid Parameters"
                     "") in str(message), "init success"
+            time.sleep(180)
 
     @pytest.mark.asyncio
     async def test_generate_sampling_params_seed_007(self, setup_teardown):
@@ -2567,6 +2570,7 @@ class TestEPDProxy:
         except Exception as message:
             print(f"error message is: {str(message)}")
             assert "Invalid Parameters" in str(message), "init success"
+            time.sleep(180)
 
 
     @pytest.mark.asyncio
