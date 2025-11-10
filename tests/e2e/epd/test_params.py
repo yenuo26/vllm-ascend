@@ -1918,7 +1918,8 @@ class TestEPDProxy:
             p.shutdown()
         except Exception as message:
             print(f"error message is: {str(message)}")
-            assert "ValidationError" in str(message), "init success"
+            assert ("Invalid Parameters"
+                    "") in str(message), "init success"
 
     @pytest.mark.asyncio
     async def test_generate_sampling_params_seed_007(self, setup_teardown):
