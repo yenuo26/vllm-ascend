@@ -219,7 +219,8 @@ CONSTS_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/global_consts.py"
 class AisbenchRunner:
     RESULT_MSG = {
         "performance": "Performance Result files locate in ",
-        "accuracy": "write csv to "
+        "accuracy": "write csv to ",
+        "pressure": "Performance Result files locate in "
     }
     DATASET_RENAME = {
         "aime2024": "aime",
@@ -290,7 +291,7 @@ class AisbenchRunner:
             if self.task_type == "accuracy":
                 self.threshold = aisbench_config.get("threshold", 1)
                 self._accuracy_verify()
-            if self.task_type == "performance" or "pressure":
+            if self.task_type == "performance" or self.task_type == "pressure":
                 self.threshold = aisbench_config.get("threshold", 0.97)
                 self._performance_verify()
         if save:
@@ -371,7 +372,7 @@ class AisbenchRunner:
             dst_dir = os.path.join(DATASET_DIR, dataset_rename)
             command = ["cp", "-r", self.dataset_path, dst_dir]
             subprocess.call(command)
-        if self.task_type == "performance" or task_type == "pressure":
+        if self.task_type == "performance" or self.task_type == "pressure":
             conf_path = os.path.join(DATASET_CONF_DIR,
                                      f'{self.dataset_conf}.py')
             if self.dataset_conf.startswith("textvqa"):
@@ -404,7 +405,7 @@ class AisbenchRunner:
                          f'max_out_len = {self.max_out_len},', content)
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
-        if self.task_type == "performance" or task_type == "pressure":
+        if self.task_type == "performance" or self.task_type == "pressure":
             content = re.sub(r'path=.*', f'path="{self.model}",', content)
             content = re.sub(r'request_rate.*',
                              f'request_rate = {self.request_rate},', content)
