@@ -390,7 +390,7 @@ class AisbenchRunner:
         if self.task_type == "pressure":
             with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
                 content = f.read()
-            content = re.sub(r'PRESSURE_TIME=.*', f'PRESSURE_TIME="{self.pressure_time}",',
+            content = re.sub(r'PRESSURE_TIME.*', f'PRESSURE_TIME = {self.pressure_time}',
                              content)
             with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
                 f.write(content)
