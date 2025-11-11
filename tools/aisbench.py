@@ -212,6 +212,8 @@ DATASET_CONF_DIR = os.path.join(benchmark_path,
 REQUEST_CONF_DIR = os.path.join(benchmark_path,
                                 "ais_bench/benchmark/configs/models/vllm_api")
 DATASET_DIR = os.path.join(benchmark_path, "ais_bench/datasets")
+CONSTS_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/global_consts.py")
+
 
 
 class AisbenchRunner:
@@ -240,6 +242,12 @@ class AisbenchRunner:
             ]
             if self.num_prompts:
                 aisbench_cmd.extend(['--num-prompts', str(self.num_prompts)])
+        if self.task_type == "pressure":
+            aisbench_cmd = [
+                "taskset", "-c", "97-192", 'ais_bench', '--models',
+                self.request_conf, '--datasets', f'{dataset_conf}', '--mode',
+                'perf', '--pressure'
+            ]
         print(f"running aisbench cmd: {' '.join(aisbench_cmd)}")
         self.proc: subprocess.Popen = subprocess.Popen(aisbench_cmd,
                                                        stdout=subprocess.PIPE,
@@ -269,6 +277,7 @@ class AisbenchRunner:
         self.top_p = aisbench_config.get("top_p")
         self.seed = aisbench_config.get("seed")
         self.repetition_penalty = aisbench_config.get("repetition_penalty")
+        self.pressure_time = aisbench_config.get("pressure_time", 0)
         self.exp_folder = None
         self.card_num = card_num
         self.result_line = None
@@ -281,7 +290,7 @@ class AisbenchRunner:
             if self.task_type == "accuracy":
                 self.threshold = aisbench_config.get("threshold", 1)
                 self._accuracy_verify()
-            if self.task_type == "performance":
+            if self.task_type == "performance" or "pressure":
                 self.threshold = aisbench_config.get("threshold", 0.97)
                 self._performance_verify()
         if save:
@@ -362,7 +371,7 @@ class AisbenchRunner:
             dst_dir = os.path.join(DATASET_DIR, dataset_rename)
             command = ["cp", "-r", self.dataset_path, dst_dir]
             subprocess.call(command)
-        if self.task_type == "performance":
+        if self.task_type == "performance" or task_type == "pressure":
             conf_path = os.path.join(DATASET_CONF_DIR,
                                      f'{self.dataset_conf}.py')
             if self.dataset_conf.startswith("textvqa"):
@@ -377,6 +386,14 @@ class AisbenchRunner:
             with open(conf_path_new, 'w', encoding='utf-8') as f:
                 f.write(content)
 
+        if self.task_type == "pressure":
+            with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
+                content = f.read()
+            content = re.sub(r'PRESSURE_TIME=.*', f'PRESSURE_TIME="{self.pressure_time}",',
+                             content)
+            with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
+                f.write(content)
+
     def _init_request_conf(self):
         conf_path = os.path.join(REQUEST_CONF_DIR, f'{self.request_conf}.py')
         with open(conf_path, 'r', encoding='utf-8') as f:
@@ -387,7 +404,7 @@ class AisbenchRunner:
                          f'max_out_len = {self.max_out_len},', content)
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
-        if self.task_type == "performance":
+        if self.task_type == "performance" or task_type == "pressure":
             content = re.sub(r'path=.*', f'path="{self.model}",', content)
             content = re.sub(r'request_rate.*',
                              f'request_rate = {self.request_rate},', content)
