@@ -42,7 +42,7 @@ async def test_pd_mix_001_acc(model: str, tp_size: int, dataset_name: str):
         "top_p": 1,
         "repetition_penalty": 1,
         "request_rate": 0,
-        "baseline": 1,
+        "baseline": 81,
         "seed": 77,
         "threshold": 1
     }]
@@ -95,7 +95,7 @@ async def test_1e1pd_001_acc(model: str, tp_size: int, dataset_name: str):
         "top_p": 1,
         "repetition_penalty": 1,
         "request_rate": 0,
-        "baseline": 1,
+        "baseline": 81,
         "seed": 77,
         "threshold": 1
     }]
@@ -111,6 +111,63 @@ async def test_1e1pd_001_acc(model: str, tp_size: int, dataset_name: str):
         run_aisbench_cases(model=model,
                            port=api_port,
                            save=False,
+                           aisbench_cases=aisbench_cases)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, teardown):
+    e_server_args = [
+        "--no-enable-prefix-caching", "--model", model,
+        "--tensor-parallel-size",
+        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
+        "20000", "--max-num-seqs", "1", "--enforce-eager",
+        "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+    ]
+
+    pd_server_args = [
+        "--model", model, "--max-model-len", "20000",
+        "--max-num-batched-tokens", "20000", "--tensor-parallel-size",
+        str(tp_size), "--max-num-seqs", "128", "--gpu-memory-utilization",
+        "0.95", "--enforce-eager", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+    ]
+
+    aisbench_cases = [{
+        "case_type": "accuracy",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_general_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "max_out_len": 2048,
+        "batch_size": 128,
+        "temperature": 0,
+        "top_k": -1,
+        "top_p": 1,
+        "repetition_penalty": 1,
+        "request_rate": 0,
+        "baseline": 81,
+        "seed": 77,
+        "threshold": 1
+    }]
+
+    api_port = 10001
+    async with RemoteEPDServer(start_mode="http",
+                               api_server_port=api_port,
+                               pd_num=1,
+                               e_num=1,
+                               is_epd_same_card=True,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
                            aisbench_cases=aisbench_cases)
 
 
@@ -152,7 +209,7 @@ async def test_1e2pd_001_acc(model: str, tp_size: int, dataset_name: str):
         "top_p": 1,
         "repetition_penalty": 1,
         "request_rate": 0,
-        "baseline": 1,
+        "baseline": 81,
         "seed": 77,
         "threshold": 1
     }]
