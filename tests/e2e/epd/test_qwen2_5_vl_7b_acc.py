@@ -21,7 +21,7 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str):
+async def test_pd_mix_001_acc(model: str, tp_size: int, dataset_name: str):
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -33,19 +33,18 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str):
     aisbench_cases = [{
         "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_stream_chat",
+        "request_conf": "vllm_api_generate_chat",
         "dataset_conf": "textvqa/textvqa_gen",
-        "num_prompts": 200,
-        "max_out_len": 256,
+        "max_out_len": 2048,
         "batch_size": 128,
-        "temperature": 0.5,
-        "top_k": 10,
-        "top_p": 0.7,
-        "repetition_penalty": 1.2,
+        "temperature": 0,
+        "top_k": -1,
+        "top_p": 1,
+        "repetition_penalty": 1,
         "request_rate": 0,
         "baseline": 1,
         "seed": 77,
-        "threshold": 0.97
+        "threshold": 1
     }]
 
     with RemoteOpenAIServer(model,
@@ -64,7 +63,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str):
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str):
+async def test_1e1pd_001_acc(model: str, tp_size: int, dataset_name: str):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -87,19 +86,18 @@ async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str):
     aisbench_cases = [{
         "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_stream_chat",
+        "request_conf": "vllm_api_generate_chat",
         "dataset_conf": "textvqa/textvqa_gen",
-        "num_prompts": 200,
-        "max_out_len": 256,
+        "max_out_len": 2048,
         "batch_size": 128,
-        "temperature": 0.5,
-        "top_k": 10,
-        "top_p": 0.7,
-        "repetition_penalty": 1.2,
+        "temperature": 0,
+        "top_k": -1,
+        "top_p": 1,
+        "repetition_penalty": 1,
         "request_rate": 0,
         "baseline": 1,
         "seed": 77,
-        "threshold": 0.97
+        "threshold": 1
     }]
 
     api_port = 10001
@@ -120,7 +118,8 @@ async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str):
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
+async def test_1e2pd_001_acc(model: str, tp_size: int, dataset_name: str,
+                             teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -145,19 +144,18 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
     aisbench_cases = [{
         "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_stream_chat",
+        "request_conf": "vllm_api_generate_chat",
         "dataset_conf": "textvqa/textvqa_gen",
-        "num_prompts": 200,
-        "max_out_len": 256,
+        "max_out_len": 2048,
         "batch_size": 128,
-        "temperature": 0.5,
-        "top_k": 10,
-        "top_p": 0.7,
-        "repetition_penalty": 1.2,
+        "temperature": 0,
+        "top_k": -1,
+        "top_p": 1,
+        "repetition_penalty": 1,
         "request_rate": 0,
         "baseline": 1,
         "seed": 77,
-        "threshold": 0.97
+        "threshold": 1
     }]
 
     api_port = 10001

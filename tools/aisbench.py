@@ -233,12 +233,12 @@ class AisbenchRunner:
         if self.task_type == "accuracy":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                self.request_conf, '--datasets', f'{dataset_conf}'
+                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom'
             ]
         if self.task_type == "performance":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                self.request_conf, '--datasets', f'{dataset_conf}', '--mode',
+                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom', '--mode',
                 'perf'
             ]
             if self.num_prompts:
@@ -246,7 +246,7 @@ class AisbenchRunner:
         if self.task_type == "pressure":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                self.request_conf, '--datasets', f'{dataset_conf}', '--mode',
+                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom', '--mode',
                 'perf', '--pressure'
             ]
         print(f"running aisbench cmd: {' '.join(aisbench_cmd)}")
@@ -366,26 +366,19 @@ class AisbenchRunner:
                 combined_df.to_csv(path, index=False)
 
     def _init_dataset_conf(self):
-        if self.task_type == "accuracy":
-            dataset_name = os.path.basename(self.dataset_path)
-            dataset_rename = self.DATASET_RENAME.get(dataset_name, "")
-            dst_dir = os.path.join(DATASET_DIR, dataset_rename)
-            command = ["cp", "-r", self.dataset_path, dst_dir]
-            subprocess.call(command)
-        if self.task_type == "performance" or self.task_type == "pressure":
-            conf_path = os.path.join(DATASET_CONF_DIR,
-                                     f'{self.dataset_conf}.py')
-            if self.dataset_conf.startswith("textvqa"):
-                self.dataset_path = os.path.join(self.dataset_path,
-                                                 "textvqa_val.jsonl")
-            with open(conf_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
-                             content)
-            conf_path_new = os.path.join(DATASET_CONF_DIR,
-                                         f'{self.dataset_conf}.py')
-            with open(conf_path_new, 'w', encoding='utf-8') as f:
-                f.write(content)
+        conf_path = os.path.join(DATASET_CONF_DIR,
+                                 f'{self.dataset_conf}.py')
+        if self.dataset_conf.startswith("textvqa"):
+            self.dataset_path = os.path.join(self.dataset_path,
+                                             "textvqa_val.jsonl")
+        with open(conf_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
+                         content)
+        conf_path_new = os.path.join(DATASET_CONF_DIR,
+                                     f'{self.dataset_conf}_custom.py')
+        with open(conf_path_new, 'w', encoding='utf-8') as f:
+            f.write(content)
 
         if self.task_type == "pressure":
             with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
@@ -434,7 +427,7 @@ class AisbenchRunner:
                 r"repetition_penalty.*",
                 f"repetition_penalty = {self.repetition_penalty},", content)
         conf_path_new = os.path.join(REQUEST_CONF_DIR,
-                                     f'{self.request_conf}.py')
+                                     f'{self.request_conf}_custom.py')
         with open(conf_path_new, 'w', encoding='utf-8') as f:
             f.write(content)
         print(f"The request config is\n {content}")
