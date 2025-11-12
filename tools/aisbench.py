@@ -412,7 +412,7 @@ class AisbenchRunner:
             if "ignore_eos" not in content:
                 content = re.sub(
                     r"temperature.*",
-                    "temperature = 0.6,\n            ignore_eos = False,",
+                    "temperature = 0,\n            ignore_eos = False,",
                     content)
         if self.temperature:
             content = re.sub(r"temperature.*",

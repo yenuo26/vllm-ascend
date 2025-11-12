@@ -33,7 +33,7 @@ async def test_pd_mix_001_acc(model: str, tp_size: int, dataset_name: str):
     aisbench_cases = [{
         "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_generate_chat",
+        "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "max_out_len": 2048,
         "batch_size": 128,
@@ -86,7 +86,7 @@ async def test_1e1pd_001_acc(model: str, tp_size: int, dataset_name: str):
     aisbench_cases = [{
         "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_generate_chat",
+        "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "max_out_len": 2048,
         "batch_size": 128,
@@ -118,8 +118,7 @@ async def test_1e1pd_001_acc(model: str, tp_size: int, dataset_name: str):
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_001_acc(model: str, tp_size: int, dataset_name: str,
-                             teardown):
+async def test_1e2pd_001_acc(model: str, tp_size: int, dataset_name: str):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -144,7 +143,7 @@ async def test_1e2pd_001_acc(model: str, tp_size: int, dataset_name: str,
     aisbench_cases = [{
         "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_generate_chat",
+        "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "max_out_len": 2048,
         "batch_size": 128,
