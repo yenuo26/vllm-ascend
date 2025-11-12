@@ -10,7 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, TypeVar, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
 
 import httpx
 import numpy as np
@@ -19,6 +19,7 @@ import psutil
 import pytest
 import requests
 import torch
+import importlib
 from PIL import Image
 from llm_service.apis.vllm.proxy import Proxy
 from llm_service.protocol.protocol import ServerType
@@ -66,6 +67,16 @@ PromptVideoInput = _PromptMultiModalInput[np.ndarray]
 
 _TEST_DIR = os.path.dirname(__file__)
 
+def get_package_location(package_name):
+    try:
+        distribution = importlib.metadata.distribution(package_name)
+        return str(distribution.locate_file(''))
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+
+VLLM_PATH = get_package_location("vllm")
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     destroy_model_parallel()
@@ -176,23 +187,14 @@ class RemoteEPDServer:
                                      "[PRXOY] ")
 
     def _start_mooncake(self) -> None:
-        api_server_args = [
-            "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--model", self.model, "--proxy-addr",
-            self.proxy_addr, "--e-addr-list", ",".join(self.e_addr_list),
-            "--pd-addr-list", ",".join(self.pd_addr_list)
+        self.mooncake_args = [
+            "mooncake_master",
+            *self.mooncake_args
         ]
-        if self.is_image_load:
-            api_server_args.append("--is-load-image")
-        if self.enable_health_monitor:
-            api_server_args.append("--enable-health-monitor")
-        api_server_path = Path(
-            __file__).parent.parent.parent / "tools" / "api_server.py"
-        api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, self.env_dict,
-                                     "[PRXOY] ")
+        self._run_server_new_session(self.mooncake_args, None,
+                                     "[MOONCAKE] ")
 
-    def _start_vllm(self):
+    def _start_vllm_worker(self):
         if self.env_dict is None:
             self.env_dict = dict()
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
@@ -245,10 +247,7 @@ class RemoteEPDServer:
                     self.e_addr_list.append(self.e_serve_args[index_e + 1])
                 else:
                     for i in range(self.e_num):
-                        if self.is_e_same_card:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = "0"
-                        else:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                         # defaut encode-addr is /tmp/encode_{i}
                         e_serve_args = copy.deepcopy(self.e_serve_args)
                         e_serve_args = e_serve_args + [
@@ -289,6 +288,85 @@ class RemoteEPDServer:
 
                         self._run_server(pd_serve_args, self.env_dict,
                                          f"[PD_{i}] ")
+        else:
+            raise RuntimeError("pd_serve_args must be a list")
+
+    def _start_zmq_proxy(self):
+        p = Proxy(proxy_addr=self.proxy_addr,
+                       encode_addr_list=self.e_addr_list,
+                       pd_addr_list=self.pd_addr_list,
+                       enable_health_monitor=self.enable_health_monitor,
+                       model_name=self.model)
+        return p
+
+    def _start_disagg_proxy(self):
+        proxy_args = [
+            "--host", "127.0.0.1", "--port",
+            str(self.api_server_port), "--encode-servers-urls",
+            ",".join(self.e_addr_list),
+            "--decode-servers-urls", ",".join(self.pd_addr_list),
+            "--prefill-servers-urls", "disable"
+        ]
+        proxy_path = os.path.join(VLLM_PATH, "examples/online_serving/disaggregated_encoder/mooncake_connector/disagg_epd_proxy.py")
+        proxy_args = ["python", proxy_path, *proxy_args]
+        self._run_server_new_session(proxy_args, self.env_dict,
+                                     "[PRXOY] ")
+
+    def _start_vllm_serve(self):
+        if self.env_dict is None:
+            self.env_dict = dict()
+        self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
+        self.env_dict['VLLM_USE_V1'] = "1"
+        if isinstance(self.e_serve_args, str):
+            self.e_serve_args = shlex.split(self.e_serve_args)
+        if isinstance(self.pd_serve_args, str):
+            self.pd_serve_args = shlex.split(self.pd_serve_args)
+        else:
+            self.e_serve_args = [
+                "taskset","-c", "0-96", "vllm", "serve",
+                *self.e_serve_args
+            ]
+            self.pd_serve_args = [
+                "taskset","-c", "0-96", "vllm", "serve",
+                *self.pd_serve_args
+            ]
+
+        if isinstance(self.e_serve_args, list):
+            if all(isinstance(item, list) for item in self.e_serve_args):
+                for i, e_serve_arg in enumerate(self.e_serve_args):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    index_e = e_serve_arg.index("--port")
+                    self.e_addr_list.append(f"http://localhost:{e_serve_arg[index_e + 1]}")
+                    self._run_server(e_serve_arg, self.env_dict,
+                                     f"[ENCODE_{i}] ")
+            else:
+                for i in range(self.e_num):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    e_serve_arg = copy.deepcopy(self.e_serve_args)
+                    index_e = e_serve_arg.index("--port")
+                    self.e_addr_list.append(f"http://localhost:{e_serve_arg[index_e + 1]}")
+                    self._run_server(e_serve_arg, self.env_dict,
+                                     f"[ENCODE_{i}] ")
+
+        else:
+            raise RuntimeError("e_serve_args must be a list")
+
+        if isinstance(self.pd_serve_args, list):
+            if all(isinstance(item, list) for item in self.pd_serve_args):
+                for i, pd_serve_arg in enumerate(self.pd_serve_args):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    index_pd = pd_serve_arg.index("--port")
+                    self.pd_addr_list.append(f"http://localhost:{pd_serve_arg[index_e + 1]}")
+                    self._run_server(pd_serve_arg, self.env_dict,
+                                     f"[PD_{i}] ")
+            else:
+                for i in range(self.pd_num):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    pd_serve_arg = copy.deepcopy(self.pd_serve_args)
+                    index_pd = pd_serve_arg.index("--port")
+                    self.pd_addr_list.append(f"http://localhost:{pd_serve_arg[index_pd + 1]}")
+                    self._run_server(pd_serve_arg, self.env_dict,
+                                     f"[PD_{i}] ")
         else:
             raise RuntimeError("pd_serve_args must be a list")
 
@@ -388,7 +466,7 @@ class RemoteEPDServer:
         return False
 
     def __init__(self,
-                 start_mode: Optional[str],
+                 run_mode: Literal["disagg_epd_proxy", "zmq_proxy", "zmq", "zmq_proxy_http"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
                  e_serve_args: Union[list[str], str],
@@ -397,16 +475,16 @@ class RemoteEPDServer:
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
-                 is_e_same_card: Optional[bool] = False,
                  enable_health_monitor: Optional[bool] = False,
                  env_dict: Optional[dict[str, str]] = None) -> None:
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
-        self.start_mode = start_mode
+        if run_mode not in ["disagg_proxy", "zmq_proxy", "zmq", "zmq_proxy_server"]:
+            raise ValueError(f"run mode must be disagg_epd_proxy、zmq_proxy、zmq、zmq_proxy_server")
+        self.run_mode = run_mode
         self.is_image_load = is_image_load
         self.is_epd_same_card = is_epd_same_card
-        self.is_e_same_card = is_e_same_card
         self.api_server_port = api_server_port
         self.enable_health_monitor = enable_health_monitor
         self.e_addr_list = list()
@@ -423,19 +501,20 @@ class RemoteEPDServer:
     async def __aenter__(self):
         # start with
         max_wait_seconds = 1800
-        self._start_vllm()
-        self.p = Proxy(proxy_addr=self.proxy_addr,
-                       encode_addr_list=self.e_addr_list,
-                       pd_addr_list=self.pd_addr_list,
-                       enable_health_monitor=self.enable_health_monitor,
-                       model_name=self.model)
-        await self._wait_for_vllm_server(max_wait_seconds=max_wait_seconds)
-        if self.start_mode == "http":
-            self.p.shutdown()
-            self._start_api_server()
-            await self._wait_for_api_server()
-        elif self.start_mode == "api":
-            self.p.shutdown()
+        if "zmq" in self.run_mod:
+            self._start_vllm_worker()
+            self.p = self._start_zmq_proxy()
+            await self._wait_for_vllm_server(max_wait_seconds=max_wait_seconds)
+            if self.run_mode == "zmq_proxy_server":
+                self.p.shutdown()
+                self._start_api_server()
+                await self._wait_for_api_server()
+            elif self.run_mode == "zmq":
+                self.p.shutdown()
+        else:
+            self._start_vllm_serve()
+            self.p = self._start_disagg_proxy()
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

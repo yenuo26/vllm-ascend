@@ -93,7 +93,7 @@ async def chat_completions(request: Request):
             top_p=request_data.get("top_p", 1.0),
             top_k=request_data.get("top_k", 10),
             max_tokens=request_data.get("max_tokens", 100),
-            ignore_eos=request_data.get("ignore", True),
+            ignore_eos=request_data.get("ignore_eos", True),
             stop=request_data.get("stop", None),
             seed=request_data.get("seed", 77),
             repetition_penalty=request_data.get("repetition_penalty", 1.0),
