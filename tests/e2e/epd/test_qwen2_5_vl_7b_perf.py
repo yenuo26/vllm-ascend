@@ -288,7 +288,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E1PD",
+        "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
         "threshold": 0.97
     }
     aisbench_cases = []
