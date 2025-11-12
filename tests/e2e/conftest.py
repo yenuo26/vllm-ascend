@@ -175,6 +175,23 @@ class RemoteEPDServer:
         self._run_server_new_session(api_server_args, self.env_dict,
                                      "[PRXOY] ")
 
+    def _start_mooncake(self) -> None:
+        api_server_args = [
+            "--host", "127.0.0.1", "--port",
+            str(self.api_server_port), "--model", self.model, "--proxy-addr",
+            self.proxy_addr, "--e-addr-list", ",".join(self.e_addr_list),
+            "--pd-addr-list", ",".join(self.pd_addr_list)
+        ]
+        if self.is_image_load:
+            api_server_args.append("--is-load-image")
+        if self.enable_health_monitor:
+            api_server_args.append("--enable-health-monitor")
+        api_server_path = Path(
+            __file__).parent.parent.parent / "tools" / "api_server.py"
+        api_server_args = ["python", api_server_path, *api_server_args]
+        self._run_server_new_session(api_server_args, self.env_dict,
+                                     "[PRXOY] ")
+
     def _start_vllm(self):
         if self.env_dict is None:
             self.env_dict = dict()
@@ -376,6 +393,7 @@ class RemoteEPDServer:
                  pd_num: Optional[int],
                  e_serve_args: Union[list[str], str],
                  pd_serve_args: Union[list[str], str],
+                 mooncake_args: Union[list[str], str],
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
@@ -397,6 +415,7 @@ class RemoteEPDServer:
         self.model = str()
         self.e_serve_args = e_serve_args
         self.pd_serve_args = pd_serve_args
+        self.mooncake_args = mooncake_args
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = self._default_addr_prefix + "proxy"

@@ -414,16 +414,16 @@ class AisbenchRunner:
                     r"temperature.*",
                     "temperature = 0,\n            ignore_eos = False,",
                     content)
-        if self.temperature:
+        if self.temperature is not None:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)
-        if self.top_p:
+        if self.top_p is not None:
             content = re.sub(r"top_p.*", f"top_p = {self.top_p},", content)
-        if self.top_k:
+        if self.top_k is not None:
             content = re.sub(r"top_k.*", f"top_k = {self.top_k},", content)
-        if self.seed:
+        if self.seed is not None:
             content = re.sub(r"seed.*", f"seed = {self.seed},", content)
-        if self.repetition_penalty:
+        if self.repetition_penalty is not None:
             content = re.sub(
                 r"repetition_penalty.*",
                 f"repetition_penalty = {self.repetition_penalty},", content)
