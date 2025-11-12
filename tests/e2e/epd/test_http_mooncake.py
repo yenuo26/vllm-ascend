@@ -28,7 +28,7 @@ async def test_1e2pd_001_mooncake(model: str, tp_size: int, dataset_name: str):
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
-        model, "--gpu-memory-utilization", "0.0", "--port", "19535"
+        model, "--gpu-memory-utilization", "0.0", "--port", "19535",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager", "--enable-request-id-headers",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -40,7 +40,7 @@ async def test_1e2pd_001_mooncake(model: str, tp_size: int, dataset_name: str):
     ]
 
     pd_server_args = [
-        model, "--gpu-memory-utilization", "0.95", "--port", "19536"
+        model, "--gpu-memory-utilization", "0.95", "--port", "19536",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager", "--enable-request-id-headers",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -111,10 +111,11 @@ async def test_1e2pd_001_mooncake(model: str, tp_size: int, dataset_name: str):
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    async with RemoteEPDServer(run_mode="zmq_proxy_server",
+    async with RemoteEPDServer(run_mode="disagg_epd_proxy",
                                api_server_port=api_port,
                                pd_num=2,
                                e_num=1,
+                               env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
                                mooncake_args=mooncake_args) as server:

@@ -466,7 +466,7 @@ class RemoteEPDServer:
         return False
 
     def __init__(self,
-                 run_mode: Literal["disagg_epd_proxy", "zmq_proxy", "zmq", "zmq_proxy_http"],
+                 run_mode: Literal["disagg_proxy", "zmq_proxy", "zmq", "zmq_proxy_http"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
                  e_serve_args: Union[list[str], str],
@@ -481,7 +481,7 @@ class RemoteEPDServer:
         self.e_num = e_num
         self.pd_num = pd_num
         if run_mode not in ["disagg_proxy", "zmq_proxy", "zmq", "zmq_proxy_server"]:
-            raise ValueError(f"run mode must be disagg_epd_proxy、zmq_proxy、zmq、zmq_proxy_server")
+            raise ValueError(f"run mode must be disagg_proxy、zmq_proxy、zmq、zmq_proxy_server")
         self.run_mode = run_mode
         self.is_image_load = is_image_load
         self.is_epd_same_card = is_epd_same_card
