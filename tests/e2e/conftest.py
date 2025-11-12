@@ -501,7 +501,7 @@ class RemoteEPDServer:
     async def __aenter__(self):
         # start with
         max_wait_seconds = 1800
-        if "zmq" in self.run_mod:
+        if "zmq" in self.run_mode:
             self._start_vllm_worker()
             self.p = self._start_zmq_proxy()
             await self._wait_for_vllm_server(max_wait_seconds=max_wait_seconds)
