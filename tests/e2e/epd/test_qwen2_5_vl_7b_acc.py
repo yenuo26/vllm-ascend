@@ -101,7 +101,7 @@ async def test_1e1pd_001_acc(model: str, tp_size: int, dataset_name: str):
     }]
 
     api_port = 10001
-    async with RemoteEPDServer(start_mode="http",
+    async with RemoteEPDServer(run_mode="zmq_proxy_server",
                                api_server_port=api_port,
                                pd_num=1,
                                e_num=1,
@@ -158,7 +158,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
     }]
 
     api_port = 10001
-    async with RemoteEPDServer(start_mode="http",
+    async with RemoteEPDServer(run_mode="zmq_proxy_server",
                                api_server_port=api_port,
                                pd_num=1,
                                e_num=1,
@@ -215,7 +215,7 @@ async def test_1e2pd_001_acc(model: str, tp_size: int, dataset_name: str):
     }]
 
     api_port = 10001
-    async with RemoteEPDServer(start_mode="http",
+    async with RemoteEPDServer(run_mode="zmq_proxy_server",
                                api_server_port=api_port,
                                pd_num=2,
                                e_num=1,

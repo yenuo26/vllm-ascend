@@ -28,7 +28,7 @@ async def teardown():
         create_result_plot(result_file_names=[
             f"qwen2_5_vl_7b_{dataset}_PD_mix",
             f"qwen2_5_vl_7b_{dataset}_1E1PD_sc",
-            f"qwen2_5_vl_7b_{dataset}_1E2PD", f"qwen2_5_vl_7b_{dataset}_1E1PD"
+            f"qwen2_5_vl_7b_{dataset}_1E2PD", f"qwen2_5_vl_7b_{dataset}_1E3PD"
         ],result_figure_prefix=dataset)
 
 
@@ -198,7 +198,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    async with RemoteEPDServer(start_mode="http",
+    async with RemoteEPDServer(run_mode="zmq_proxy_server",
                                api_server_port=api_port,
                                pd_num=1,
                                e_num=1,
@@ -222,7 +222,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str, teardown):
+async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -272,7 +272,7 @@ async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str, teardown):
         77,
     }]
 
-    request_rate = [0.56, 1.12, 1.68, 2.24, 2.8, 3.36]
+    request_rate = [1.12, 2.24, 3.36, 4.48, 5.6, 6.72]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
@@ -298,9 +298,9 @@ async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str, teardown):
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    async with RemoteEPDServer(start_mode="http",
+    async with RemoteEPDServer(run_mode="zmq_proxy_server",
                                api_server_port=api_port,
-                               pd_num=1,
+                               pd_num=3,
                                e_num=1,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
@@ -313,7 +313,7 @@ async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str, teardown):
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
-                           card_num=2,
+                           card_num=4,
                            aisbench_cases=aisbench_cases)
 
 
@@ -397,7 +397,7 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    async with RemoteEPDServer(start_mode="http",
+    async with RemoteEPDServer(run_mode="zmq_proxy_server",
                                api_server_port=api_port,
                                pd_num=2,
                                e_num=1,

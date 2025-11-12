@@ -356,7 +356,7 @@ class RemoteEPDServer:
                 for i, pd_serve_arg in enumerate(self.pd_serve_args):
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     index_pd = pd_serve_arg.index("--port")
-                    self.pd_addr_list.append(f"http://localhost:{pd_serve_arg[index_e + 1]}")
+                    self.pd_addr_list.append(f"http://localhost:{pd_serve_arg[index_pd + 1]}")
                     self._run_server(pd_serve_arg, self.env_dict,
                                      f"[PD_{i}] ")
             else:
@@ -471,7 +471,7 @@ class RemoteEPDServer:
                  pd_num: Optional[int],
                  e_serve_args: Union[list[str], str],
                  pd_serve_args: Union[list[str], str],
-                 mooncake_args: Union[list[str], str],
+                 mooncake_args: Union[list[str], str] = None,
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
