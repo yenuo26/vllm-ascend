@@ -398,10 +398,11 @@ class AisbenchRunner:
                          f'max_out_len = {self.max_out_len},', content)
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
+        content = re.sub(r'path=.*', f'path="{self.model}",', content)
+        content = re.sub(r'request_rate.*',
+                         f'request_rate = {self.request_rate},', content)
+
         if self.task_type == "performance" or self.task_type == "pressure":
-            content = re.sub(r'path=.*', f'path="{self.model}",', content)
-            content = re.sub(r'request_rate.*',
-                             f'request_rate = {self.request_rate},', content)
             if "ignore_eos" not in content:
                 content = re.sub(
                     r"temperature.*",
