@@ -284,6 +284,8 @@ class AisbenchRunner:
         self.result_line = None
         self._init_dataset_conf()
         self._init_request_conf()
+        if self.task_type == "pressure":
+            self._init_consts_conf()
         self._run_aisbench_task()
         self._wait_for_task()
         if verify:
@@ -375,18 +377,28 @@ class AisbenchRunner:
             content = f.read()
         content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
                          content)
+        if self.max_out_len is None:
+            if "max_tokens" not in content:
+                content = re.sub(
+                    r"output_column.*",
+                    "output_column='answer',\n            max_tokens_column = True",
+                    content)
+
         conf_path_new = os.path.join(DATASET_CONF_DIR,
                                      f'{self.dataset_conf}_custom.py')
         with open(conf_path_new, 'w', encoding='utf-8') as f:
             f.write(content)
 
-        if self.task_type == "pressure":
-            with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
-                content = f.read()
-            content = re.sub(r'PRESSURE_TIME.*', f'PRESSURE_TIME = {self.pressure_time}',
-                             content)
-            with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
-                f.write(content)
+
+
+
+    def _init_consts_conf(self):
+        with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
+            content = f.read()
+        content = re.sub(r'PRESSURE_TIME.*', f'PRESSURE_TIME = {self.pressure_time}',
+                         content)
+        with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
+            f.write(content)
 
     def _init_request_conf(self):
         conf_path = os.path.join(REQUEST_CONF_DIR, f'{self.request_conf}.py')
@@ -394,8 +406,7 @@ class AisbenchRunner:
             content = f.read()
         content = re.sub(r'model=.*', f'model="{self.model}",', content)
         content = re.sub(r'host_port.*', f'host_port = {self.port},', content)
-        content = re.sub(r'max_out_len.*',
-                         f'max_out_len = {self.max_out_len},', content)
+
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
         content = re.sub(r'path=.*', f'path="{self.model}",', content)
@@ -414,6 +425,10 @@ class AisbenchRunner:
                     r"temperature.*",
                     "temperature = 0,\n            ignore_eos = False,",
                     content)
+
+        if self.max_out_len is not None:
+            content = re.sub(r'max_out_len.*',
+                             f'max_out_len = {self.max_out_len},', content)
         if self.temperature is not None:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)

@@ -53,7 +53,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown)
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
-        "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen_base64",
         "num_prompts":
         50,
         "max_out_len":
@@ -79,7 +79,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown)
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "max_out_len": 150,
         "batch_size": 128,
@@ -151,7 +151,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
-        "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen_base64",
         "num_prompts":
         50,
         "max_out_len":
@@ -177,7 +177,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "max_out_len": 150,
         "batch_size": 128,
@@ -251,7 +251,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
-        "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen_base64",
         "num_prompts":
         50,
         "max_out_len":
@@ -277,7 +277,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "max_out_len": 150,
         "batch_size": 128,
@@ -351,7 +351,7 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
-        "textvqa/textvqa_gen",
+        "textvqa/textvqa_gen_base64",
         "num_prompts":
         50,
         "max_out_len":
@@ -376,7 +376,7 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "max_out_len": 150,
         "batch_size": 128,

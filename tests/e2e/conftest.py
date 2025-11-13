@@ -370,7 +370,7 @@ class RemoteEPDServer:
         else:
             raise RuntimeError("pd_serve_args must be a list")
 
-    async def _wait_for_vllm_server(self, max_wait_seconds) -> None:
+    async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
         sleep_times = 10
         timeout_times = 3
         start_time = time.time()
@@ -434,7 +434,7 @@ class RemoteEPDServer:
         except psutil.NoSuchProcess:
             pass
 
-    async def _wait_for_api_server(self,
+    async def _wait_for_server(self,
                                    timeout: int = 300,
                                    check_interval: float = 0.5) -> bool:
 
@@ -504,16 +504,17 @@ class RemoteEPDServer:
         if "zmq" in self.run_mode:
             self._start_vllm_worker()
             self.p = self._start_zmq_proxy()
-            await self._wait_for_vllm_server(max_wait_seconds=max_wait_seconds)
+            await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
             if self.run_mode == "zmq_proxy_server":
                 self.p.shutdown()
                 self._start_api_server()
-                await self._wait_for_api_server()
+                await self._wait_for_server()
             elif self.run_mode == "zmq":
                 self.p.shutdown()
         else:
             self._start_vllm_serve()
-            self.p = self._start_disagg_proxy()
+            self._start_disagg_proxy()
+            await self._wait_for_server()
 
         return self
 
