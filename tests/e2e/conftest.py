@@ -187,12 +187,47 @@ class RemoteEPDServer:
                                      "[PRXOY] ")
 
     def _start_mooncake(self) -> None:
+        self._init_mooncake_config()
         self.mooncake_args = [
             "mooncake_master",
             *self.mooncake_args
         ]
         self._run_server_new_session(self.mooncake_args, None,
                                      "[MOONCAKE] ")
+
+
+    def _init_mooncake_config(self) -> None:
+        producer_json = {"local_hostname": "0.0.0.0", "metadata_server": "http://0.0.0.0:8082/metadata",
+                         "global_segment_size": 32212254720,
+                         "local_buffer_size":1073741824,
+                         "protocol": "tcp",
+                         "device_name":"",
+                         "master_server_address": "0.0.0.0:50052",
+                         "replica_num": 1,
+                         "fast_transfer": True,
+                         "fast_transfer_buffer_size": 1}
+        consumer_json = {"local_hostname": "0.0.0.0",
+                         "metadata_server": "http://0.0.0.0:8082/metadata",
+                         "global_segment_size": 0,
+                         "local_buffer_size":1073741824,
+                         "protocol": "tcp",
+                         "device_name":"",
+                         "master_server_address": "0.0.0.0:50052",
+                         "replica_num": 1,
+                         "fast_transfer": True,
+                         "fast_transfer_buffer_size": 1}
+
+        producer_index = self.e_serve_args.index("--ec-transfer-config")
+        producer_path = self.e_serve_args[producer_index + 1].get("ec_connector_extra_config").get("ec_mooncake_config_file_path")
+        consumer_index = self.pd_serve_args.index("--ec-transfer-config")
+        consumer_path = self.pd_serve_args[consumer_index + 1].get("ec_connector_extra_config").get(
+            "ec_mooncake_config_file_path")
+        with open(producer_path, 'w', encoding='utf-8') as f:
+            json.dump(producer_json, f, ensure_ascii=False, indent=4)
+        print(f"The mooncake producer config is\n {producer_json}")
+        with open(consumer_path, 'w', encoding='utf-8') as f:
+            json.dump(consumer_json, f, ensure_ascii=False, indent=4)
+        print(f"The mooncake consumer config is\n {consumer_json}")
 
     def _start_vllm_worker(self):
         if self.env_dict is None:
@@ -466,11 +501,13 @@ class RemoteEPDServer:
         return False
 
     def __init__(self,
-                 run_mode: Literal["disagg_proxy", "zmq_proxy", "zmq", "zmq_proxy_http"],
+                 run_mode: Literal["serve", "worker"],
+                 store_type: Literal["mooncake", "storage"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
                  e_serve_args: Union[list[str], str],
                  pd_serve_args: Union[list[str], str],
+                 proxy_type: Literal["disagg_proxy", "proxy", "api_server"]=None,
                  mooncake_args: Union[list[str], str] = None,
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
@@ -480,9 +517,15 @@ class RemoteEPDServer:
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
-        if run_mode not in ["disagg_proxy", "zmq_proxy", "zmq", "zmq_proxy_server"]:
-            raise ValueError(f"run mode must be disagg_proxy、zmq_proxy、zmq、zmq_proxy_server")
+        if run_mode not in ["serve", "worker"]:
+            raise ValueError(f"run mode must be serve or worker")
+        if store_type not in ["mooncake", "storage"]:
+            raise ValueError(f"store type must be mooncake or storage")
+        if proxy_type is not None and proxy_type not in ["disagg_proxy", "proxy"]:
+            raise ValueError(f"proxy type must be disagg_proxy or proxy")
         self.run_mode = run_mode
+        self.store_type = store_type
+        self.proxy_type = proxy_type
         self.is_image_load = is_image_load
         self.is_epd_same_card = is_epd_same_card
         self.api_server_port = api_server_port
@@ -501,19 +544,22 @@ class RemoteEPDServer:
     async def __aenter__(self):
         # start with
         max_wait_seconds = 1800
-        if "zmq" in self.run_mode:
+        if self.store_type == "mooncake":
+            self._start_mooncake()
+        if self.run_mode == "worker":
             self._start_vllm_worker()
             self.p = self._start_zmq_proxy()
             await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
-            if self.run_mode == "zmq_proxy_server":
-                self.p.shutdown()
-                self._start_api_server()
-                await self._wait_for_server()
-            elif self.run_mode == "zmq":
-                self.p.shutdown()
-        else:
+        elif self.run_mode == "serve":
             self._start_vllm_serve()
+        if self.proxy_type is None:
+            self.p.shutdown()
+        elif self.proxy_type == "disagg_proxy":
             self._start_disagg_proxy()
+            await self._wait_for_server()
+        elif self.proxy_type == "api_server":
+            self.p.shutdown()
+            self._start_api_server()
             await self._wait_for_server()
 
         return self
