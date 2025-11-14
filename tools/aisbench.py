@@ -269,7 +269,7 @@ class AisbenchRunner:
         self.dataset_conf = aisbench_config.get("dataset_conf")
         self.dataset_path = aisbench_config.get("dataset_path")
         self.num_prompts = aisbench_config.get("num_prompts")
-        self.max_out_len = aisbench_config["max_out_len"]
+        self.max_out_len = aisbench_config.get("max_out_len", None)
         self.batch_size = aisbench_config["batch_size"]
         self.request_rate = aisbench_config.get("request_rate", 0)
         self.temperature = aisbench_config.get("temperature")
