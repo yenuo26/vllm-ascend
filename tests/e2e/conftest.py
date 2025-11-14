@@ -218,9 +218,9 @@ class RemoteEPDServer:
                          "fast_transfer_buffer_size": 1}
 
         producer_index = self.e_serve_args.index("--ec-transfer-config")
-        producer_path = self.e_serve_args[producer_index + 1].get("ec_connector_extra_config").get("ec_mooncake_config_file_path")
+        producer_path = json.loads(self.e_serve_args[producer_index + 1]).get("ec_connector_extra_config").get("ec_mooncake_config_file_path")
         consumer_index = self.pd_serve_args.index("--ec-transfer-config")
-        consumer_path = self.pd_serve_args[consumer_index + 1].get("ec_connector_extra_config").get(
+        consumer_path = json.loads(self.pd_serve_args[consumer_index + 1]).get("ec_connector_extra_config").get(
             "ec_mooncake_config_file_path")
         with open(producer_path, 'w', encoding='utf-8') as f:
             json.dump(producer_json, f, ensure_ascii=False, indent=4)
