@@ -111,7 +111,7 @@ async def test_1e2pd_001_mooncake(model: str, tp_size: int, dataset_name: str):
         aisbench_cases.append(new_case_dict)
 
     api_port = 10001
-    async with RemoteEPDServer(run_mode="http",
+    async with RemoteEPDServer(run_mode="worker",
                                store_type="mooncake",
                                proxy_type="disagg_proxy",
                                api_server_port=api_port,
