@@ -226,12 +226,16 @@ if __name__ == "__main__":
     parser.add_argument("--enable-health-monitor",
                         action='store_true',
                         help="enable health monitor")
+    parser.add_argument("--transfer-protpcol",
+                        type=str,
+                        help="transfer-protpcol, tcp or ipc")
 
     args = parser.parse_args()
     app.state.proxy = Proxy(proxy_addr=args.proxy_addr,
                             encode_addr_list=args.e_addr_list.split(","),
                             pd_addr_list=args.pd_addr_list.split(","),
                             enable_health_monitor=args.enable_health_monitor,
+                            transfer_protocol=args.transfer_protpcol,
                             model_name=args.model)
     app.state.is_load_image = args.is_load_image
     print(f"Starting API server on {args.host}:{args.port}")
