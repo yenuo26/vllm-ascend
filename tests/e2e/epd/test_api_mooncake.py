@@ -51,9 +51,9 @@ async def test_1e1pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: st
     ]
 
     mooncake_args = [
-        "--rpc_port", "50051", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
+        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
+        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
 
     warmup_cases = [{
@@ -164,9 +164,9 @@ async def test_1e1pd_merge_mooncake_ipc_001(model: str, tp_size: int, dataset_na
     ]
 
     mooncake_args = [
-        "--rpc_port", "50051", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
+        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
+        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
 
     warmup_cases = [{
@@ -278,9 +278,9 @@ async def test_1e2pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: st
     ]
 
     mooncake_args = [
-        "--rpc_port", "50051", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
+        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
+        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
 
     warmup_cases = [{
@@ -391,9 +391,9 @@ async def test_1e2pd_mooncake_tcp_001(model: str, tp_size: int, dataset_name: st
         '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
     mooncake_args = [
-        "--rpc_port", "50051", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
+        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
+        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
     warmup_cases = [{
         "case_type":
