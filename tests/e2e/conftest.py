@@ -603,11 +603,12 @@ class RemoteEPDServer:
         self.proxy_args = proxy_args
         self.enable_health_monitor = False
         self.transfer_protocol = None
-        for i, arg in enumerate(proxy_args):
-            if "--enable-health-monitor" in arg:
-                self.enable_health_monitor = True
-            if "--transfer-protocol" in arg:
-                self.transfer_protocol = proxy_args[i + 1]
+        if proxy_args is not None:
+            for i, arg in enumerate(proxy_args):
+                if "--enable-health-monitor" in arg:
+                    self.enable_health_monitor = True
+                if "--transfer-protocol" in arg:
+                    self.transfer_protocol = proxy_args[i + 1]
 
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
