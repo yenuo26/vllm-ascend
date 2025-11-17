@@ -231,7 +231,7 @@ if __name__ == "__main__":
                         help="transfer-protocol, tcp or ipc")
 
     args = parser.parse_args()
-    if hasattr(args, 'transfer-protocol') and args.transfer_protocol is not None:
+    if hasattr(args, '--transfer-protocol') and args.transfer_protocol is not None:
         app.state.proxy = Proxy(proxy_addr=args.proxy_addr,
                                 encode_addr_list=args.e_addr_list.split(","),
                                 pd_addr_list=args.pd_addr_list.split(","),
