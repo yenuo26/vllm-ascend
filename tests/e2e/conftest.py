@@ -263,7 +263,7 @@ class RemoteEPDServer:
             ]
 
         if "--proxy-addr" not in self.e_serve_args and "--proxy-addr" not in self.pd_serve_args:
-            if self.env_dict["TRANSFER_PROTOCOL"] is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
+            if self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
             ) == "TCP" or self.transfer_protocol.upper() == "TCP":
                 self.e_serve_args = self.e_serve_args + [
                     "--proxy-addr", "127.0.0.1:37000"
@@ -300,7 +300,7 @@ class RemoteEPDServer:
                 for i, e_serve_arg in enumerate(self.e_serve_args):
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     if "--worker-addr" not in e_serve_arg:
-                        if self.env_dict["TRANSFER_PROTOCOL"] is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
                         ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                             e_serve_arg = e_serve_arg + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
@@ -320,7 +320,7 @@ class RemoteEPDServer:
                     e_serve_args = copy.deepcopy(self.e_serve_args)
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     if "--worker-addr" not in e_serve_args:
-                        if self.env_dict["TRANSFER_PROTOCOL"] is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
                         ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                             e_serve_args = e_serve_args + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
@@ -342,10 +342,13 @@ class RemoteEPDServer:
         if isinstance(self.pd_serve_args, list):
             if all(isinstance(item, list) for item in self.pd_serve_args):
                 for i, pd_serve_arg in enumerate(self.pd_serve_args):
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    if self.is_epd_same_card:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    else:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
                     if "--worker-addr" not in pd_serve_arg:
-                        if self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP" or self.transfer_protocol.upper() == "TCP":
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                             pd_serve_arg = pd_serve_arg + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
                             ]
@@ -362,10 +365,13 @@ class RemoteEPDServer:
             else:
                 for i in range(self.pd_num):
                     pd_serve_args = copy.deepcopy(self.pd_serve_args)
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
+                    if self.is_epd_same_card:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    else:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
                     if "--worker-addr" not in pd_serve_args:
-                        if self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP" or self.transfer_protocol.upper() == "TCP":
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                             pd_serve_args = pd_serve_args + [
                                 "--worker-addr", "127.0.0.1:3800" + str(i)
                             ]
