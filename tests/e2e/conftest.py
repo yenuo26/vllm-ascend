@@ -197,25 +197,29 @@ class RemoteEPDServer:
 
 
     def _init_mooncake_config(self) -> None:
-        producer_json = {"local_hostname": "0.0.0.0", "metadata_server": "http://0.0.0.0:8082/metadata",
+        producer_json = {"local_hostname": "0.0.0.0",
                          "global_segment_size": 32212254720,
                          "local_buffer_size":1073741824,
                          "protocol": "tcp",
                          "device_name":"",
-                         "master_server_address": "0.0.0.0:50052",
                          "replica_num": 1,
                          "fast_transfer": True,
                          "fast_transfer_buffer_size": 1}
         consumer_json = {"local_hostname": "0.0.0.0",
-                         "metadata_server": "http://0.0.0.0:8082/metadata",
                          "global_segment_size": 0,
                          "local_buffer_size":1073741824,
                          "protocol": "tcp",
                          "device_name":"",
-                         "master_server_address": "0.0.0.0:50052",
                          "replica_num": 1,
                          "fast_transfer": True,
                          "fast_transfer_buffer_size": 1}
+
+        metadata_server_port_index = self.mooncake_args.index("--http_metadata_server_port")
+        rpc_port_index = self.mooncake_args.index("--rpc_port")
+        metadata_server_port = self.mooncake_args[metadata_server_port_index].split("=")[-1]
+        rpc_port = self.mooncake_args[rpc_port_index+1]
+        consumer_json["metadata_server"] = producer_json["metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
+        consumer_json["master_server_address"] = producer_json["master_server_address"] = f"0.0.0.0:{rpc_port}"
 
         producer_index = self.e_serve_args.index("--ec-transfer-config")
         producer_path = json.loads(self.e_serve_args[producer_index + 1]).get("ec_connector_extra_config").get("ec_mooncake_config_file_path")
@@ -517,6 +521,7 @@ class RemoteEPDServer:
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
+        self.p = None
         if run_mode not in ["serve", "worker"]:
             raise ValueError(f"run mode must be serve or worker")
         if store_type not in ["mooncake", "storage"]:
@@ -569,7 +574,8 @@ class RemoteEPDServer:
         for proc in self._proc_list:
             self._kill_process_tree(proc.pid)
         print("vllm instance and api server is stoping")
-        self.p.shutdown()
+        if self.p is not None:
+            self.p.shutdown()
         print("proxy is stoping")
 
 
