@@ -263,9 +263,14 @@ class RemoteEPDServer:
                 "llm_service.entrypoints.worker", *self.pd_serve_args
             ]
 
+        if (self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
+            ) == "TCP") or (self.transfer_protocol is not None and self.transfer_protocol.upper() == "TCP"):
+            is_protocol_tcp = True
+        else:
+            is_protocol_tcp = False
+
         if "--proxy-addr" not in self.e_serve_args and "--proxy-addr" not in self.pd_serve_args:
-            if (self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
-            ) == "TCP") or self.transfer_protocol.upper() == "TCP":
+            if is_protocol_tcp:
                 self.e_serve_args = self.e_serve_args + [
                     "--proxy-addr", "127.0.0.1:37000"
                 ]
@@ -301,8 +306,7 @@ class RemoteEPDServer:
                 for i, e_serve_arg in enumerate(self.e_serve_args):
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     if "--worker-addr" not in e_serve_arg:
-                        if (self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP") or self.transfer_protocol.upper() == "TCP":
+                        if is_protocol_tcp:
                             e_serve_arg = e_serve_arg + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
                             ]
@@ -321,8 +325,7 @@ class RemoteEPDServer:
                     e_serve_args = copy.deepcopy(self.e_serve_args)
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     if "--worker-addr" not in e_serve_args:
-                        if (self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP") or self.transfer_protocol.upper() == "TCP":
+                        if is_protocol_tcp:
                             e_serve_args = e_serve_args + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
                             ]
@@ -348,8 +351,7 @@ class RemoteEPDServer:
                     else:
                         self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
                     if "--worker-addr" not in pd_serve_arg:
-                        if (self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP") or self.transfer_protocol.upper() == "TCP":
+                        if is_protocol_tcp:
                             pd_serve_arg = pd_serve_arg + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
                             ]
@@ -371,8 +373,7 @@ class RemoteEPDServer:
                     else:
                         self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
                     if "--worker-addr" not in pd_serve_args:
-                        if (self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP") or self.transfer_protocol.upper() == "TCP":
+                        if is_protocol_tcp:
                             pd_serve_args = pd_serve_args + [
                                 "--worker-addr", "127.0.0.1:3800" + str(i)
                             ]
