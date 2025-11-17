@@ -27,7 +27,9 @@ async def teardown():
     for dataset in DATASET_NAME:
         create_result_plot(result_file_names=[
             f"qwen2_5_vl_7b_{dataset}_PD_mix",
-            f"qwen2_5_vl_7b_{dataset}_1E2PD"
+            f"qwen2_5_vl_7b_{dataset}_1E2PD",
+            f"qwen2_5_vl_7b_{dataset}_1E3PD",
+            f"qwen2_5_vl_7b_{dataset}_1E1PD_sc"
         ],result_figure_prefix=dataset)
 
 
