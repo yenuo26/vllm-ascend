@@ -233,12 +233,12 @@ class AisbenchRunner:
         if self.task_type == "accuracy":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                self.request_conf, '--datasets', f'{dataset_conf}'
+                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom'
             ]
         if self.task_type == "performance":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                self.request_conf, '--datasets', f'{dataset_conf}', '--mode',
+                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom', '--mode',
                 'perf'
             ]
             if self.num_prompts:
@@ -246,7 +246,7 @@ class AisbenchRunner:
         if self.task_type == "pressure":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                self.request_conf, '--datasets', f'{dataset_conf}', '--mode',
+                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom', '--mode',
                 'perf', '--pressure'
             ]
         print(f"running aisbench cmd: {' '.join(aisbench_cmd)}")
@@ -269,7 +269,7 @@ class AisbenchRunner:
         self.dataset_conf = aisbench_config.get("dataset_conf")
         self.dataset_path = aisbench_config.get("dataset_path")
         self.num_prompts = aisbench_config.get("num_prompts")
-        self.max_out_len = aisbench_config["max_out_len"]
+        self.max_out_len = aisbench_config.get("max_out_len", None)
         self.batch_size = aisbench_config["batch_size"]
         self.request_rate = aisbench_config.get("request_rate", 0)
         self.temperature = aisbench_config.get("temperature")
@@ -284,6 +284,8 @@ class AisbenchRunner:
         self.result_line = None
         self._init_dataset_conf()
         self._init_request_conf()
+        if self.task_type == "pressure":
+            self._init_consts_conf()
         self._run_aisbench_task()
         self._wait_for_task()
         if verify:
@@ -366,34 +368,37 @@ class AisbenchRunner:
                 combined_df.to_csv(path, index=False)
 
     def _init_dataset_conf(self):
-        if self.task_type == "accuracy":
-            dataset_name = os.path.basename(self.dataset_path)
-            dataset_rename = self.DATASET_RENAME.get(dataset_name, "")
-            dst_dir = os.path.join(DATASET_DIR, dataset_rename)
-            command = ["cp", "-r", self.dataset_path, dst_dir]
-            subprocess.call(command)
-        if self.task_type == "performance" or self.task_type == "pressure":
-            conf_path = os.path.join(DATASET_CONF_DIR,
-                                     f'{self.dataset_conf}.py')
-            if self.dataset_conf.startswith("textvqa"):
-                self.dataset_path = os.path.join(self.dataset_path,
-                                                 "textvqa_val.jsonl")
-            with open(conf_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
-                             content)
-            conf_path_new = os.path.join(DATASET_CONF_DIR,
-                                         f'{self.dataset_conf}.py')
-            with open(conf_path_new, 'w', encoding='utf-8') as f:
-                f.write(content)
+        conf_path = os.path.join(DATASET_CONF_DIR,
+                                 f'{self.dataset_conf}.py')
+        if self.dataset_conf.startswith("textvqa"):
+            self.dataset_path = os.path.join(self.dataset_path,
+                                             "textvqa_val.jsonl")
+        with open(conf_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
+                         content)
+        if self.max_out_len is None:
+            if "max_tokens" not in content:
+                content = re.sub(
+                    r"output_column.*",
+                    "output_column='answer',\n            max_tokens_column = 'max_tokens'",
+                    content)
 
-        if self.task_type == "pressure":
-            with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
-                content = f.read()
-            content = re.sub(r'PRESSURE_TIME.*', f'PRESSURE_TIME = {self.pressure_time}',
-                             content)
-            with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
-                f.write(content)
+        conf_path_new = os.path.join(DATASET_CONF_DIR,
+                                     f'{self.dataset_conf}_custom.py')
+        with open(conf_path_new, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+
+
+
+    def _init_consts_conf(self):
+        with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
+            content = f.read()
+        content = re.sub(r'PRESSURE_TIME.*', f'PRESSURE_TIME = {self.pressure_time}',
+                         content)
+        with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
+            f.write(content)
 
     def _init_request_conf(self):
         conf_path = os.path.join(REQUEST_CONF_DIR, f'{self.request_conf}.py')
@@ -401,14 +406,14 @@ class AisbenchRunner:
             content = f.read()
         content = re.sub(r'model=.*', f'model="{self.model}",', content)
         content = re.sub(r'host_port.*', f'host_port = {self.port},', content)
-        content = re.sub(r'max_out_len.*',
-                         f'max_out_len = {self.max_out_len},', content)
+
         content = re.sub(r'batch_size.*', f'batch_size = {self.batch_size},',
                          content)
+        content = re.sub(r'path=.*', f'path="{self.model}",', content)
+        content = re.sub(r'request_rate.*',
+                         f'request_rate = {self.request_rate},', content)
+
         if self.task_type == "performance" or self.task_type == "pressure":
-            content = re.sub(r'path=.*', f'path="{self.model}",', content)
-            content = re.sub(r'request_rate.*',
-                             f'request_rate = {self.request_rate},', content)
             if "ignore_eos" not in content:
                 content = re.sub(
                     r"temperature.*",
@@ -418,23 +423,27 @@ class AisbenchRunner:
             if "ignore_eos" not in content:
                 content = re.sub(
                     r"temperature.*",
-                    "temperature = 0.6,\n            ignore_eos = False,",
+                    "temperature = 0,\n            ignore_eos = False,",
                     content)
-        if self.temperature:
+
+        if self.max_out_len is not None:
+            content = re.sub(r'max_out_len.*',
+                             f'max_out_len = {self.max_out_len},', content)
+        if self.temperature is not None:
             content = re.sub(r"temperature.*",
                              f"temperature = {self.temperature},", content)
-        if self.top_p:
+        if self.top_p is not None:
             content = re.sub(r"top_p.*", f"top_p = {self.top_p},", content)
-        if self.top_k:
+        if self.top_k is not None:
             content = re.sub(r"top_k.*", f"top_k = {self.top_k},", content)
-        if self.seed:
+        if self.seed is not None:
             content = re.sub(r"seed.*", f"seed = {self.seed},", content)
-        if self.repetition_penalty:
+        if self.repetition_penalty is not None:
             content = re.sub(
                 r"repetition_penalty.*",
                 f"repetition_penalty = {self.repetition_penalty},", content)
         conf_path_new = os.path.join(REQUEST_CONF_DIR,
-                                     f'{self.request_conf}.py')
+                                     f'{self.request_conf}_custom.py')
         with open(conf_path_new, 'w', encoding='utf-8') as f:
             f.write(content)
         print(f"The request config is\n {content}")

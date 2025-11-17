@@ -10,7 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, TypeVar, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
 
 import httpx
 import numpy as np
@@ -19,6 +19,7 @@ import psutil
 import pytest
 import requests
 import torch
+import importlib
 from PIL import Image
 from llm_service.apis.vllm.proxy import Proxy
 from llm_service.protocol.protocol import ServerType
@@ -65,6 +66,17 @@ PromptAudioInput = _PromptMultiModalInput[Tuple[np.ndarray, int]]
 PromptVideoInput = _PromptMultiModalInput[np.ndarray]
 
 _TEST_DIR = os.path.dirname(__file__)
+
+
+def get_package_location(package_name):
+    try:
+        distribution = importlib.metadata.distribution(package_name)
+        return str(distribution.locate_file(''))
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+VLLM_PATH = get_package_location("vllm")
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
@@ -167,15 +179,71 @@ class RemoteEPDServer:
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
+
         if self.enable_health_monitor:
             api_server_args.append("--enable-health-monitor")
+
+        if self.transfer_protocol:
+            api_server_args.append("--transfer-protocol")
+
+        print(f"proxy params is: {api_server_args}")
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
         self._run_server_new_session(api_server_args, self.env_dict,
                                      "[PRXOY] ")
 
-    def _start_vllm(self):
+    def _start_mooncake(self) -> None:
+        self._init_mooncake_config()
+        self.mooncake_args = ["mooncake_master", *self.mooncake_args]
+        self._run_server_new_session(self.mooncake_args, None, "[MOONCAKE] ")
+
+    def _init_mooncake_config(self) -> None:
+        producer_json = {
+            "local_hostname": "0.0.0.0",
+            "global_segment_size": 32212254720,
+            "local_buffer_size": 1073741824,
+            "protocol": "tcp",
+            "device_name": "",
+            "replica_num": 1,
+            "fast_transfer": True,
+            "fast_transfer_buffer_size": 1
+        }
+        consumer_json = {
+            "local_hostname": "0.0.0.0",
+            "global_segment_size": 0,
+            "local_buffer_size": 1073741824,
+            "protocol": "tcp",
+            "device_name": "",
+            "replica_num": 1,
+            "fast_transfer": True,
+            "fast_transfer_buffer_size": 1
+        }
+
+        for i, arg in enumerate(self.mooncake_args):
+            if "--http_metadata_server_port" in arg:
+                metadata_server_port = self.mooncake_args[i].split("=")[-1]
+                consumer_json["metadata_server"] = producer_json[
+                    "metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
+            if "--rpc_port" in arg:
+                rpc_port = self.mooncake_args[i + 1]
+                consumer_json["master_server_address"] = producer_json[
+                    "master_server_address"] = f"0.0.0.0:{rpc_port}"
+
+        producer_index = self.e_serve_args.index("--ec-transfer-config")
+        producer_path = json.loads(self.e_serve_args[producer_index + 1]).get(
+            "ec_connector_extra_config").get("ec_mooncake_config_file_path")
+        consumer_index = self.pd_serve_args.index("--ec-transfer-config")
+        consumer_path = json.loads(self.pd_serve_args[consumer_index + 1]).get(
+            "ec_connector_extra_config").get("ec_mooncake_config_file_path")
+        with open(producer_path, 'w', encoding='utf-8') as f:
+            json.dump(producer_json, f, ensure_ascii=False, indent=4)
+        print(f"The mooncake producer config is\n {producer_json}")
+        with open(consumer_path, 'w', encoding='utf-8') as f:
+            json.dump(consumer_json, f, ensure_ascii=False, indent=4)
+        print(f"The mooncake consumer config is\n {consumer_json}")
+
+    def _start_vllm_worker(self):
         if self.env_dict is None:
             self.env_dict = dict()
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
@@ -186,30 +254,39 @@ class RemoteEPDServer:
             self.pd_serve_args = shlex.split(self.pd_serve_args)
         else:
             self.e_serve_args = [
-                "taskset","-c", "0-96", "python", "-m", "llm_service.entrypoints.worker",
-                *self.e_serve_args
+                "taskset", "-c", "0-96", "python", "-m",
+                "llm_service.entrypoints.worker", *self.e_serve_args
             ]
             self.pd_serve_args = [
-                "taskset","-c", "0-96", "python", "-m", "llm_service.entrypoints.worker",
-                *self.pd_serve_args
+                "taskset", "-c", "0-96", "python", "-m",
+                "llm_service.entrypoints.worker", *self.pd_serve_args
             ]
 
         if "--proxy-addr" not in self.e_serve_args and "--proxy-addr" not in self.pd_serve_args:
-            # defaut proxy-addr is /tmp/proxy
-            self.e_serve_args = self.e_serve_args + [
-                "--proxy-addr", self._default_addr_prefix + "proxy"
-            ]
-            self.pd_serve_args = self.pd_serve_args + [
-                "--proxy-addr", self._default_addr_prefix + "proxy"
-            ]
-        else:
-            try:
-                index_e = self.e_serve_args.index("--proxy-addr")
-                index_pd = self.pd_serve_args.index("--proxy-addr")
-            except ValueError:
-                print("e instance proxy addr must be same as pd instance")
-                return
-            self.proxy_addr = self.e_serve_args[index_e + 1]
+            if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+            ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
+                self.e_serve_args = self.e_serve_args + [
+                    "--proxy-addr", "127.0.0.1:37000"
+                ]
+                self.pd_serve_args = self.pd_serve_args + [
+                    "--proxy-addr", "127.0.0.1:37000"
+                ]
+            else:
+                # defaut proxy-addr is /tmp/proxy
+                self.e_serve_args = self.e_serve_args + [
+                    "--proxy-addr", self._default_addr_prefix + "proxy"
+                ]
+                self.pd_serve_args = self.pd_serve_args + [
+                    "--proxy-addr", self._default_addr_prefix + "proxy"
+                ]
+
+        try:
+            index_e = self.e_serve_args.index("--proxy-addr")
+            index_pd = self.pd_serve_args.index("--proxy-addr")
+        except ValueError:
+            print("e instance proxy addr must be same as pd instance")
+            return
+        self.proxy_addr = self.e_serve_args[index_e + 1]
 
         if "--model" not in self.e_serve_args or "--model" not in self.pd_serve_args:
             raise ValueError("must carry --model")
@@ -220,62 +297,188 @@ class RemoteEPDServer:
 
         if isinstance(self.e_serve_args, list):
             if all(isinstance(item, list) for item in self.e_serve_args):
-                #TODO 处理多维数组
-                pass
-            else:
-                if "--worker-addr" in self.e_serve_args:
-                    index_e = self.e_serve_args.index("--worker-addr")
-                    self.e_addr_list.append(self.e_serve_args[index_e + 1])
-                else:
-                    for i in range(self.e_num):
-                        if self.is_e_same_card:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = "0"
+                for i, e_serve_arg in enumerate(self.e_serve_args):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    if "--worker-addr" not in e_serve_arg:
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
+                            e_serve_arg = e_serve_arg + [
+                                "--worker-addr", "127.0.0.1:3900" + str(i)
+                            ]
                         else:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                        # defaut encode-addr is /tmp/encode_{i}
-                        e_serve_args = copy.deepcopy(self.e_serve_args)
-                        e_serve_args = e_serve_args + [
-                            "--worker-addr",
-                            self._default_addr_prefix + "encoder_" + str(i)
-                        ]
-                        self.e_addr_list.append(self._default_addr_prefix +
-                                                "encoder_" + str(i))
+                            # defaut encode-addr is /tmp/encode_{i}
+                            e_serve_arg = e_serve_arg + [
+                                "--worker-addr",
+                                self._default_addr_prefix + "encoder_" + str(i)
+                            ]
+                    index_e = e_serve_arg.index("--worker-addr")
+                    self.e_addr_list.append(e_serve_arg[index_e + 1])
+                    self._run_server(e_serve_arg, self.env_dict,
+                                     f"[ENCODE_{i}] ")
+            else:
+                for i in range(self.e_num):
+                    e_serve_args = copy.deepcopy(self.e_serve_args)
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    if "--worker-addr" not in e_serve_args:
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
+                            e_serve_args = e_serve_args + [
+                                "--worker-addr", "127.0.0.1:3900" + str(i)
+                            ]
+                        else:
+                            # defaut encode-addr is /tmp/encode_{i}
+                            e_serve_args = e_serve_args + [
+                                "--worker-addr",
+                                self._default_addr_prefix + "encoder_" + str(i)
+                            ]
+                    index_e = e_serve_args.index("--worker-addr")
+                    self.e_addr_list.append(e_serve_args[index_e + 1])
+                    self._run_server(e_serve_args, self.env_dict,
+                                     f"[ENCODE_{i}] ")
 
-                        self._run_server(e_serve_args, self.env_dict,
-                                         f"[ENCODE_{i}] ")
         else:
             raise RuntimeError("e_serve_args must be a list")
 
         if isinstance(self.pd_serve_args, list):
             if all(isinstance(item, list) for item in self.pd_serve_args):
-                # TODO 处理多维数组
-                pass
-            else:
-                if "--worker-addr" in self.pd_serve_args:
-                    index_pd = self.pd_serve_args.index("--worker-addr")
-                    self.pd_addr_list.append(self.pd_serve_args[index_pd + 1])
-                else:
-                    for i in range(self.pd_num):
-                        if self.is_epd_same_card:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                for i, pd_serve_arg in enumerate(self.pd_serve_args):
+                    if self.is_epd_same_card:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    else:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
+                    if "--worker-addr" not in pd_serve_arg:
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
+                            pd_serve_arg = pd_serve_arg + [
+                                "--worker-addr", "127.0.0.1:3900" + str(i)
+                            ]
                         else:
-                            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
-                                i + self.e_num)
-                        # defaut worker-addr is /tmp/pd_{i}
-                        pd_serve_args = copy.deepcopy(self.pd_serve_args)
-                        pd_serve_args = pd_serve_args + [
-                            "--worker-addr",
-                            self._default_addr_prefix + "pd_" + str(i)
-                        ]
-                        self.pd_addr_list.append(self._default_addr_prefix +
-                                                 "pd_" + str(i))
+                            # defaut pd-addr is /tmp/pd_{i}
+                            pd_serve_arg = pd_serve_arg + [
+                                "--worker-addr",
+                                self._default_addr_prefix + "pd_" + str(i)
+                            ]
+                    index_pd = pd_serve_arg.index("--worker-addr")
+                    self.pd_addr_list.append(pd_serve_arg[index_pd + 1])
+                    self._run_server(pd_serve_arg, self.env_dict,
+                                     f"[PD_{i}] ")
+            else:
+                for i in range(self.pd_num):
+                    pd_serve_args = copy.deepcopy(self.pd_serve_args)
+                    if self.is_epd_same_card:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    else:
+                        self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i+self.e_num)
+                    if "--worker-addr" not in pd_serve_args:
+                        if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
+                            pd_serve_args = pd_serve_args + [
+                                "--worker-addr", "127.0.0.1:3800" + str(i)
+                            ]
+                        else:
+                            # defaut encode-addr is /tmp/pd_{i}
+                            pd_serve_args = pd_serve_args + [
+                                "--worker-addr",
+                                self._default_addr_prefix + "pd_" + str(i)
+                            ]
+                    index_pd = pd_serve_args.index("--worker-addr")
+                    self.pd_addr_list.append(pd_serve_args[index_pd + 1])
+                    self._run_server(pd_serve_args, self.env_dict,
+                                     f"[PD_{i}] ")
 
-                        self._run_server(pd_serve_args, self.env_dict,
-                                         f"[PD_{i}] ")
         else:
             raise RuntimeError("pd_serve_args must be a list")
 
-    async def _wait_for_vllm_server(self, max_wait_seconds) -> None:
+    def _start_zmq_proxy(self):
+        if self.transfer_protocol is not None:
+            p = Proxy(proxy_addr=self.proxy_addr,
+                      encode_addr_list=self.e_addr_list,
+                      pd_addr_list=self.pd_addr_list,
+                      enable_health_monitor=self.enable_health_monitor,
+                      transfer_protocol=self.transfer_protocol,
+                      model_name=self.model)
+        else:
+            p = Proxy(proxy_addr=self.proxy_addr,
+                      encode_addr_list=self.e_addr_list,
+                      pd_addr_list=self.pd_addr_list,
+                      enable_health_monitor=self.enable_health_monitor,
+                      model_name=self.model)
+
+        return p
+
+    def _start_disagg_proxy(self):
+        proxy_args = [
+            "--host", "127.0.0.1", "--port",
+            str(self.api_server_port), "--encode-servers-urls",
+            ",".join(self.e_addr_list), "--decode-servers-urls",
+            ",".join(self.pd_addr_list), "--prefill-servers-urls", "disable"
+        ]
+        proxy_path = os.path.join(
+            VLLM_PATH,
+            "examples/online_serving/disaggregated_encoder/mooncake_connector/disagg_epd_proxy.py"
+        )
+        proxy_args = ["python", proxy_path, *proxy_args]
+        self._run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ")
+
+    def _start_vllm_serve(self):
+        if self.env_dict is None:
+            self.env_dict = dict()
+        self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
+        self.env_dict['VLLM_USE_V1'] = "1"
+        if isinstance(self.e_serve_args, str):
+            self.e_serve_args = shlex.split(self.e_serve_args)
+        if isinstance(self.pd_serve_args, str):
+            self.pd_serve_args = shlex.split(self.pd_serve_args)
+        else:
+            self.e_serve_args = [
+                "taskset", "-c", "0-96", "vllm", "serve", *self.e_serve_args
+            ]
+            self.pd_serve_args = [
+                "taskset", "-c", "0-96", "vllm", "serve", *self.pd_serve_args
+            ]
+
+        if isinstance(self.e_serve_args, list):
+            if all(isinstance(item, list) for item in self.e_serve_args):
+                for i, e_serve_arg in enumerate(self.e_serve_args):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    index_e = e_serve_arg.index("--port")
+                    self.e_addr_list.append(
+                        f"http://localhost:{e_serve_arg[index_e + 1]}")
+                    self._run_server(e_serve_arg, self.env_dict,
+                                     f"[ENCODE_{i}] ")
+            else:
+                for i in range(self.e_num):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    e_serve_arg = copy.deepcopy(self.e_serve_args)
+                    index_e = e_serve_arg.index("--port")
+                    self.e_addr_list.append(
+                        f"http://localhost:{e_serve_arg[index_e + 1]}")
+                    self._run_server(e_serve_arg, self.env_dict,
+                                     f"[ENCODE_{i}] ")
+
+        else:
+            raise RuntimeError("e_serve_args must be a list")
+
+        if isinstance(self.pd_serve_args, list):
+            if all(isinstance(item, list) for item in self.pd_serve_args):
+                for i, pd_serve_arg in enumerate(self.pd_serve_args):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    index_pd = pd_serve_arg.index("--port")
+                    self.pd_addr_list.append(
+                        f"http://localhost:{pd_serve_arg[index_pd + 1]}")
+                    self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
+            else:
+                for i in range(self.pd_num):
+                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+                    pd_serve_arg = copy.deepcopy(self.pd_serve_args)
+                    index_pd = pd_serve_arg.index("--port")
+                    self.pd_addr_list.append(
+                        f"http://localhost:{pd_serve_arg[index_pd + 1]}")
+                    self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
+        else:
+            raise RuntimeError("pd_serve_args must be a list")
+
+    async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
         sleep_times = 10
         timeout_times = 3
         start_time = time.time()
@@ -339,9 +542,9 @@ class RemoteEPDServer:
         except psutil.NoSuchProcess:
             pass
 
-    async def _wait_for_api_server(self,
-                                   timeout: int = 300,
-                                   check_interval: float = 0.5) -> bool:
+    async def _wait_for_server(self,
+                               timeout: int = 300,
+                               check_interval: float = 0.5) -> bool:
 
         base_url = f"http://127.0.0.1:{self.api_server_port}"
         health_url = f"{base_url}/health"
@@ -371,32 +574,56 @@ class RemoteEPDServer:
         return False
 
     def __init__(self,
-                 start_mode: Optional[str],
+                 run_mode: Literal["serve", "worker"],
+                 store_type: Literal["mooncake", "storage"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
                  e_serve_args: Union[list[str], str],
                  pd_serve_args: Union[list[str], str],
+                 proxy_type: Literal["disagg_proxy", "proxy",
+                                     "api_server"] = None,
+                 mooncake_args: Union[list[str], str] = None,
+                 proxy_args: Union[list[str], str] = None,
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
-                 is_e_same_card: Optional[bool] = False,
-                 enable_health_monitor: Optional[bool] = False,
                  env_dict: Optional[dict[str, str]] = None) -> None:
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
-        self.start_mode = start_mode
+        self.p = None
+        if run_mode not in ["serve", "worker"]:
+            raise ValueError(f"run mode must be serve or worker")
+        if store_type not in ["mooncake", "storage"]:
+            raise ValueError(f"store type must be mooncake or storage")
+        if proxy_type is not None and proxy_type not in [
+                "disagg_proxy", "proxy", "api_server"
+        ]:
+            raise ValueError(
+                f"proxy type must be disagg_proxy, proxy or api_server")
+        self.run_mode = run_mode
+        self.store_type = store_type
+        self.proxy_type = proxy_type
         self.is_image_load = is_image_load
         self.is_epd_same_card = is_epd_same_card
-        self.is_e_same_card = is_e_same_card
         self.api_server_port = api_server_port
-        self.enable_health_monitor = enable_health_monitor
         self.e_addr_list = list()
         self.pd_addr_list = list()
 
         self.model = str()
         self.e_serve_args = e_serve_args
         self.pd_serve_args = pd_serve_args
+        self.mooncake_args = mooncake_args
+        self.proxy_args = proxy_args
+        self.enable_health_monitor = False
+        self.transfer_protocol = None
+        if proxy_args is not None:
+            for i, arg in enumerate(proxy_args):
+                if "--enable-health-monitor" in arg:
+                    self.enable_health_monitor = True
+                if "--transfer-protocol" in arg:
+                    self.transfer_protocol = proxy_args[i + 1]
+
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = self._default_addr_prefix + "proxy"
@@ -404,19 +631,24 @@ class RemoteEPDServer:
     async def __aenter__(self):
         # start with
         max_wait_seconds = 1800
-        self._start_vllm()
-        self.p = Proxy(proxy_addr=self.proxy_addr,
-                       encode_addr_list=self.e_addr_list,
-                       pd_addr_list=self.pd_addr_list,
-                       enable_health_monitor=self.enable_health_monitor,
-                       model_name=self.model)
-        await self._wait_for_vllm_server(max_wait_seconds=max_wait_seconds)
-        if self.start_mode == "http":
+        if self.store_type == "mooncake":
+            self._start_mooncake()
+        if self.run_mode == "worker":
+            self._start_vllm_worker()
+            self.p = self._start_zmq_proxy()
+            await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
+        elif self.run_mode == "serve":
+            self._start_vllm_serve()
+        if self.proxy_type is None:
+            self.p.shutdown()
+        elif self.proxy_type == "disagg_proxy":
+            self._start_disagg_proxy()
+            await self._wait_for_server()
+        elif self.proxy_type == "api_server":
             self.p.shutdown()
             self._start_api_server()
-            await self._wait_for_api_server()
-        elif self.start_mode == "api":
-            self.p.shutdown()
+            await self._wait_for_server()
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -424,7 +656,8 @@ class RemoteEPDServer:
         for proc in self._proc_list:
             self._kill_process_tree(proc.pid)
         print("vllm instance and api server is stoping")
-        self.p.shutdown()
+        if self.p is not None:
+            self.p.shutdown()
         print("proxy is stoping")
 
 
