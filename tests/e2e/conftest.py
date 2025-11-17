@@ -214,12 +214,15 @@ class RemoteEPDServer:
                          "fast_transfer": True,
                          "fast_transfer_buffer_size": 1}
 
-        metadata_server_port_index = self.mooncake_args.index("--http_metadata_server_port")
-        rpc_port_index = self.mooncake_args.index("--rpc_port")
-        metadata_server_port = self.mooncake_args[metadata_server_port_index].split("=")[-1]
-        rpc_port = self.mooncake_args[rpc_port_index+1]
-        consumer_json["metadata_server"] = producer_json["metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
-        consumer_json["master_server_address"] = producer_json["master_server_address"] = f"0.0.0.0:{rpc_port}"
+        for i, arg in enumerate(self.mooncake_args):
+            if "--http_metadata_server_port" in arg:
+                metadata_server_port = self.mooncake_args[i].split("=")[-1]
+                consumer_json["metadata_server"] = producer_json[
+                    "metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
+            if "--rpc_port" in arg:
+                rpc_port = self.mooncake_args[i + 1]
+                consumer_json["master_server_address"] = producer_json["master_server_address"] = f"0.0.0.0:{rpc_port}"
+
 
         producer_index = self.e_serve_args.index("--ec-transfer-config")
         producer_path = json.loads(self.e_serve_args[producer_index + 1]).get("ec_connector_extra_config").get("ec_mooncake_config_file_path")
