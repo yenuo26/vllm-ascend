@@ -262,7 +262,7 @@ async def test_1e2pd_mooncake_tcp_002(model: str, tp_size: int, dataset_name: st
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -273,7 +273,7 @@ async def test_1e2pd_mooncake_tcp_002(model: str, tp_size: int, dataset_name: st
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
