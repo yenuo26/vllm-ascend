@@ -311,13 +311,13 @@ class RemoteEPDServer:
                 if "--worker-addr" not in e_serve_arg:
                     if is_protocol_tcp:
                         e_serve_arg = e_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3900" + str(i)
+                            "--worker-addr", "127.0.0.1:3800" + str(i)
                         ]
                     elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
                             e_serve_arg.index("--transfer-protocol") +
                             1].upper() == "TCP":
                         e_serve_arg = e_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3900" + str(i)
+                            "--worker-addr", "127.0.0.1:3800" + str(i)
                         ]
                     else:
                         # defaut encode-addr is /tmp/encode_{i}
