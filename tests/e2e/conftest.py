@@ -300,8 +300,8 @@ class RemoteEPDServer:
                 for i, e_serve_arg in enumerate(self.e_serve_args):
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     if "--worker-addr" not in e_serve_arg:
-                        if self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP" or self.transfer_protocol.upper() == "TCP":
+                        if self.env_dict["TRANSFER_PROTOCOL"] is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                             e_serve_arg = e_serve_arg + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
                             ]
@@ -320,8 +320,8 @@ class RemoteEPDServer:
                     e_serve_args = copy.deepcopy(self.e_serve_args)
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                     if "--worker-addr" not in e_serve_args:
-                        if self.env_dict["TRANSFER_PROTOCOL"].upper(
-                        ) == "TCP" or self.transfer_protocol.upper() == "TCP":
+                        if self.env_dict["TRANSFER_PROTOCOL"] is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+                        ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                             e_serve_args = e_serve_args + [
                                 "--worker-addr", "127.0.0.1:3900" + str(i)
                             ]
@@ -397,6 +397,7 @@ class RemoteEPDServer:
                       pd_addr_list=self.pd_addr_list,
                       enable_health_monitor=self.enable_health_monitor,
                       model_name=self.model)
+
         return p
 
     def _start_disagg_proxy(self):
