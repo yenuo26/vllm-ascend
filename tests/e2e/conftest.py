@@ -266,10 +266,10 @@ class RemoteEPDServer:
             if self.env_dict["TRANSFER_PROTOCOL"].upper(
             ) == "TCP" or self.transfer_protocol.upper() == "TCP":
                 self.e_serve_args = self.e_serve_args + [
-                    "--proxy-addr", "127.0.0.1:39000"
+                    "--proxy-addr", "127.0.0.1:37000"
                 ]
                 self.pd_serve_args = self.pd_serve_args + [
-                    "--proxy-addr", "127.0.0.1:39000"
+                    "--proxy-addr", "127.0.0.1:37000"
                 ]
             else:
                 # defaut proxy-addr is /tmp/proxy
