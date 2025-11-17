@@ -263,8 +263,8 @@ class RemoteEPDServer:
             ]
 
         if "--proxy-addr" not in self.e_serve_args and "--proxy-addr" not in self.pd_serve_args:
-            if self.env_dict.get("TRANSFER_PROTOCOL") is not None and self.env_dict["TRANSFER_PROTOCOL"].upper(
-            ) == "TCP" or self.transfer_protocol.upper() == "TCP":
+            if self.env_dict.get("TRANSFER_PROTOCOL") is not None and (self.env_dict["TRANSFER_PROTOCOL"].upper(
+            ) == "TCP" or self.transfer_protocol.upper() == "TCP"):
                 self.e_serve_args = self.e_serve_args + [
                     "--proxy-addr", "127.0.0.1:37000"
                 ]
