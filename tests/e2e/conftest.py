@@ -384,12 +384,19 @@ class RemoteEPDServer:
             raise RuntimeError("pd_serve_args must be a list")
 
     def _start_zmq_proxy(self):
-        p = Proxy(proxy_addr=self.proxy_addr,
-                  encode_addr_list=self.e_addr_list,
-                  pd_addr_list=self.pd_addr_list,
-                  enable_health_monitor=self.enable_health_monitor,
-                  transfer_protocol=self.transfer_protocol,
-                  model_name=self.model)
+        if self.transfer_protocol is not None:
+            p = Proxy(proxy_addr=self.proxy_addr,
+                      encode_addr_list=self.e_addr_list,
+                      pd_addr_list=self.pd_addr_list,
+                      enable_health_monitor=self.enable_health_monitor,
+                      transfer_protocol=self.transfer_protocol,
+                      model_name=self.model)
+        else:
+            p = Proxy(proxy_addr=self.proxy_addr,
+                      encode_addr_list=self.e_addr_list,
+                      pd_addr_list=self.pd_addr_list,
+                      enable_health_monitor=self.enable_health_monitor,
+                      model_name=self.model)
         return p
 
     def _start_disagg_proxy(self):
