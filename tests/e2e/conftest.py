@@ -390,6 +390,8 @@ class RemoteEPDServer:
             raise RuntimeError("pd_serve_args must be a list")
 
     def _start_zmq_proxy(self):
+        for key, value in self.env_dict.items():
+            os.environ[key] = value
         if self.transfer_protocol is not None:
             p = Proxy(proxy_addr=self.proxy_addr,
                       encode_addr_list=self.e_addr_list,
