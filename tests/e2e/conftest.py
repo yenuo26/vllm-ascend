@@ -271,7 +271,7 @@ class RemoteEPDServer:
             is_protocol_tcp = False
 
         if isinstance(self.e_serve_args, list):
-            e_serve_args_list = ()
+            e_serve_args_list = list()
             if not all(isinstance(item, list) for item in self.e_serve_args):
                 for i in range(self.e_num):
                     e_serve_args_list.append(copy.deepcopy(self.e_serve_args))
@@ -279,6 +279,12 @@ class RemoteEPDServer:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                 if "--proxy-addr" not in e_serve_arg:
                     if is_protocol_tcp:
+                        e_serve_arg = e_serve_arg + [
+                            "--proxy-addr", "127.0.0.1:37000"
+                        ]
+                    elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
+                            e_serve_arg.index("--transfer-protocol") +
+                            1].upper() == "TCP":
                         e_serve_arg = e_serve_arg + [
                             "--proxy-addr", "127.0.0.1:37000"
                         ]
@@ -326,13 +332,13 @@ class RemoteEPDServer:
             raise RuntimeError("e_serve_args must be a list")
 
         if isinstance(self.pd_serve_args, list):
-            pd_serve_args_list = ()
+            pd_serve_args_list = list()
             if not all(isinstance(item, list) for item in self.pd_serve_args):
                 for i in range(self.pd_num):
                     pd_serve_args_list.append(copy.deepcopy(
                         self.pd_serve_args))
 
-            for i, pd_serve_arg in enumerate(self.pd_serve_args):
+            for i, pd_serve_arg in enumerate(pd_serve_args_list):
                 if self.is_epd_same_card:
                     self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
                 else:
@@ -348,7 +354,7 @@ class RemoteEPDServer:
                             pd_serve_arg.index("--transfer-protocol") +
                             1].upper() == "TCP":
                         pd_serve_arg = pd_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3700" + str(i)
+                            "--proxy-addr", "127.0.0.1:37000"
                         ]
                     else:
                         # defaut proxy-addr is /tmp/proxy
@@ -370,6 +376,12 @@ class RemoteEPDServer:
 
                 if "--worker-addr" not in pd_serve_arg:
                     if is_protocol_tcp:
+                        pd_serve_arg = pd_serve_arg + [
+                            "--worker-addr", "127.0.0.1:3900" + str(i)
+                        ]
+                    elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
+                            pd_serve_arg.index("--transfer-protocol") +
+                            1].upper() == "TCP":
                         pd_serve_arg = pd_serve_arg + [
                             "--worker-addr", "127.0.0.1:3900" + str(i)
                         ]
@@ -609,7 +621,7 @@ class RemoteEPDServer:
         self.e_addr_list = list()
         self.pd_addr_list = list()
 
-        self.model = str()
+        self.model = None
         self.e_serve_args = e_serve_args
         self.pd_serve_args = pd_serve_args
         self.mooncake_args = mooncake_args
@@ -625,7 +637,7 @@ class RemoteEPDServer:
 
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
-        self.proxy_addr = self._default_addr_prefix + "proxy"
+        self.proxy_addr = None
 
     async def __aenter__(self):
         # start with
