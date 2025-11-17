@@ -185,6 +185,7 @@ class RemoteEPDServer:
 
         if self.transfer_protocol:
             api_server_args.append("--transfer-protocol")
+            api_server_args.append(self.transfer_protocol)
 
         print(f"proxy params is: {api_server_args}")
         api_server_path = Path(
