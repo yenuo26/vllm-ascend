@@ -529,8 +529,8 @@ class RemoteEPDServer:
             raise ValueError(f"run mode must be serve or worker")
         if store_type not in ["mooncake", "storage"]:
             raise ValueError(f"store type must be mooncake or storage")
-        if proxy_type is not None and proxy_type not in ["disagg_proxy", "proxy"]:
-            raise ValueError(f"proxy type must be disagg_proxy or proxy")
+        if proxy_type is not None and proxy_type not in ["disagg_proxy", "proxy", "api_server"]:
+            raise ValueError(f"proxy type must be disagg_proxy, proxy or api_server")
         self.run_mode = run_mode
         self.store_type = store_type
         self.proxy_type = proxy_type
