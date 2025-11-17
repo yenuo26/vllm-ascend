@@ -15,37 +15,41 @@ MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
 
 TENSOR_PARALLELS = [1]
+#DATASET_NAME = ["simulate_truth"]
+DATASET_NAME = ["image_2", "image_3", "image_4"]
 
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="session")
 async def teardown():
     yield
-    create_result_plot(result_file_names=[
-        "qwen2_5_vl_7b_perf_custom_PD_merge",
-        "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
-        "qwen2_5_vl_7b_perf_custom_1E2PD", "qwen2_5_vl_7b_perf_custom_1E1PD"
-    ])
+    for dataset in DATASET_NAME:
+        create_result_plot(result_file_names=[
+            f"qwen2_5_vl_7b_{dataset}_PD_mix",
+            f"qwen2_5_vl_7b_{dataset}_1E1PD_sc",
+            f"qwen2_5_vl_7b_{dataset}_1E2PD", f"qwen2_5_vl_7b_{dataset}_1E1PD"
+        ],result_figure_prefix=dataset)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_pd_merge_001(model: str, tp_size: int, teardown):
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown):
     api_port = 10001
     vllm_server_args = [
         "--port",
         str(api_port), "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "100", "--enforce-eager",
+        str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "100", "--enforce-eager",
         "--gpu-memory-utilization", "0.95"
     ]
     warmup_cases = [{
         "case_type":
         "performance",
         "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, dataset_name),
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
@@ -70,10 +74,10 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
         77,
     }]
 
-    request_rate = [0.1, 0.28, 0.56, 0.84, 1.12, 1.4]
+    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
     case_dict = {
         "case_type": "performance",
-        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "num_prompts": 200,
@@ -86,7 +90,7 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": "qwen2_5_vl_7b_perf_custom_PD_merge",
+        "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_PD_mix",
         "threshold": 0.97
     }
     aisbench_cases = []
@@ -116,12 +120,13 @@ async def test_pd_merge_001(model: str, tp_size: int, teardown):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
-        "30000", "--max-num-seqs", "1", "--enforce-eager",
+        str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -129,10 +134,10 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
     ]
 
     pd_server_args = [
-        "--model", model, "--max-model-len", "20000",
-        "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
+        "--model", model, "--max-model-len", "10000",
+        "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
         str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
-        "0.98", "--enforce-eager", "--ec-transfer-config",
+        "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
@@ -142,7 +147,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
         "case_type":
         "performance",
         "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, dataset_name),
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
@@ -167,10 +172,10 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
         77,
     }]
 
-    request_rate = [0.1, 0.28, 0.56, 0.84, 1.12, 1.4]
+    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
     case_dict = {
         "case_type": "performance",
-        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "num_prompts": 200,
@@ -183,7 +188,7 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E1PD_merge",
+        "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E1PD_sc",
         "threshold": 0.97
     }
     aisbench_cases = []
@@ -216,23 +221,23 @@ async def test_1e1pd_merge_001(model: str, tp_size: int, teardown):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e1pd_001(model: str, tp_size: int, teardown):
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e1pd_001(model: str, tp_size: int, dataset_name: str, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
-        "30000", "--max-num-seqs", "1", "--enforce-eager",
+        str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
-
     pd_server_args = [
-        "--model", model, "--max-model-len", "20000",
-        "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
+        "--model", model, "--max-model-len", "10000",
+        "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
         str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
-        "0.98", "--enforce-eager", "--ec-transfer-config",
+        "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
@@ -242,7 +247,7 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         "case_type":
         "performance",
         "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, dataset_name),
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
@@ -267,10 +272,10 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         77,
     }]
 
-    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68]
+    request_rate = [0.56, 1.12, 1.68, 2.24, 2.8, 3.36]
     case_dict = {
         "case_type": "performance",
-        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "num_prompts": 200,
@@ -283,7 +288,7 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E1PD",
+        "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E1PD",
         "threshold": 0.97
     }
     aisbench_cases = []
@@ -308,18 +313,20 @@ async def test_1e1pd_001(model: str, tp_size: int, teardown):
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=2,
                            aisbench_cases=aisbench_cases)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-async def test_1e2pd_001(model: str, tp_size: int, teardown):
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
-        "30000", "--max-num-seqs", "1", "--enforce-eager",
+        str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -327,8 +334,8 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
     ]
 
     pd_server_args = [
-        "--model", model, "--max-model-len", "20000",
-        "--max-num-batched-tokens", "30000", "--tensor-parallel-size",
+        "--model", model, "--max-model-len", "10000",
+        "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
         str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
         "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
@@ -340,7 +347,7 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
         "case_type":
         "performance",
         "dataset_path":
-        os.path.join(DATASET_PATH, "simulate_truth"),
+        os.path.join(DATASET_PATH, dataset_name),
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
@@ -364,10 +371,10 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
         "seed":
         77,
     }]
-    request_rate = [0.28, 0.56, 0.84, 1.12, 1.4, 1.68, 1.96, 2.24]
+    request_rate = [0.84, 1.68, 2.52, 3.36, 4.2, 5.04]
     case_dict = {
         "case_type": "performance",
-        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen",
         "num_prompts": 200,
@@ -380,7 +387,7 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": "qwen2_5_vl_7b_perf_custom_1E2PD",
+        "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E2PD",
         "threshold": 0.97
     }
     aisbench_cases = []
@@ -405,4 +412,5 @@ async def test_1e2pd_001(model: str, tp_size: int, teardown):
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=3,
                            aisbench_cases=aisbench_cases)
