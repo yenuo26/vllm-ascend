@@ -225,7 +225,7 @@ def create_ttft_plot(result_file_names,
     try:
         plt.figure(figsize=(14, 8))
         bar_width = 0.1
-        fig, axes = plt.subplots(2, 3, figsize=(20, 20))
+        fig, axes = plt.subplots(2, 3, figsize=(18, 18))
         axes_indexs = [
             axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
         ]
@@ -243,10 +243,10 @@ def create_ttft_plot(result_file_names,
                                width=bar_width,
                                color=color,
                                alpha=0.7,label=file_name)
-                for bar in bars:
+                for value, bar in zip(file_data[metrics_name], bars):
                     height = bar.get_height()
                     axes_obj.text(bar.get_x() + bar.get_width() / 2., height + 0.5,
-                             f"{file_data[metrics_name]}",
+                             f"{value}",
                              ha='center', va='bottom', fontsize=12, fontweight='bold')
                 axes_obj.set_xticklabels(file_data['index'])
 
