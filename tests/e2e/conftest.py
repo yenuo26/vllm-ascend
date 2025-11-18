@@ -24,8 +24,8 @@ import torch
 import importlib
 from PIL import Image
 from datetime import datetime
-from llm_service.apis.vllm.proxy import Proxy
-from llm_service.protocol.protocol import ServerType
+from lm_service.apis.vllm.proxy import Proxy
+from lm_service.protocol.protocol import ServerType
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
@@ -303,7 +303,7 @@ class RemoteEPDServer:
 
         serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
-                "llm_service.entrypoints.worker"
+                "lm_service.entrypoints.worker"
             ]
 
         if self.env_dict.get(

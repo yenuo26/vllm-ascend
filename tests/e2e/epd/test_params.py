@@ -6,7 +6,7 @@ from PIL import Image
 import pytest
 import pytest_asyncio
 from vllm import SamplingParams
-from llm_service.apis.vllm.proxy import Proxy
+from lm_service.apis.vllm.proxy import Proxy
 from vllm.multimodal.image import convert_image_mode
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config

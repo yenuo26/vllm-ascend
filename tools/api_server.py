@@ -10,14 +10,14 @@ import msgspec
 import json
 import numpy as np
 import uvicorn
-import llm_service.envs as llm_service_envs
+import lm_service.envs as lm_service_envs
 import vllm.envs as envs
 
 from PIL import Image
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from llm_service.apis.vllm.proxy import Proxy
+from lm_service.apis.vllm.proxy import Proxy
 
 from vllm.multimodal.image import convert_image_mode
 from vllm.sampling_params import SamplingParams
@@ -140,7 +140,7 @@ async def chat_completions(request: Request):
                     yield f"data: {msgspec.json.encode(chunk).decode()}\n\n"
                 # End of stream
                 yield "data: [DONE]\n\n"
-                if llm_service_envs.TIMECOUNT_ENABLED:
+                if lm_service_envs.TIMECOUNT_ENABLED:
                     asyncio.create_task(app.state.proxy.log_metrics())
 
             return StreamingResponse(stream_generator(),
@@ -184,7 +184,7 @@ async def chat_completions(request: Request):
                         "total_tokens": total_tokens
                     }
                 }
-                if llm_service_envs.TIMECOUNT_ENABLED:
+                if lm_service_envs.TIMECOUNT_ENABLED:
                     await asyncio.sleep(envs.VLLM_LOG_STATS_INTERVAL)
                     await app.state.proxy.log_metrics()
                 return JSONResponse(content=response)
