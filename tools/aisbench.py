@@ -37,11 +37,15 @@ def get_package_location(package_name):
         return None
 
 
-def create_result_plot(result_file_names, result_figure_prefix="test_perf_result"):
+def create_result_plot(result_file_names,
+                       result_figure_prefix="test_perf_result"):
     plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
-    color_map = {name: colors[i % len(colors)] for i, name in enumerate(result_file_names)}
+    color_map = {
+        name: colors[i % len(colors)]
+        for i, name in enumerate(result_file_names)
+    }
 
     try:
         fig, axes = plt.subplots(2, 3, figsize=(18, 18))
@@ -59,7 +63,6 @@ def create_result_plot(result_file_names, result_figure_prefix="test_perf_result
 
         axes[1, 1].set_title('Total Token Throughput/Card')
         axes[1, 1].set_ylabel('Total Token Throughput/Card(token/s)')
-
 
         for i, name in enumerate(result_file_names):
             df = pd.read_csv(f"./{name}.csv")
@@ -201,54 +204,57 @@ def create_result_plot(result_file_names, result_figure_prefix="test_perf_result
             plt.savefig(f'./{result_figure_prefix}_{today}.png',
                         dpi=200,
                         bbox_inches='tight')
-            print(f"Result figure is locate in {result_figure_prefix}_{today}.png")
+            print(
+                f"Result figure is locate in {result_figure_prefix}_{today}.png"
+            )
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
 
-def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result"):
+
+def create_ttft_plot(result_file_names,
+                     result_figure_prefix="test_perf_result"):
     plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
-    color_map = {name: colors[i % len(colors)] for i, name in enumerate(result_file_names)}
+    color_map = {
+        name: colors[i % len(colors)]
+        for i, name in enumerate(result_file_names)
+    }
 
     try:
         plt.figure(figsize=(14, 8))
         bar_width = 0.1
         fig, axes = plt.subplots(2, 3, figsize=(18, 18))
-        axes[0, 0].set_title('e2e')
-
-        axes[0, 1].set_title('queue')
-
-        axes[0, 2].set_title('prefill')
-
-        axes[1, 0].set_title('output_token')
-
-        axes[1, 1].set_title('first_token')
-
+        axes_indexs = [
+            axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
+        ]
+        metrics_names = ['e2e', 'queue', 'prefill', 'output_token', 'first_token']
+        for axes_obj, metrics_name in zip(axes_indexs, metrics_names):
+            axes_obj.set_title(metrics_name)
 
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
             x_pos = np.arange(len(file_data)) + i * bar_width
             color = color_map[file_name]
+            for axes_obj, metrics_name in zip(axes_indexs, metrics_names):
+                axes_obj.bar(x_pos,
+                               file_data[metrics_name],
+                               width=bar_width,
+                               color=color,
+                               alpha=0.7,
+                               label=f'{file_name}')
+                axes_obj.text(0.5,
+                                0.95,
+                                f"{file_data[metrics_name]}",
+                                transform=axes[0, 0].transAxes,
+                                ha='center',
+                                va='center',
+                                fontsize=12,
+                                color='white',
+                                fontweight='bold')
 
-            axes[0,0].bar(x_pos, file_data['e2e'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}')
-            axes[0,0].text(f"{file_data['e2e']}",
-                     ha='center', va='center',
-                     fontsize=12, color='white', fontweight='bold')
-            axes[0,1].bar(x_pos, file_data['queue'], width=bar_width,
-                    color=color, alpha=0.7,label=f'{file_name}')
-            axes[0,2].bar(x_pos, file_data['prefill'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}')
-            axes[1,0].bar(x_pos, file_data['output_token'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}')
-            axes[1,1].bar(x_pos, file_data['first_token'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}')
 
-        axes_indexs = [
-            axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
-        ]
         for axes_obj in axes_indexs:
             axes_obj.set_ylabel('ms')
             axes_obj.set_xlabel('Request Rate/Card(req/s)')
@@ -272,7 +278,9 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
             plt.savefig(f'./{result_figure_prefix}_{today}.png',
                         dpi=200,
                         bbox_inches='tight')
-            print(f"Result figure is locate in {result_figure_prefix}_{today}.png")
+            print(
+                f"Result figure is locate in {result_figure_prefix}_{today}.png"
+            )
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
@@ -285,8 +293,8 @@ DATASET_CONF_DIR = os.path.join(benchmark_path,
 REQUEST_CONF_DIR = os.path.join(benchmark_path,
                                 "ais_bench/benchmark/configs/models/vllm_api")
 DATASET_DIR = os.path.join(benchmark_path, "ais_bench/datasets")
-CONSTS_DIR = os.path.join(benchmark_path, "ais_bench/benchmark/global_consts.py")
-
+CONSTS_DIR = os.path.join(benchmark_path,
+                          "ais_bench/benchmark/global_consts.py")
 
 
 class AisbenchRunner:
@@ -306,21 +314,22 @@ class AisbenchRunner:
         if self.task_type == "accuracy":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom'
+                f"{self.request_conf}_custom", '--datasets',
+                f'{dataset_conf}_custom'
             ]
         if self.task_type == "performance":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom', '--mode',
-                'perf'
+                f"{self.request_conf}_custom", '--datasets',
+                f'{dataset_conf}_custom', '--mode', 'perf'
             ]
             if self.num_prompts:
                 aisbench_cmd.extend(['--num-prompts', str(self.num_prompts)])
         if self.task_type == "pressure":
             aisbench_cmd = [
                 "taskset", "-c", "97-192", 'ais_bench', '--models',
-                f"{self.request_conf}_custom", '--datasets', f'{dataset_conf}_custom', '--mode',
-                'perf', '--pressure'
+                f"{self.request_conf}_custom", '--datasets',
+                f'{dataset_conf}_custom', '--mode', 'perf', '--pressure'
             ]
         print(f"running aisbench cmd: {' '.join(aisbench_cmd)}")
         self.proc: subprocess.Popen = subprocess.Popen(aisbench_cmd,
@@ -401,11 +410,18 @@ class AisbenchRunner:
                 csv_result[performance_param] = data
                 csv_result = dict(csv_result)
             merged_json = {"Request rate": self.request_rate}
-            merged_json["Request rate/Card"] = round(self.request_rate / self.card_num, 2)
+            merged_json["Request rate/Card"] = round(
+                self.request_rate / self.card_num, 2)
             merged_json.update(self.result_json)
             merged_json.update(csv_result)
-            merged_json["Total Token Throughput/Card"] = round(float(merged_json.get("Total Token Throughput").get("total").split(" ")[0]) / self.card_num, 4)
-            merged_json["Request Throughput/Card"] = round(float(merged_json.get("Request Throughput").get("total").split(" ")[0]) / self.card_num, 4)
+            merged_json["Total Token Throughput/Card"] = round(
+                float(
+                    merged_json.get("Total Token Throughput").get(
+                        "total").split(" ")[0]) / self.card_num, 4)
+            merged_json["Request Throughput/Card"] = round(
+                float(
+                    merged_json.get("Request Throughput").get("total").split(
+                        " ")[0]) / self.card_num, 4)
             self._write_to_execl(merged_json, f"./{self.result_file_name}.csv")
             print(f"Result csv file is locate in {self.result_file_name}.csv")
         except Exception as e:
@@ -441,15 +457,13 @@ class AisbenchRunner:
                 combined_df.to_csv(path, index=False)
 
     def _init_dataset_conf(self):
-        conf_path = os.path.join(DATASET_CONF_DIR,
-                                 f'{self.dataset_conf}.py')
+        conf_path = os.path.join(DATASET_CONF_DIR, f'{self.dataset_conf}.py')
         if self.dataset_conf.startswith("textvqa"):
             self.dataset_path = os.path.join(self.dataset_path,
                                              "textvqa_val.jsonl")
         with open(conf_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        content = re.sub(r'path=.*', f'path="{self.dataset_path}",',
-                         content)
+        content = re.sub(r'path=.*', f'path="{self.dataset_path}",', content)
         if self.max_out_len is None:
             if "max_tokens" not in content:
                 content = re.sub(
@@ -462,14 +476,11 @@ class AisbenchRunner:
         with open(conf_path_new, 'w', encoding='utf-8') as f:
             f.write(content)
 
-
-
-
     def _init_consts_conf(self):
         with open(CONSTS_DIR, 'r', encoding='utf-8') as f:
             content = f.read()
-        content = re.sub(r'PRESSURE_TIME.*', f'PRESSURE_TIME = {self.pressure_time}',
-                         content)
+        content = re.sub(r'PRESSURE_TIME.*',
+                         f'PRESSURE_TIME = {self.pressure_time}', content)
         with open(CONSTS_DIR, 'w', encoding='utf-8') as f:
             f.write(content)
 
@@ -588,11 +599,21 @@ class AisbenchRunner:
         assert self.baseline - self.threshold <= acc_value <= self.baseline + self.threshold, f"Accuracy verification failed. The accuracy of {self.dataset_path} is {acc_value}, which is not within {self.threshold} relative to baseline {self.baseline}."
 
 
-def run_aisbench_cases(model, port, aisbench_cases, card_num=1, verify=True, save=True):
+def run_aisbench_cases(model,
+                       port,
+                       aisbench_cases,
+                       card_num=1,
+                       verify=True,
+                       save=True):
     aisbench_errors = []
     for aisbench_case in aisbench_cases:
         try:
-            with AisbenchRunner(model, port, aisbench_case, verify=verify, save=save, card_num=card_num):
+            with AisbenchRunner(model,
+                                port,
+                                aisbench_case,
+                                verify=verify,
+                                save=save,
+                                card_num=card_num):
                 pass
         except Exception as e:
             aisbench_errors.append([aisbench_case, e, traceback.print_exc()])
