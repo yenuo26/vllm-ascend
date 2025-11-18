@@ -31,7 +31,6 @@ async def teardown():
             f"qwen2_5_vl_7b_{dataset}_1E1PD_sc"
         ],result_figure_prefix=dataset)
         create_ttft_plot(result_file_names=[
-            f"qwen2_5_vl_7b_{dataset}_PD_mix_ttft",
             f"qwen2_5_vl_7b_{dataset}_1E2PD_ttft",
             f"qwen2_5_vl_7b_{dataset}_1E3PD_ttft",
             f"qwen2_5_vl_7b_{dataset}_1E1PD_sc_ttft"
@@ -331,11 +330,14 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
                            aisbench_cases=warmup_cases,
                            verify=False,
                            save=False)
-        # aisbench test
-        run_aisbench_cases(model=model,
-                           port=api_port,
-                           card_num=4,
-                           aisbench_cases=aisbench_cases)
+        for aisbench_case in aisbench_cases:
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               card_num=4,
+                               aisbench_cases=[aisbench_case])
+            server.save_ttft_data(file_name=f"qwen2_5_vl_7b_{dataset_name}_1E3PD_ttft",
+                                  index=aisbench_case["request_rate"])
+
 
 
 @pytest.mark.asyncio
@@ -435,8 +437,11 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
                            aisbench_cases=warmup_cases,
                            verify=False,
                            save=False)
-        # aisbench test
-        run_aisbench_cases(model=model,
-                           port=api_port,
-                           card_num=3,
-                           aisbench_cases=aisbench_cases)
+        for aisbench_case in aisbench_cases:
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               card_num=3,
+                               aisbench_cases=[aisbench_case])
+            server.save_ttft_data(file_name=f"qwen2_5_vl_7b_{dataset_name}_1E2PD_ttft",
+                                  index=aisbench_case["request_rate"])
+
