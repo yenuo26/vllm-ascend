@@ -250,28 +250,28 @@ def create_ttft_plot(result_file_names,
                              ha='center', va='bottom', fontsize=12, fontweight='bold')
                 axes_obj.set_xticklabels(file_data['index'])
 
-
-
         for axes_obj in axes_indexs:
             axes_obj.set_ylabel('ms')
             axes_obj.set_xlabel('Request Rate/Card(req/s)')
             axes_obj.set_xticks(np.arange(len(file_data)))
+            axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
             axes_obj.grid(True, alpha=0.3)
             axes_obj.legend()
 
         axes[1, 2].set_visible(False)
         plt.tight_layout()
-        fig.suptitle('', fontsize=16, y=0.98)
 
         if len(result_file_names) == 1:
             plt.savefig(f'./{result_file_names[0]}.png',
                         dpi=200,
+                        pad_inches=0.1,
                         bbox_inches='tight')
             print(f"Result figure is locate in {result_file_names[0]}.png")
         else:
             today = date.today()
             plt.savefig(f'./{result_figure_prefix}_{today}.png',
                         dpi=200,
+                        pad_inches=0.1,
                         bbox_inches='tight')
             print(
                 f"Result figure is locate in {result_figure_prefix}_{today}.png"
