@@ -208,28 +208,9 @@ if __name__ == "__main__":
                         default="127.0.0.1",
                         help="Proxy host")
     parser.add_argument("--port", type=int, default=8000, help="Proxy port")
-    # parser.add_argument("--proxy-addr",
-    #                     type=str,
-    #                     required=True,
-    #                     help="Proxy address")
-    # parser.add_argument("--e-addr-list",
-    #                     type=str,
-    #                     required=True,
-    #                     help="encode worker ipc address")
-    # parser.add_argument("--pd-addr-list",
-    #                     type=str,
-    #                     required=True,
-    #                     help="pd worker ipc address")
-    # parser.add_argument("--model", type=str, required=True, help="Model name")
     parser.add_argument("--is-load-image",
                         action='store_true',
                         help="load image from path")
-    # parser.add_argument("--enable-health-monitor",
-    #                     action='store_true',
-    #                     help="enable health monitor")
-    # parser.add_argument("--transfer-protocol",
-    #                     type=str,
-    #                     help="transfer-protocol, tcp or ipc")
     parser.add_argument("--proxy-config", type=str, help="proxy configuration as JSON")
 
     args = parser.parse_args()

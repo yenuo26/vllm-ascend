@@ -171,26 +171,12 @@ class RemoteEPDServer:
         self._proc_list.append(proc)
 
     def _start_api_server(self) -> None:
-        # api_server_args = [
-        #     "--host", "127.0.0.1", "--port",
-        #     str(self.api_server_port), "--model", self.model, "--proxy-addr",
-        #     self.proxy_addr, "--e-addr-list", ",".join(self.e_addr_list),
-        #     "--pd-addr-list", ",".join(self.pd_addr_list)
-        # ]
-
         api_server_args = [
             "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--proxy-config", str(self.proxy_config)
+            str(self.api_server_port), "--proxy-config", json.dumps(self.proxy_config)
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
-        #
-        # if self.enable_health_monitor:
-        #     api_server_args.append("--enable-health-monitor")
-        #
-        # if self.proxy_transfer_protocol:
-        #     api_server_args.append("--transfer-protocol")
-        #     api_server_args.append(self.proxy_transfer_protocol)
 
         print(f"proxy params is: {api_server_args}")
         api_server_path = Path(
@@ -388,13 +374,13 @@ class RemoteEPDServer:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
                     self.d_addr_list.append(pd_serve_arg[worker_index + 1])
-                    log_prefix = "[D_{i}] "
+                    log_prefix = f"[D_{i}] "
                 elif "kv_producer" in pd_serve_arg[kv_index + 1]:
                     self.p_addr_list.append(pd_serve_arg[worker_index + 1])
-                    log_prefix = "[P_{i}] "
+                    log_prefix = f"[P_{i}] "
             else:
                 self.pd_addr_list.append(pd_serve_arg[worker_index + 1])
-                log_prefix = "[PD_{i}] "
+                log_prefix = f"[PD_{i}] "
             self._run_server(pd_serve_arg, self.env_dict, log_prefix)
 
     def _start_zmq_proxy(self):
@@ -471,14 +457,31 @@ class RemoteEPDServer:
                                      timeout=timeout_times))
                 for iid in range(self.e_num)
             ]
-            tasks_1 = [
-                asyncio.create_task(
-                    asyncio.wait_for(self.p.check_health(
-                        ServerType.PD_INSTANCE, iid),
-                                     timeout=timeout_times))
-                for iid in range(self.pd_num)
-            ]
-            tasks = tasks_0 + tasks_1
+            if self.pd_addr_list:
+                tasks_1 = [
+                    asyncio.create_task(
+                        asyncio.wait_for(self.p.check_health(
+                            ServerType.PD_INSTANCE, iid),
+                                         timeout=timeout_times))
+                    for iid in range(self.pd_num)
+                ]
+                tasks = tasks_0 + tasks_1
+            else:
+                tasks_1 = [
+                    asyncio.create_task(
+                        asyncio.wait_for(self.p.check_health(
+                            ServerType.P_INSTANCE, iid),
+                            timeout=timeout_times))
+                    for iid in range(len(self.p_addr_list))
+                ]
+                tasks_2 = [
+                    asyncio.create_task(
+                        asyncio.wait_for(self.p.check_health(
+                            ServerType.D_INSTANCE, iid),
+                            timeout=timeout_times))
+                    for iid in range(len(self.d_addr_list))
+                ]
+                tasks = tasks_0 + tasks_1 + tasks_2
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
             if all([isinstance(result, bool) and result
