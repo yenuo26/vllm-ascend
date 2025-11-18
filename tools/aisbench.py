@@ -214,32 +214,50 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
 
     try:
         plt.figure(figsize=(14, 8))
+        bar_width = 0.1
+        fig, axes = plt.subplots(2, 3, figsize=(18, 18))
+        axes[0, 0].set_title('e2e')
 
-        bar_width = 0.8 / len(result_file_names) / 5
+        axes[0, 1].set_title('queue')
+
+        axes[0, 2].set_title('prefill')
+
+        axes[1, 0].set_title('output_token')
+
+        axes[1, 1].set_title('first_token')
+
 
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
             x_pos = np.arange(len(file_data)) + i * bar_width
             color = color_map[file_name]
 
-            plt.bar(x_pos, file_data['e2e'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}-e2e')
-            plt.bar(x_pos+bar_width, file_data['queue'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}-queue')
-            plt.bar(x_pos+2*bar_width, file_data['prefill'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}-prefill')
-            plt.bar(x_pos+2*bar_width, file_data['output_token'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}-output_token')
-            plt.bar(x_pos+2*bar_width, file_data['first_token'], width=bar_width,
-                    color=color, alpha=0.7, label=f'{file_name}-first_token')
+            axes[0,0].bar(x_pos, file_data['e2e'], width=bar_width,
+                    color=color, alpha=0.7, label=f'{file_name}')
+            axes[0,1].bar(x_pos+bar_width, file_data['queue'], width=bar_width,
+                    color=color, alpha=0.7)
+            axes[0,2].bar(x_pos+2*bar_width, file_data['prefill'], width=bar_width,
+                    color=color, alpha=0.7)
+            axes[1,0].bar(x_pos+3*bar_width, file_data['output_token'], width=bar_width,
+                    color=color, alpha=0.7)
+            axes[1,1].bar(x_pos+4*bar_width, file_data['first_token'], width=bar_width,
+                    color=color, alpha=0.7)
 
-        plt.title('ttft analysis', fontsize=16, fontweight='bold')
-        plt.xlabel('request rate/card(req/s)', fontsize=12)
-        plt.ylabel('ms', fontsize=12)
-        plt.xticks()
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.grid(axis='y', alpha=0.3)
+        axes_indexs = [
+            axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
+        ]
+        for axes_obj in axes_indexs:
+            axes_obj.set_ylabel('ms')
+            axes_obj.set_xlabel('Request Rate/Card(req/s)')
+            axes_obj.grid(True, alpha=0.3)
+            axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
+            axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
+            axes_obj.legend()
+            axes_obj.xticks()
+
+        axes[1, 2].set_visible(False)
         plt.tight_layout()
+        fig.suptitle('', fontsize=16, y=0.98)
 
         if len(result_file_names) == 1:
             plt.savefig(f'./{result_file_names[0]}.png',
