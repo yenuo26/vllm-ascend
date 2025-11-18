@@ -8,7 +8,7 @@ from tests.e2e.conftest import RemoteOpenAIServer
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
-from tools.aisbench import create_result_plot
+from tools.aisbench import create_result_plot, create_ttft_plot
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -30,6 +30,13 @@ async def teardown():
             f"qwen2_5_vl_7b_{dataset}_1E3PD",
             f"qwen2_5_vl_7b_{dataset}_1E1PD_sc"
         ],result_figure_prefix=dataset)
+        create_ttft_plot(result_file_names=[
+            f"qwen2_5_vl_7b_{dataset}_PD_mix_ttft",
+            f"qwen2_5_vl_7b_{dataset}_1E2PD_ttft",
+            f"qwen2_5_vl_7b_{dataset}_1E3PD_ttft",
+            f"qwen2_5_vl_7b_{dataset}_1E1PD_sc_ttft"
+        ], result_figure_prefix=dataset)
+
 
 
 @pytest.mark.asyncio

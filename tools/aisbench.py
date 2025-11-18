@@ -218,7 +218,7 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
 
         for file in result_file_names:
             try:
-                df = pd.read_csv(file)
+                df = pd.read_csv(f"./{file}.csv")
                 file_name = os.path.basename(file).replace('.csv', '')
                 df['file_source'] = file_name
                 all_data.append(df)
