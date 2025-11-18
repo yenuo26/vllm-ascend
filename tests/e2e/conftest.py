@@ -171,21 +171,26 @@ class RemoteEPDServer:
         self._proc_list.append(proc)
 
     def _start_api_server(self) -> None:
+        # api_server_args = [
+        #     "--host", "127.0.0.1", "--port",
+        #     str(self.api_server_port), "--model", self.model, "--proxy-addr",
+        #     self.proxy_addr, "--e-addr-list", ",".join(self.e_addr_list),
+        #     "--pd-addr-list", ",".join(self.pd_addr_list)
+        # ]
+
         api_server_args = [
             "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--model", self.model, "--proxy-addr",
-            self.proxy_addr, "--e-addr-list", ",".join(self.e_addr_list),
-            "--pd-addr-list", ",".join(self.pd_addr_list)
+            str(self.api_server_port), "--proxy-config", str(self.proxy_config)
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
-
-        if self.enable_health_monitor:
-            api_server_args.append("--enable-health-monitor")
-
-        if self.proxy_transfer_protocol:
-            api_server_args.append("--transfer-protocol")
-            api_server_args.append(self.proxy_transfer_protocol)
+        #
+        # if self.enable_health_monitor:
+        #     api_server_args.append("--enable-health-monitor")
+        #
+        # if self.proxy_transfer_protocol:
+        #     api_server_args.append("--transfer-protocol")
+        #     api_server_args.append(self.proxy_transfer_protocol)
 
         print(f"proxy params is: {api_server_args}")
         api_server_path = Path(
@@ -381,27 +386,37 @@ class RemoteEPDServer:
                         self._default_addr_prefix + "pd_" + str(i)
                     ]
             index_pd = pd_serve_arg.index("--worker-addr")
-            self.pd_addr_list.append(pd_serve_arg[index_pd + 1])
-            self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
+            if "kv_consumer" in pd_serve_arg:
+                self.d_addr_list.append(pd_serve_arg[index_pd + 1])
+                log_prefix = "[D_{i}] "
+            elif "kv_producer" in pd_serve_arg:
+                self.p_addr_list.append(pd_serve_arg[index_pd + 1])
+                log_prefix = "[P_{i}] "
+            else:
+                self.pd_addr_list.append(pd_serve_arg[index_pd + 1])
+                log_prefix = "[PD_{i}] "
+            self._run_server(pd_serve_arg, self.env_dict, log_prefix)
 
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
             os.environ[key] = value
-        if self.proxy_transfer_protocol is not None:
-            p = Proxy(proxy_addr=self.proxy_addr,
-                      encode_addr_list=self.e_addr_list,
-                      pd_addr_list=self.pd_addr_list,
-                      enable_health_monitor=self.enable_health_monitor,
-                      transfer_protocol=self.proxy_transfer_protocol,
-                      model_name=self.model)
+        self.proxy_config = {
+            'proxy_addr': self.proxy_addr,
+            'encode_addr_list': self.e_addr_list,
+            'enable_health_monitor': self.enable_health_monitor,
+            'model_name': self.model
+        }
+        if self.pd_addr_list:
+            self.proxy_config['pd_addr_list'] = self.pd_addr_list
         else:
-            p = Proxy(proxy_addr=self.proxy_addr,
-                      encode_addr_list=self.e_addr_list,
-                      pd_addr_list=self.pd_addr_list,
-                      enable_health_monitor=self.enable_health_monitor,
-                      model_name=self.model)
+            self.proxy_config.update({
+                'p_addr_list': self.p_addr_list,
+                'd_addr_list': self.d_addr_list
+            })
+        if self.proxy_transfer_protocol is not None:
+            self.proxy_config['transfer_protocol'] = self.proxy_transfer_protocol
 
-        return p
+        return Proxy(**self.proxy_config)
 
     def _start_disagg_proxy(self):
         proxy_args = [
@@ -422,58 +437,26 @@ class RemoteEPDServer:
             self.env_dict = dict()
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
-        if isinstance(self.e_serve_args, str):
-            self.e_serve_args = shlex.split(self.e_serve_args)
-        if isinstance(self.pd_serve_args, str):
-            self.pd_serve_args = shlex.split(self.pd_serve_args)
-        else:
-            self.e_serve_args = [
-                "taskset", "-c", "0-96", "vllm", "serve", *self.e_serve_args
-            ]
-            self.pd_serve_args = [
-                "taskset", "-c", "0-96", "vllm", "serve", *self.pd_serve_args
-            ]
 
-        if isinstance(self.e_serve_args, list):
-            if all(isinstance(item, list) for item in self.e_serve_args):
-                for i, e_serve_arg in enumerate(self.e_serve_args):
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                    index_e = e_serve_arg.index("--port")
-                    self.e_addr_list.append(
-                        f"http://localhost:{e_serve_arg[index_e + 1]}")
-                    self._run_server(e_serve_arg, self.env_dict,
-                                     f"[ENCODE_{i}] ")
-            else:
-                for i in range(self.e_num):
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                    e_serve_arg = copy.deepcopy(self.e_serve_args)
-                    index_e = e_serve_arg.index("--port")
-                    self.e_addr_list.append(
-                        f"http://localhost:{e_serve_arg[index_e + 1]}")
-                    self._run_server(e_serve_arg, self.env_dict,
-                                     f"[ENCODE_{i}] ")
+        serve_arg_cmd = ["taskset", "-c", "0-96", "vllm", "serve"]
 
-        else:
-            raise RuntimeError("e_serve_args must be a list")
+        for i, e_serve_arg in enumerate(self.e_serve_args_list):
+            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+            e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
+            index_e = e_serve_arg.index("--port")
+            self.e_addr_list.append(
+                f"http://localhost:{e_serve_arg[index_e + 1]}")
+            self._run_server(e_serve_arg, self.env_dict,
+                             f"[ENCODE_{i}] ")
 
-        if isinstance(self.pd_serve_args, list):
-            if all(isinstance(item, list) for item in self.pd_serve_args):
-                for i, pd_serve_arg in enumerate(self.pd_serve_args):
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                    index_pd = pd_serve_arg.index("--port")
-                    self.pd_addr_list.append(
-                        f"http://localhost:{pd_serve_arg[index_pd + 1]}")
-                    self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
-            else:
-                for i in range(self.pd_num):
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                    pd_serve_arg = copy.deepcopy(self.pd_serve_args)
-                    index_pd = pd_serve_arg.index("--port")
-                    self.pd_addr_list.append(
-                        f"http://localhost:{pd_serve_arg[index_pd + 1]}")
-                    self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
-        else:
-            raise RuntimeError("pd_serve_args must be a list")
+        for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
+            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+            pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
+            index_pd = pd_serve_arg.index("--port")
+            self.pd_addr_list.append(
+                f"http://localhost:{pd_serve_arg[index_pd + 1]}")
+            self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
+
 
     async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
         sleep_times = 10
@@ -606,6 +589,8 @@ class RemoteEPDServer:
         self.api_server_port = api_server_port
         self.e_addr_list = list()
         self.pd_addr_list = list()
+        self.p_addr_list = list()
+        self.d_addr_list = list()
         self.e_serve_args_list = list()
         self.pd_serve_args_list = list()
 
