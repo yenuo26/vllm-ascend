@@ -213,32 +213,13 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
     color_map = {name: colors[i % len(colors)] for i, name in enumerate(result_file_names)}
 
     try:
-        all_data = []
-        file_names = []
-
-        for file in result_file_names:
-            try:
-                df = pd.read_csv(f"./{file}.csv")
-                file_name = os.path.basename(file).replace('.csv', '')
-                df['file_source'] = file_name
-                all_data.append(df)
-                file_names.append(file_name)
-            except Exception as e:
-                print(f"load {file} failed: {e}")
-
-        if not all_data:
-            return
-        combined_data = pd.concat(all_data, ignore_index=True)
-
         plt.figure(figsize=(14, 8))
 
         bar_width = 0.8 / len(result_file_names)
-        indices = combined_data['index'].unique() if 'index' in combined_data.columns else range(1, len(
-            combined_data) // len(result_file_names) + 1)
 
         for i, file_name in enumerate(result_file_names):
-            file_data = combined_data[combined_data['file_source'] == file_name]
-            x_pos = np.arange(len(indices)) + i * bar_width
+            file_data = pd.read_csv(f"./{file_name}.csv")
+            x_pos = np.arange(len(file_data)) + i * bar_width
 
             plt.bar(x_pos, file_data['e2e'], width=bar_width,
                     color=color_map[i], alpha=0.7, label=f'{file_name}-e2e')
@@ -254,7 +235,7 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
         plt.title('ttft analysis', fontsize=16, fontweight='bold')
         plt.xlabel('request rate/card(req/s)', fontsize=12)
         plt.ylabel('ms', fontsize=12)
-        plt.xticks(np.arange(len(indices)) + bar_width * (len(result_file_names) - 1) / 2, indices)
+        plt.xticks()
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.grid(axis='y', alpha=0.3)
         plt.tight_layout()
