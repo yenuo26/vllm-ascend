@@ -238,31 +238,27 @@ def create_ttft_plot(result_file_names,
             x_pos = np.arange(len(file_data)) + i * bar_width
             color = color_map[file_name]
             for axes_obj, metrics_name in zip(axes_indexs, metrics_names):
-                axes_obj.bar(x_pos,
+                axes_obj.bar(file_data['index'],
                                file_data[metrics_name],
                                width=bar_width,
                                color=color,
-                               alpha=0.7,
-                               label=f'{file_name}')
-                axes_obj.text(0.5,
-                                0.95,
+                               alpha=0.7)
+                axes_obj.text(0.5,0.95,
                                 f"{file_data[metrics_name]}",
-                                transform=axes[0, 0].transAxes,
+                                transform=axes_obj.transAxes,
                                 ha='center',
                                 va='center',
                                 fontsize=12,
-                                color='white',
+                                color='black',
                                 fontweight='bold')
+
 
 
         for axes_obj in axes_indexs:
             axes_obj.set_ylabel('ms')
             axes_obj.set_xlabel('Request Rate/Card(req/s)')
             axes_obj.grid(True, alpha=0.3)
-            axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
-            axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
             axes_obj.legend()
-            axes_obj.xticks()
 
         axes[1, 2].set_visible(False)
         plt.tight_layout()
