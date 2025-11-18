@@ -215,7 +215,7 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
     try:
         plt.figure(figsize=(14, 8))
 
-        bar_width = 0.8 / len(result_file_names)
+        bar_width = 0.8 / len(result_file_names) / 5
 
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
@@ -224,13 +224,13 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
 
             plt.bar(x_pos, file_data['e2e'], width=bar_width,
                     color=color, alpha=0.7, label=f'{file_name}-e2e')
-            plt.bar(x_pos, file_data['queue'], width=bar_width,
+            plt.bar(x_pos+bar_width, file_data['queue'], width=bar_width,
                     color=color, alpha=0.7, label=f'{file_name}-queue')
-            plt.bar(x_pos, file_data['prefill'], width=bar_width,
+            plt.bar(x_pos+2*bar_width, file_data['prefill'], width=bar_width,
                     color=color, alpha=0.7, label=f'{file_name}-prefill')
-            plt.bar(x_pos, file_data['output_token'], width=bar_width,
+            plt.bar(x_pos+2*bar_width, file_data['output_token'], width=bar_width,
                     color=color, alpha=0.7, label=f'{file_name}-output_token')
-            plt.bar(x_pos, file_data['first_token'], width=bar_width,
+            plt.bar(x_pos+2*bar_width, file_data['first_token'], width=bar_width,
                     color=color, alpha=0.7, label=f'{file_name}-first_token')
 
         plt.title('ttft analysis', fontsize=16, fontweight='bold')
