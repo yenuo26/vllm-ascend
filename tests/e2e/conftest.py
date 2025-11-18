@@ -94,21 +94,6 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()
 
-def extract_ttft_data(text):
-    pattern = re.compile(
-        r'INFO (\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [^\]]* Engine (\d+): Avg e2e time requests: ([\d\.]+) ms, '
-        r'Avg queue time requests: ([\d\.]+) ms, Avg prefill time requests: ([\d\.]+) ms, '
-        r'Avg mean time per output token requests: ([\d\.]) ms, Avg time to first token: ([\d\.]+) ms'
-    )
-    times, e2e, queue, prefill, output_token, first_token = 0, 0, 0, 0, 0, 0
-    m = pattern.search(text)
-    if m:
-        e2e = float(m.group(3))
-        queue = float(m.group(4))
-        prefill = float(m.group(5))
-        output_token = float(m.group(6))
-        first_token = float(m.group(7))
-    return e2e, queue, prefill, output_token, first_token
 
 
 def write_to_execl(data, path):
@@ -137,10 +122,24 @@ class RemoteEPDServer:
                     if line:
                         print(f"{prefix}: {line}", end='')
                         if prefix.strip() == "[PD_0]" and self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
-                            self.e2e, self.queue, self.prefill, self.output_token, self.first_token = extract_ttft_data(line)
+                            self.extract_ttft_data(line)
 
         except Exception as e:
             print(f"error: {e}")
+
+    def _extract_ttft_data(self, text):
+        pattern = re.compile(
+            r'INFO (\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [^\]]* Engine (\d+): Avg e2e time requests: ([\d\.]+) ms, '
+            r'Avg queue time requests: ([\d\.]+) ms, Avg prefill time requests: ([\d\.]+) ms, '
+            r'Avg mean time per output token requests: ([\d\.]) ms, Avg time to first token: ([\d\.]+) ms'
+        )
+        m = pattern.search(text)
+        if m:
+            self.e2e = float(m.group(3))
+            self.queue = float(m.group(4))
+            self.prefill = float(m.group(5))
+            self.output_token = float(m.group(6))
+            self.first_token = float(m.group(7))
 
     def save_ttft_data(self, file_name, index):
         data = {
@@ -678,6 +677,11 @@ class RemoteEPDServer:
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
+        self.e2e = 0
+        self.queue = 0
+        self.prefill = 0
+        self.output_token = 0
+        self.first_token = 0
 
     async def __aenter__(self):
         # start with
