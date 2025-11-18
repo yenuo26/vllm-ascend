@@ -231,14 +231,17 @@ class RemoteEPDServer:
                 consumer_json["master_server_address"] = producer_json[
                     "master_server_address"] = f"0.0.0.0:{rpc_port}"
 
-        for i, arg in enumerate(self.e_serve_args):
+
+        for i, arg in enumerate(self.e_serve_args_list):
             producer_index = arg.index("--ec-transfer-config")
             producer_path = json.loads(arg[producer_index + 1]).get(
                 "ec_connector_extra_config").get("ec_mooncake_config_file_path")
             with open(producer_path, 'w', encoding='utf-8') as f:
                 json.dump(producer_json, f, ensure_ascii=False, indent=4)
             print(f"The mooncake producer config is\n {producer_json}")
-        for i, arg in enumerate(self.pd_serve_args):
+
+
+        for i, arg in enumerate(self.pd_serve_args_list):
             if "--ec-transfer-config" in arg:
                 consumer_index = arg.index("--ec-transfer-config")
                 consumer_path = json.loads(arg[consumer_index + 1]).get(
@@ -254,19 +257,12 @@ class RemoteEPDServer:
             self.env_dict = dict()
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
-        if isinstance(self.e_serve_args, str):
-            self.e_serve_args = shlex.split(self.e_serve_args)
-        if isinstance(self.pd_serve_args, str):
-            self.pd_serve_args = shlex.split(self.pd_serve_args)
-        else:
-            self.e_serve_args = [
+
+        serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
-                "llm_service.entrypoints.worker", *self.e_serve_args
+                "llm_service.entrypoints.worker"
             ]
-            self.pd_serve_args = [
-                "taskset", "-c", "0-96", "python", "-m",
-                "llm_service.entrypoints.worker", *self.pd_serve_args
-            ]
+
 
         if self.env_dict.get(
                 "TRANSFER_PROTOCOL"
@@ -275,133 +271,118 @@ class RemoteEPDServer:
         else:
             is_protocol_tcp = False
 
-        if isinstance(self.e_serve_args, list):
-            e_serve_args_list = list()
-            if not all(isinstance(item, list) for item in self.e_serve_args):
-                for i in range(self.e_num):
-                    e_serve_args_list.append(copy.deepcopy(self.e_serve_args))
-            for i, e_serve_arg in enumerate(e_serve_args_list):
+
+        for i, e_serve_arg in enumerate(self.e_serve_args_list):
+            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+            e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
+            if "--proxy-addr" not in e_serve_arg:
+                if is_protocol_tcp:
+                    e_serve_arg = e_serve_arg + [
+                        "--proxy-addr", "127.0.0.1:37000"
+                    ]
+                elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
+                        e_serve_arg.index("--transfer-protocol") +
+                        1].upper() == "TCP":
+                    e_serve_arg = e_serve_arg + [
+                        "--proxy-addr", "127.0.0.1:37000"
+                    ]
+                else:
+                    # defaut proxy-addr is /tmp/proxy
+                    e_serve_arg = e_serve_arg + [
+                        "--proxy-addr", self._default_addr_prefix + "proxy"
+                    ]
+            index_e = e_serve_arg.index("--proxy-addr")
+            if self.proxy_addr is not None and e_serve_arg[
+                    index_e + 1] != self.proxy_addr:
+                raise ValueError("proxy addr must be same between workers")
+            self.proxy_addr = e_serve_arg[index_e + 1]
+
+            if "--model" not in e_serve_arg:
+                raise ValueError("must carry --model")
+            else:
+                index_e = e_serve_arg.index("--model")
+                if self.model is not None and e_serve_arg[index_e +
+                                                          1] != self.model:
+                    raise ValueError("model must be same between workers")
+                self.model = e_serve_arg[index_e + 1]
+
+            if "--worker-addr" not in e_serve_arg:
+                if is_protocol_tcp:
+                    e_serve_arg = e_serve_arg + [
+                        "--worker-addr", "127.0.0.1:3800" + str(i)
+                    ]
+                elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
+                        e_serve_arg.index("--transfer-protocol") +
+                        1].upper() == "TCP":
+                    e_serve_arg = e_serve_arg + [
+                        "--worker-addr", "127.0.0.1:3800" + str(i)
+                    ]
+                else:
+                    # defaut encode-addr is /tmp/encode_{i}
+                    e_serve_arg = e_serve_arg + [
+                        "--worker-addr",
+                        self._default_addr_prefix + "encoder_" + str(i)
+                    ]
+            index_e = e_serve_arg.index("--worker-addr")
+            self.e_addr_list.append(e_serve_arg[index_e + 1])
+            self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
+
+        for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
+            if self.is_epd_same_card:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-                if "--proxy-addr" not in e_serve_arg:
-                    if is_protocol_tcp:
-                        e_serve_arg = e_serve_arg + [
-                            "--proxy-addr", "127.0.0.1:37000"
-                        ]
-                    elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
-                            e_serve_arg.index("--transfer-protocol") +
-                            1].upper() == "TCP":
-                        e_serve_arg = e_serve_arg + [
-                            "--proxy-addr", "127.0.0.1:37000"
-                        ]
-                    else:
-                        # defaut proxy-addr is /tmp/proxy
-                        e_serve_arg = e_serve_arg + [
-                            "--proxy-addr", self._default_addr_prefix + "proxy"
-                        ]
-                index_e = e_serve_arg.index("--proxy-addr")
-                if self.proxy_addr is not None and e_serve_arg[
-                        index_e + 1] != self.proxy_addr:
-                    raise ValueError("proxy addr must be same between workers")
-                self.proxy_addr = e_serve_arg[index_e + 1]
-
-                if "--model" not in e_serve_arg:
-                    raise ValueError("must carry --model")
+            else:
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
+                    i + self.e_num)
+            pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
+            if "--proxy-addr" not in pd_serve_arg:
+                if is_protocol_tcp:
+                    pd_serve_arg = pd_serve_arg + [
+                        "--proxy-addr", "127.0.0.1:37000"
+                    ]
+                elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
+                        pd_serve_arg.index("--transfer-protocol") +
+                        1].upper() == "TCP":
+                    pd_serve_arg = pd_serve_arg + [
+                        "--proxy-addr", "127.0.0.1:37000"
+                    ]
                 else:
-                    index_e = e_serve_arg.index("--model")
-                    if self.model is not None and e_serve_arg[index_e +
-                                                              1] != self.model:
-                        raise ValueError("model must be same between workers")
-                    self.model = e_serve_arg[index_e + 1]
+                    # defaut proxy-addr is /tmp/proxy
+                    pd_serve_arg = pd_serve_arg + [
+                        "--proxy-addr", self._default_addr_prefix + "proxy"
+                    ]
 
-                if "--worker-addr" not in e_serve_arg:
-                    if is_protocol_tcp:
-                        e_serve_arg = e_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3800" + str(i)
-                        ]
-                    elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
-                            e_serve_arg.index("--transfer-protocol") +
-                            1].upper() == "TCP":
-                        e_serve_arg = e_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3800" + str(i)
-                        ]
-                    else:
-                        # defaut encode-addr is /tmp/encode_{i}
-                        e_serve_arg = e_serve_arg + [
-                            "--worker-addr",
-                            self._default_addr_prefix + "encoder_" + str(i)
-                        ]
-                index_e = e_serve_arg.index("--worker-addr")
-                self.e_addr_list.append(e_serve_arg[index_e + 1])
-                self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
-        else:
-            raise RuntimeError("e_serve_args must be a list")
+            index_pd = pd_serve_arg.index("--proxy-addr")
+            if self.proxy_addr is not None and pd_serve_arg[
+                    index_pd + 1] != self.proxy_addr:
+                raise ValueError("proxy addr must be same between workers")
+            if "--model" not in pd_serve_arg:
+                raise ValueError("must carry --model")
+            else:
+                index_pd = pd_serve_arg.index("--model")
+                if self.model is not None and pd_serve_arg[
+                        index_pd + 1] != self.model:
+                    raise ValueError("model must be same between workers")
 
-        if isinstance(self.pd_serve_args, list):
-            pd_serve_args_list = list()
-            if not all(isinstance(item, list) for item in self.pd_serve_args):
-                for i in range(self.pd_num):
-                    pd_serve_args_list.append(copy.deepcopy(
-                        self.pd_serve_args))
-
-            for i, pd_serve_arg in enumerate(pd_serve_args_list):
-                if self.is_epd_same_card:
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
+            if "--worker-addr" not in pd_serve_arg:
+                if is_protocol_tcp:
+                    pd_serve_arg = pd_serve_arg + [
+                        "--worker-addr", "127.0.0.1:3900" + str(i)
+                    ]
+                elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
+                        pd_serve_arg.index("--transfer-protocol") +
+                        1].upper() == "TCP":
+                    pd_serve_arg = pd_serve_arg + [
+                        "--worker-addr", "127.0.0.1:3900" + str(i)
+                    ]
                 else:
-                    self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
-                        i + self.e_num)
-
-                if "--proxy-addr" not in pd_serve_arg:
-                    if is_protocol_tcp:
-                        pd_serve_arg = pd_serve_arg + [
-                            "--proxy-addr", "127.0.0.1:37000"
-                        ]
-                    elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
-                            pd_serve_arg.index("--transfer-protocol") +
-                            1].upper() == "TCP":
-                        pd_serve_arg = pd_serve_arg + [
-                            "--proxy-addr", "127.0.0.1:37000"
-                        ]
-                    else:
-                        # defaut proxy-addr is /tmp/proxy
-                        pd_serve_arg = pd_serve_arg + [
-                            "--proxy-addr", self._default_addr_prefix + "proxy"
-                        ]
-
-                index_pd = pd_serve_arg.index("--proxy-addr")
-                if self.proxy_addr is not None and pd_serve_arg[
-                        index_pd + 1] != self.proxy_addr:
-                    raise ValueError("proxy addr must be same between workers")
-                if "--model" not in pd_serve_arg:
-                    raise ValueError("must carry --model")
-                else:
-                    index_pd = pd_serve_arg.index("--model")
-                    if self.model is not None and pd_serve_arg[
-                            index_pd + 1] != self.model:
-                        raise ValueError("model must be same between workers")
-
-                if "--worker-addr" not in pd_serve_arg:
-                    if is_protocol_tcp:
-                        pd_serve_arg = pd_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3900" + str(i)
-                        ]
-                    elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
-                            pd_serve_arg.index("--transfer-protocol") +
-                            1].upper() == "TCP":
-                        pd_serve_arg = pd_serve_arg + [
-                            "--worker-addr", "127.0.0.1:3900" + str(i)
-                        ]
-                    else:
-                        # defaut pd-addr is /tmp/pd_{i}
-                        pd_serve_arg = pd_serve_arg + [
-                            "--worker-addr",
-                            self._default_addr_prefix + "pd_" + str(i)
-                        ]
-                index_pd = pd_serve_arg.index("--worker-addr")
-                self.pd_addr_list.append(pd_serve_arg[index_pd + 1])
-                self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
-
-        else:
-            raise RuntimeError("pd_serve_args must be a list")
+                    # defaut pd-addr is /tmp/pd_{i}
+                    pd_serve_arg = pd_serve_arg + [
+                        "--worker-addr",
+                        self._default_addr_prefix + "pd_" + str(i)
+                    ]
+            index_pd = pd_serve_arg.index("--worker-addr")
+            self.pd_addr_list.append(pd_serve_arg[index_pd + 1])
+            self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
 
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
@@ -625,10 +606,24 @@ class RemoteEPDServer:
         self.api_server_port = api_server_port
         self.e_addr_list = list()
         self.pd_addr_list = list()
+        self.e_serve_args_list = list()
+        self.pd_serve_args_list = list()
 
         self.model = None
-        self.e_serve_args = e_serve_args
-        self.pd_serve_args = pd_serve_args
+        if isinstance(e_serve_args, list):
+            if not all(isinstance(item, list) for item in e_serve_args):
+                for i in range(self.e_num):
+                    self.e_serve_args_list.append(copy.deepcopy(e_serve_args))
+        else:
+            raise RuntimeError("e_serve_args must be a list")
+
+        if isinstance(pd_serve_args, list):
+            if not all(isinstance(item, list) for item in pd_serve_args):
+                for i in range(self.pd_num):
+                    self.pd_serve_args_list.append(copy.deepcopy(pd_serve_args))
+        else:
+            raise RuntimeError("pd_serve_args must be a list")
+
         self.mooncake_args = mooncake_args
         self.proxy_args = proxy_args
         self.enable_health_monitor = False
