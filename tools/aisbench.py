@@ -238,19 +238,16 @@ def create_ttft_plot(result_file_names,
             x_pos = np.arange(len(file_data)) + i * bar_width
             color = color_map[file_name]
             for axes_obj, metrics_name in zip(axes_indexs, metrics_names):
-                axes_obj.bar(x_pos,
+                bars = axes_obj.bar(x_pos,
                                file_data[metrics_name],
                                width=bar_width,
                                color=color,
                                alpha=0.7,label=file_name)
-                axes_obj.text(0.5,0.95,
-                                f"{file_data[metrics_name]}",
-                                transform=axes_obj.transAxes,
-                                ha='center',
-                                va='center',
-                                fontsize=12,
-                                color='black',
-                                fontweight='bold')
+                for bar in bars:
+                    height = bar.get_height()
+                    axes_obj.text(bar.get_x() + bar.get_width() / 2., height + 0.5,
+                             f"{file_data[metrics_name]}",
+                             ha='center', va='bottom', fontsize=12, fontweight='bold')
                 axes_obj.set_xticklabels(file_data['index'])
 
 
