@@ -136,7 +136,7 @@ class RemoteEPDServer:
                 for line in iter(pipe.readline, ''):
                     if line:
                         print(f"{prefix}: {line}", end='')
-                        if prefix == "[PD_0]" and self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
+                        if prefix.strip() == "[PD_0]" and self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
                             self.e2e, self.queue, self.prefill, self.output_token, self.first_token = extract_ttft_data(line)
 
         except Exception as e:

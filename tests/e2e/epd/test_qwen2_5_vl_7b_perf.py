@@ -224,7 +224,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
             run_aisbench_cases(model=model,
                                port=api_port,
                                aisbench_cases=[aisbench_case])
-            server.save_ttft_data(file_name=f"qwen2_5_vl_7b_{dataset_name}_1E1PD_sc_ttft", index=aisbench_case[request_rate])
+            server.save_ttft_data(file_name=f"qwen2_5_vl_7b_{dataset_name}_1E1PD_sc_ttft", index=aisbench_case["request_rate"])
 
 
 @pytest.mark.asyncio
