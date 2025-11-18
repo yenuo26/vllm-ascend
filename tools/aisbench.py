@@ -254,6 +254,7 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
+        traceback.print_exc()
 
 
 benchmark_path = get_package_location("ais_bench_benchmark")
