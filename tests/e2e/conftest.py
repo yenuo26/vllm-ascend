@@ -122,7 +122,7 @@ class RemoteEPDServer:
                     if line:
                         print(f"{prefix}: {line}", end='')
                         if prefix.strip() == "[PD_0]" and self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
-                            self.extract_ttft_data(line)
+                            self._extract_ttft_data(line)
 
         except Exception as e:
             print(f"error: {e}")
