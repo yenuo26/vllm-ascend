@@ -128,28 +128,23 @@ class RemoteEPDServer:
             print(f"error: {e}")
 
     def _extract_ttft_data(self, text):
-        pattern = re.compile(
-            r'INFO (\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [^\]]* Engine (\d+): Avg e2e time requests: ([\d\.]+) ms, '
-            r'Avg queue time requests: ([\d\.]+) ms, Avg prefill time requests: ([\d\.]+) ms, '
-            r'Avg mean time per output token requests: ([\d\.]) ms, Avg time to first token: ([\d\.]+) ms'
-        )
-        m = pattern.search(text)
-        if m:
-            self.e2e = float(m.group(3))
-            self.queue = float(m.group(4))
-            self.prefill = float(m.group(5))
-            self.output_token = float(m.group(6))
-            self.first_token = float(m.group(7))
+        patterns = {
+            'e2e': r'Avg e2e time requests: ([\d.]+) ms',
+            'queue': r'Avg queue time requests: ([\d.]+) ms',
+            'prefill': r'Avg prefill time requests: ([\d.]+) ms',
+            'output_token': r'Avg mean time per output token requests: ([\d.]+) ms',
+            'first_token': r'Avg time to first token: ([\d.]+) ms'
+        }
+        for key, pattern in patterns.items():
+            match = re.search(pattern, text)
+            if match:
+                self.metrics[key] = float(match.group(1))
 
     def save_ttft_data(self, file_name, index):
         data = {
-            "index": index,
-            "e2e": self.e2e,
-            "queue": self.queue,
-            "prefill": self.prefill,
-            "output_token": self.output_token,
-            "first_token": self.first_token
+            "index": index
         }
+        data.update(self.metrics)
         write_to_execl(data, f"./{file_name}.csv")
         print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
 
@@ -677,11 +672,7 @@ class RemoteEPDServer:
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
-        self.e2e = 0
-        self.queue = 0
-        self.prefill = 0
-        self.output_token = 0
-        self.first_token = 0
+        self.metrics = {}
 
     async def __aenter__(self):
         # start with
