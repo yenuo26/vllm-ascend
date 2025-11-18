@@ -53,7 +53,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
         "--kv-transfer-config",
         '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_producer",'
-        '"kv_parallel_size":1, "kv_port": "20001", "engine_id": 0, "kv_rank": 0, "kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
+        '"kv_parallel_size":1, "kv_port": "20001", "engine_id": "0", "kv_rank": "0", "kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
         '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},"decode": {"dp_size":1, "tp_size":1}}}'],
         ["--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size",
@@ -61,7 +61,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--kv-transfer-config",
         '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_consumer",'
-        '"kv_parallel_size":1, "kv_port": "20002", "engine_id": 0, "kv_rank": 0, "kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
+        '"kv_parallel_size":1, "kv_port": "20002", "engine_id": "0", "kv_rank": "0", "kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
         '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},"decode": {"dp_size":1, "tp_size":1}}}']
     ]
 

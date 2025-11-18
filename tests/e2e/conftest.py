@@ -268,14 +268,12 @@ class RemoteEPDServer:
                 "llm_service.entrypoints.worker"
             ]
 
-
         if self.env_dict.get(
                 "TRANSFER_PROTOCOL"
         ) is not None and self.env_dict["TRANSFER_PROTOCOL"].upper() == "TCP":
             is_protocol_tcp = True
         else:
             is_protocol_tcp = False
-
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
@@ -385,15 +383,17 @@ class RemoteEPDServer:
                         "--worker-addr",
                         self._default_addr_prefix + "pd_" + str(i)
                     ]
-            index_pd = pd_serve_arg.index("--worker-addr")
-            if "kv_consumer" in pd_serve_arg:
-                self.d_addr_list.append(pd_serve_arg[index_pd + 1])
-                log_prefix = "[D_{i}] "
-            elif "kv_producer" in pd_serve_arg:
-                self.p_addr_list.append(pd_serve_arg[index_pd + 1])
-                log_prefix = "[P_{i}] "
+            worker_index = pd_serve_arg.index("--worker-addr")
+            if "--kv-transfer-config" in pd_serve_arg:
+                kv_index = pd_serve_arg.index("--kv-transfer-config")
+                if "kv_consumer" in pd_serve_arg[kv_index + 1]:
+                    self.d_addr_list.append(pd_serve_arg[worker_index + 1])
+                    log_prefix = "[D_{i}] "
+                elif "kv_producer" in pd_serve_arg[kv_index + 1]:
+                    self.p_addr_list.append(pd_serve_arg[worker_index + 1])
+                    log_prefix = "[P_{i}] "
             else:
-                self.pd_addr_list.append(pd_serve_arg[index_pd + 1])
+                self.pd_addr_list.append(pd_serve_arg[worker_index + 1])
                 log_prefix = "[PD_{i}] "
             self._run_server(pd_serve_arg, self.env_dict, log_prefix)
 
@@ -599,6 +599,8 @@ class RemoteEPDServer:
             if not all(isinstance(item, list) for item in e_serve_args):
                 for i in range(self.e_num):
                     self.e_serve_args_list.append(copy.deepcopy(e_serve_args))
+            else:
+                self.e_serve_args_list = e_serve_args
         else:
             raise RuntimeError("e_serve_args must be a list")
 
@@ -606,6 +608,8 @@ class RemoteEPDServer:
             if not all(isinstance(item, list) for item in pd_serve_args):
                 for i in range(self.pd_num):
                     self.pd_serve_args_list.append(copy.deepcopy(pd_serve_args))
+            else:
+                self.pd_serve_args_list = pd_serve_args
         else:
             raise RuntimeError("pd_serve_args must be a list")
 
