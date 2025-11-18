@@ -238,7 +238,7 @@ def create_ttft_plot(result_file_names,
             x_pos = np.arange(len(file_data)) + i * bar_width
             color = color_map[file_name]
             for axes_obj, metrics_name in zip(axes_indexs, metrics_names):
-                axes_obj.bar(file_data['index'],
+                axes_obj.bar(x_pos,
                                file_data[metrics_name],
                                width=bar_width,
                                color=color,
