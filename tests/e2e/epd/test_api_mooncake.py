@@ -1360,6 +1360,17 @@ async def test_1e2pd_mooncake_tcp_TRANSFER_PROTOCOL_001(model: str, tp_size: int
                                pd_serve_args=pd_server_args,
                                mooncake_args=mooncake_args) as server:
 
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=aisbench_cases)
+
 
 
 @pytest.mark.asyncio
@@ -1794,6 +1805,7 @@ async def test_1e1pd_merge_mooncake_tcp_001(model: str, tp_size: int, dataset_na
                                pd_num=1,
                                e_num=1,
                                env_dict=env_dict,
+                               is_epd_same_card=True,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
                                mooncake_args=mooncake_args) as server:
