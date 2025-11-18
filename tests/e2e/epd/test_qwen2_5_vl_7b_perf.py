@@ -35,7 +35,7 @@ async def teardown():
             f"qwen2_5_vl_7b_{dataset}_1E2PD_ttft",
             f"qwen2_5_vl_7b_{dataset}_1E3PD_ttft",
             f"qwen2_5_vl_7b_{dataset}_1E1PD_sc_ttft"
-        ], result_figure_prefix=dataset)
+        ], result_figure_prefix=f"{dataset}_ttft")
 
 
 

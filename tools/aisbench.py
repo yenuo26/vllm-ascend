@@ -225,7 +225,7 @@ def create_ttft_plot(result_file_names,
     try:
         plt.figure(figsize=(14, 8))
         bar_width = 0.1
-        fig, axes = plt.subplots(2, 3, figsize=(18, 18))
+        fig, axes = plt.subplots(2, 3, figsize=(20, 20))
         axes_indexs = [
             axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
         ]
@@ -242,7 +242,7 @@ def create_ttft_plot(result_file_names,
                                file_data[metrics_name],
                                width=bar_width,
                                color=color,
-                               alpha=0.7)
+                               alpha=0.7,label=file_name)
                 axes_obj.text(0.5,0.95,
                                 f"{file_data[metrics_name]}",
                                 transform=axes_obj.transAxes,
@@ -251,12 +251,14 @@ def create_ttft_plot(result_file_names,
                                 fontsize=12,
                                 color='black',
                                 fontweight='bold')
+                axes_obj.set_xticklabels(file_data['index'])
 
 
 
         for axes_obj in axes_indexs:
             axes_obj.set_ylabel('ms')
             axes_obj.set_xlabel('Request Rate/Card(req/s)')
+            axes_obj.set_xticks(np.arange(len(file_data)))
             axes_obj.grid(True, alpha=0.3)
             axes_obj.legend()
 
