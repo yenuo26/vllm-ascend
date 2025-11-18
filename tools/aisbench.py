@@ -234,14 +234,17 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
 
             axes[0,0].bar(x_pos, file_data['e2e'], width=bar_width,
                     color=color, alpha=0.7, label=f'{file_name}')
-            axes[0,1].bar(x_pos+bar_width, file_data['queue'], width=bar_width,
-                    color=color, alpha=0.7)
-            axes[0,2].bar(x_pos+2*bar_width, file_data['prefill'], width=bar_width,
-                    color=color, alpha=0.7)
-            axes[1,0].bar(x_pos+3*bar_width, file_data['output_token'], width=bar_width,
-                    color=color, alpha=0.7)
-            axes[1,1].bar(x_pos+4*bar_width, file_data['first_token'], width=bar_width,
-                    color=color, alpha=0.7)
+            axes[0,0].text(f"{file_data['e2e']}",
+                     ha='center', va='center',
+                     fontsize=12, color='white', fontweight='bold')
+            axes[0,1].bar(x_pos, file_data['queue'], width=bar_width,
+                    color=color, alpha=0.7,label=f'{file_name}')
+            axes[0,2].bar(x_pos, file_data['prefill'], width=bar_width,
+                    color=color, alpha=0.7, label=f'{file_name}')
+            axes[1,0].bar(x_pos, file_data['output_token'], width=bar_width,
+                    color=color, alpha=0.7, label=f'{file_name}')
+            axes[1,1].bar(x_pos, file_data['first_token'], width=bar_width,
+                    color=color, alpha=0.7, label=f'{file_name}')
 
         axes_indexs = [
             axes[0, 0], axes[0, 1], axes[0, 2], axes[1, 0], axes[1, 1]
