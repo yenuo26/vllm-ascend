@@ -95,7 +95,7 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     torch.npu.reset_peak_memory_stats()
 
 def extract_ttft_data(text):
-    pattern = re.complie(
+    pattern = re.compile(
         r'INFO (\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [^\]]* Engine (\d+): Avg e2e time requests: ([\d\.]+) ms, '
         r'Avg queue time requests: ([\d\.]+) ms, Avg prefill time requests: ([\d\.]+) ms, '
         r'Avg mean time per output token requests: ([\d\.]) ms, Avg time to first token: ([\d\.]+) ms'
