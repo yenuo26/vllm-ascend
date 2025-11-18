@@ -13,6 +13,7 @@ from tools.aisbench import create_result_plot
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
+EC_SHARED_STORAGE_PATH = "${EC_SHARED_STORAGE_PATH:-/tmp/ec_cache}"
 
 TENSOR_PARALLELS = [1]
 DATASET_NAME = ["simulate_truth"]
@@ -3634,9 +3635,8 @@ async def test_1e2pd_mooncake_tcp_acc_001(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "1",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+        '{"ec_connector_extra_config":{"shared_storage_path":"'"$EC_SHARED_STORAGE_PATH"'"},'
+        '"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
@@ -3644,9 +3644,8 @@ async def test_1e2pd_mooncake_tcp_acc_001(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+        '{"ec_connector_extra_config":{"shared_storage_path":"'"$EC_SHARED_STORAGE_PATH"'"},'
+        '"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
@@ -3714,9 +3713,8 @@ async def test_1e2pd_mooncake_tcp_acc_002(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "1",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+        '{"ec_connector_extra_config":{"shared_storage_path":"'"$EC_SHARED_STORAGE_PATH"'"},'
+        '"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
@@ -3725,9 +3723,8 @@ async def test_1e2pd_mooncake_tcp_acc_002(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+        '{"ec_connector_extra_config":{"shared_storage_path":"'"$EC_SHARED_STORAGE_PATH"'"},'
+        '"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
