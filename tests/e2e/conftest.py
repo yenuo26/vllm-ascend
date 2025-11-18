@@ -231,18 +231,23 @@ class RemoteEPDServer:
                 consumer_json["master_server_address"] = producer_json[
                     "master_server_address"] = f"0.0.0.0:{rpc_port}"
 
-        producer_index = self.e_serve_args.index("--ec-transfer-config")
-        producer_path = json.loads(self.e_serve_args[producer_index + 1]).get(
-            "ec_connector_extra_config").get("ec_mooncake_config_file_path")
-        consumer_index = self.pd_serve_args.index("--ec-transfer-config")
-        consumer_path = json.loads(self.pd_serve_args[consumer_index + 1]).get(
-            "ec_connector_extra_config").get("ec_mooncake_config_file_path")
-        with open(producer_path, 'w', encoding='utf-8') as f:
-            json.dump(producer_json, f, ensure_ascii=False, indent=4)
-        print(f"The mooncake producer config is\n {producer_json}")
-        with open(consumer_path, 'w', encoding='utf-8') as f:
-            json.dump(consumer_json, f, ensure_ascii=False, indent=4)
-        print(f"The mooncake consumer config is\n {consumer_json}")
+        for i, arg in enumerate(self.e_serve_args):
+            producer_index = arg.index("--ec-transfer-config")
+            producer_path = json.loads(arg[producer_index + 1]).get(
+                "ec_connector_extra_config").get("ec_mooncake_config_file_path")
+            with open(producer_path, 'w', encoding='utf-8') as f:
+                json.dump(producer_json, f, ensure_ascii=False, indent=4)
+            print(f"The mooncake producer config is\n {producer_json}")
+        for i, arg in enumerate(self.pd_serve_args):
+            if "--ec-transfer-config" in arg:
+                consumer_index = arg.index("--ec-transfer-config")
+                consumer_path = json.loads(arg[consumer_index + 1]).get(
+                    "ec_connector_extra_config").get("ec_mooncake_config_file_path")
+                with open(consumer_path, 'w', encoding='utf-8') as f:
+                    json.dump(consumer_json, f, ensure_ascii=False, indent=4)
+                print(f"The mooncake consumer config is\n {consumer_json}")
+
+
 
     def _start_vllm_worker(self):
         if self.env_dict is None:
