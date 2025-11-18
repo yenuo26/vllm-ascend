@@ -3635,9 +3635,9 @@ async def test_1e2pd_mooncake_tcp_acc_001(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "1",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+        '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
+        MOONCAKE_PRODUCER_CONFIG_PATH +
+        '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
@@ -3645,9 +3645,9 @@ async def test_1e2pd_mooncake_tcp_acc_001(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+        '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
+        MOONCAKE_CONSUMER_CONFIG_PATH +
+        '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
@@ -3715,20 +3715,19 @@ async def test_1e2pd_mooncake_tcp_acc_002(model: str, tp_size: int, dataset_name
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "1",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+        '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
+        MOONCAKE_PRODUCER_CONFIG_PATH +
+        '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+        '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
+        MOONCAKE_CONSUMER_CONFIG_PATH +
+        '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
