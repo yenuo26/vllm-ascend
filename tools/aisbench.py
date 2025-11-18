@@ -220,17 +220,18 @@ def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result")
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
             x_pos = np.arange(len(file_data)) + i * bar_width
+            color = color_map[file_name]
 
             plt.bar(x_pos, file_data['e2e'], width=bar_width,
-                    color=color_map[i], alpha=0.7, label=f'{file_name}-e2e')
+                    color=color, alpha=0.7, label=f'{file_name}-e2e')
             plt.bar(x_pos, file_data['queue'], width=bar_width,
-                    color=color_map[i], alpha=0.7, label=f'{file_name}-queue')
+                    color=color, alpha=0.7, label=f'{file_name}-queue')
             plt.bar(x_pos, file_data['prefill'], width=bar_width,
-                    color=color_map[i], alpha=0.7, label=f'{file_name}-prefill')
+                    color=color, alpha=0.7, label=f'{file_name}-prefill')
             plt.bar(x_pos, file_data['output_token'], width=bar_width,
-                    color=color_map[i], alpha=0.7, label=f'{file_name}-output_token')
+                    color=color, alpha=0.7, label=f'{file_name}-output_token')
             plt.bar(x_pos, file_data['first_token'], width=bar_width,
-                    color=color_map[i], alpha=0.7, label=f'{file_name}-first_token')
+                    color=color, alpha=0.7, label=f'{file_name}-first_token')
 
         plt.title('ttft analysis', fontsize=16, fontweight='bold')
         plt.xlabel('request rate/card(req/s)', fontsize=12)
