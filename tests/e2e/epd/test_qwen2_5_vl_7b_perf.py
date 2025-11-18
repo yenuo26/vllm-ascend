@@ -15,8 +15,7 @@ MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
 
 TENSOR_PARALLELS = [1]
-#DATASET_NAME = ["simulate_truth"]
-DATASET_NAME = ["image_4"]
+DATASET_NAME = ["image_4", "simulate_truth"]
 
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
@@ -39,6 +38,7 @@ async def teardown():
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown):
     api_port = 10001
+    env_dict = {"TIMECOUNT_ENABLED": "1"}
     vllm_server_args = [
         "--port",
         str(api_port), "--tensor-parallel-size",
@@ -124,6 +124,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, teardown):
+    env_dict = {"TIMECOUNT_ENABLED": "1"}
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -207,6 +208,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
                                api_server_port=api_port,
                                pd_num=1,
                                e_num=1,
+                               env_dict=env_dict,
                                is_epd_same_card=True,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
@@ -218,9 +220,11 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
                            verify=False,
                            save=False)
         # aisbench test
-        run_aisbench_cases(model=model,
-                           port=api_port,
-                           aisbench_cases=aisbench_cases)
+        for aisbench_case in aisbench_cases:
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=[aisbench_case])
+            server.save_ttft_data(file_name=f"qwen2_5_vl_7b_{dataset_name}_1E1PD_sc_ttft", index=aisbench_case[request_rate])
 
 
 @pytest.mark.asyncio
@@ -228,6 +232,7 @@ async def test_1e1pd_sharecard_001(model: str, tp_size: int, dataset_name: str, 
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
+    env_dict = {"TIMECOUNT_ENABLED": "1"}
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -310,6 +315,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
                                api_server_port=api_port,
                                pd_num=3,
                                e_num=1,
+                               env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # warm up
@@ -330,6 +336,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
+    env_dict = {"TIMECOUNT_ENABLED": "1"}
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -412,6 +419,7 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
                                api_server_port=api_port,
                                pd_num=2,
                                e_num=1,
+                               env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # warm up

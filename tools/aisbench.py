@@ -26,6 +26,7 @@ from datetime import date
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pandas as pd
+import numpy as np
 
 
 def get_package_location(package_name):
@@ -189,6 +190,73 @@ def create_result_plot(result_file_names, result_figure_prefix="test_perf_result
         plt.tight_layout()
 
         fig.suptitle('', fontsize=16, y=0.98)
+
+        if len(result_file_names) == 1:
+            plt.savefig(f'./{result_file_names[0]}.png',
+                        dpi=200,
+                        bbox_inches='tight')
+            print(f"Result figure is locate in {result_file_names[0]}.png")
+        else:
+            today = date.today()
+            plt.savefig(f'./{result_figure_prefix}_{today}.png',
+                        dpi=200,
+                        bbox_inches='tight')
+            print(f"Result figure is locate in {result_figure_prefix}_{today}.png")
+
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+
+def create_ttft_plot(result_file_names, result_figure_prefix="test_perf_result"):
+    plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    color_map = {name: colors[i % len(colors)] for i, name in enumerate(result_file_names)}
+
+    try:
+        all_data = []
+        file_names = []
+
+        for file in result_file_names:
+            try:
+                df = pd.read_csv(file)
+                file_name = os.path.basename(file).replace('.csv', '')
+                df['file_source'] = file_name
+                all_data.append(df)
+                file_names.append(file_name)
+                print(f"\n{file_name} 数据:")
+                print(df.head())
+            except Exception as e:
+                print(f"读取文件 {file} 时出错: {e}")
+
+        if not all_data:
+            return
+
+        # 合并数据
+        combined_data = pd.concat(all_data, ignore_index=True)
+
+        # 设置图形
+        plt.figure(figsize=(14, 8))
+
+        # 准备分组柱状图数据
+        bar_width = 0.8 / len(result_file_names)  # 动态调整柱宽
+        indices = combined_data['index'].unique() if 'index' in combined_data.columns else range(1, len(
+            combined_data) // len(result_file_names) + 1)
+
+        # 绘制 e2e 数据的柱状图
+        for i, file_name in enumerate(result_file_names):
+            file_data = combined_data[combined_data['file_source'] == file_name]
+            x_pos = np.arange(len(indices)) + i * bar_width
+
+            plt.bar(x_pos, file_data['e2e'], width=bar_width,
+                    color=colors[i], alpha=0.7, label=f'{file_name}-e2e')
+
+        plt.title('多个CSV文件 e2e 数据对比', fontsize=16, fontweight='bold')
+        plt.xlabel('索引', fontsize=12)
+        plt.ylabel('e2e 值', fontsize=12)
+        plt.xticks(np.arange(len(indices)) + bar_width * (len(result_file_names) - 1) / 2, indices)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.grid(axis='y', alpha=0.3)
+        plt.tight_layout()
 
         if len(result_file_names) == 1:
             plt.savefig(f'./{result_file_names[0]}.png',

@@ -3,6 +3,7 @@ import contextlib
 import gc
 import json
 import os
+import re
 import shlex
 import copy
 import subprocess
@@ -14,6 +15,7 @@ from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
 
 import httpx
 import numpy as np
+import pandas as pd
 import openai
 import psutil
 import pytest
@@ -21,6 +23,7 @@ import requests
 import torch
 import importlib
 from PIL import Image
+from datetime import datetime
 from llm_service.apis.vllm.proxy import Proxy
 from llm_service.protocol.protocol import ServerType
 from modelscope import snapshot_download  # type: ignore[import-untyped]
@@ -91,6 +94,39 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     torch.npu.empty_cache()
     torch.npu.reset_peak_memory_stats()
 
+def extract_ttft_data(text):
+    pattern = re.complie(
+        r'INFO (\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [^\]]* Engine (\d+): Avg e2e time requests: ([\d\.]+) ms, '
+        r'Avg queue time requests: ([\d\.]+) ms, Avg prefill time requests: ([\d\.]+) ms, '
+        r'Avg mean time per output token requests: ([\d\.]) ms, Avg time to first token: ([\d\.]+) ms'
+    )
+    times, e2e, queue, prefill, output_token, first_token = 0, 0, 0, 0, 0, 0
+    m = pattern.search(text)
+    if m:
+        t = datetime.strptime(m.group(1), "%m-%d %H:%M:%S")
+        engine_id = int(m.group(2))
+        e2e = float(m.group(3))
+        queue = float(m.group(4))
+        prefill = float(m.group(5))
+        output_token = float(m.group(6))
+        first_token = float(m.group(7))
+    if not engine_id:
+        print(f"no valid data was parsed")
+    return e2e, queue, prefill, output_token, first_token
+
+
+def write_to_execl(data, path):
+    if path is not None:
+        if not os.path.exists(path):
+            df = pd.DataFrame(data, index=[0])
+            df.to_csv(path, index=False)
+        else:
+            existing_df = pd.read_csv(path)
+            new_df = pd.DataFrame(data, index=[0])
+            combined_df = pd.concat([existing_df, new_df],
+                                    ignore_index=True)
+            combined_df.to_csv(path, index=False)
+
 
 class RemoteEPDServer:
 
@@ -104,8 +140,24 @@ class RemoteEPDServer:
                 for line in iter(pipe.readline, ''):
                     if line:  # 避免空行
                         print(f"{prefix}: {line}", end='')
+                        if self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
+                            self.e2e, self.queue, self.prefill, self.output_token, self.first_token = extract_ttft_data(line)
+
         except Exception as e:
             print(f"error: {e}")
+
+    def save_ttft_data(self, file_name, index):
+        data = {
+            "index": index,
+            "e2e": self.e2e,
+            "queue": self.queue,
+            "prefill": self.prefill,
+            "output_token": self.output_token,
+            "first_token": self.first_token
+        }
+        write_to_execl(data, f"./{file_name}.csv")
+        print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
+
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
