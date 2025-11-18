@@ -103,15 +103,11 @@ def extract_ttft_data(text):
     times, e2e, queue, prefill, output_token, first_token = 0, 0, 0, 0, 0, 0
     m = pattern.search(text)
     if m:
-        t = datetime.strptime(m.group(1), "%m-%d %H:%M:%S")
-        engine_id = int(m.group(2))
         e2e = float(m.group(3))
         queue = float(m.group(4))
         prefill = float(m.group(5))
         output_token = float(m.group(6))
         first_token = float(m.group(7))
-    if not engine_id:
-        print(f"no valid data was parsed")
     return e2e, queue, prefill, output_token, first_token
 
 
