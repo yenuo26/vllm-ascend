@@ -1960,8 +1960,8 @@ async def test_1e2pd_mooncake_tcp_002(model: str, tp_size: int, dataset_name: st
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
         "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
@@ -2190,8 +2190,8 @@ async def test_1e2pd_mooncake_tcp_004(model: str, tp_size: int, dataset_name: st
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
         "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
@@ -2423,8 +2423,8 @@ async def test_1e2pd_mooncake_tcp_006(model: str, tp_size: int, dataset_name: st
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
         "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
