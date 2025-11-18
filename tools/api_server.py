@@ -7,6 +7,7 @@ import uuid
 from io import BytesIO
 
 import msgspec
+import json
 import numpy as np
 import uvicorn
 import llm_service.envs as llm_service_envs
@@ -207,43 +208,14 @@ if __name__ == "__main__":
                         default="127.0.0.1",
                         help="Proxy host")
     parser.add_argument("--port", type=int, default=8000, help="Proxy port")
-    parser.add_argument("--proxy-addr",
-                        type=str,
-                        required=True,
-                        help="Proxy address")
-    parser.add_argument("--e-addr-list",
-                        type=str,
-                        required=True,
-                        help="encode worker ipc address")
-    parser.add_argument("--pd-addr-list",
-                        type=str,
-                        required=True,
-                        help="pd worker ipc address")
-    parser.add_argument("--model", type=str, required=True, help="Model name")
     parser.add_argument("--is-load-image",
                         action='store_true',
                         help="load image from path")
-    parser.add_argument("--enable-health-monitor",
-                        action='store_true',
-                        help="enable health monitor")
-    parser.add_argument("--transfer-protocol",
-                        type=str,
-                        help="transfer-protocol, tcp or ipc")
+    parser.add_argument("--proxy-config", type=str, help="proxy configuration as JSON")
 
     args = parser.parse_args()
-    if hasattr(args, 'transfer_protocol'):
-        app.state.proxy = Proxy(proxy_addr=args.proxy_addr,
-                                encode_addr_list=args.e_addr_list.split(","),
-                                pd_addr_list=args.pd_addr_list.split(","),
-                                enable_health_monitor=args.enable_health_monitor,
-                                transfer_protocol=args.transfer_protocol,
-                                model_name=args.model)
-    else:
-        app.state.proxy = Proxy(proxy_addr=args.proxy_addr,
-                                encode_addr_list=args.e_addr_list.split(","),
-                                pd_addr_list=args.pd_addr_list.split(","),
-                                enable_health_monitor=args.enable_health_monitor,
-                                model_name=args.model)
+    proxy_config_dict = json.loads(args.proxy_config)
+    app.state.proxy = Proxy(**proxy_config_dict)
     app.state.is_load_image = args.is_load_image
     print(f"Starting API server on {args.host}:{args.port}")
     uvicorn.run(app=app,
