@@ -216,6 +216,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     proxy_config_dict = json.loads(args.proxy_config)
+    if proxy_config_dict["router"] == "RandomRouter":
+        proxy_config_dict["router"] = RandomRouter
+    elif proxy_config_dict["router"] == "RoundRobinRouter":
+        proxy_config_dict["router"] = RoundRobinRouter
+    else:
+        proxy_config_dict["router"] = LeastInFlightRouter
     app.state.proxy = Proxy(**proxy_config_dict)
     app.state.is_load_image = args.is_load_image
     print(f"Starting API server on {args.host}:{args.port}")

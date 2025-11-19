@@ -456,8 +456,9 @@ class RemoteEPDServer:
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
-
-        return Proxy(**self.proxy_config)
+        p = Proxy(**self.proxy_config)
+        self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
+        return p
 
     def _start_disagg_proxy(self):
         proxy_args = [
