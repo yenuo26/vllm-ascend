@@ -1365,7 +1365,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
                                    pd_serve_args=pd_server_args,
                                    mooncake_args=mooncake_args,
                                    proxy_args=proxy_args) as server:
-
+            print("123444444")
             # warm up
             run_aisbench_cases(model=model,
                                port=api_port,
@@ -1373,6 +1373,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
                                verify=False,
                                save=False)
     except Exception as message:
+        print("123455555")
         print(f"error message is: {str(message)}")
         assert "Invaalid value" in str(message), "init success"
 
