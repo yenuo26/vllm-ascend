@@ -189,8 +189,8 @@ def create_ttft_plot(result_file_names,
                               edgecolor='black',
                               color=color_map[metrics_name], alpha=0.7, linewidth=0.8)
 
-                for value, bar in zip(file_data[metrics_name], bars):
-                    ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), value,
+                for value, bar, single_bottom in zip(file_data[metrics_name], bars, bottom):
+                    ax.text(bar.get_x() + bar.get_width() / 2, single_bottom, value,
                                     ha='center', va='center', fontsize=8,
                                     fontweight='bold', color='black')
                 bottom += np.array(file_data[metrics_name])
