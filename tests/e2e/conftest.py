@@ -444,12 +444,18 @@ class RemoteEPDServer:
                 'p_addr_list': self.p_addr_list,
                 'd_addr_list': self.d_addr_list
             })
-        if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
-            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
-        if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
-            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
+        if self.proxy_args is not None and "transfer_protocol" in self.proxy_args:
+            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("transfer_protocol")+1]
+        if self.proxy_args is not None and "enable-health-monitor" in self.proxy_args:
+            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("enable-health-monitor")+1]
         if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
+            if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
+                self.proxy_config['router'] = RandomRouter
+            elif self.proxy_args[self.proxy_args.index("router")+1] == "RoundRobinRouter":
+                self.proxy_config['router'] = RoundRobinRouter
+            else:
+                self.proxy_config['router'] = LeastInFlightRouter
 
         return Proxy(**self.proxy_config)
 

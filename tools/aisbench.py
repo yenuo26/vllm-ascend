@@ -110,7 +110,7 @@ def create_result_plot(result_file_names,
                                 df['E2EL_Average'],color=color, markersize=4)
             # display num for data point
             for i, (xi, yi) in enumerate(zip(df['Request Throughput/Card'], df['E2EL_Average'])):
-                axes_obj.annotate(
+                axes[1,2].annotate(
                     f'{yi:.2f}',
                     (xi, yi),
                     textcoords="offset points",
@@ -165,8 +165,10 @@ def create_ttft_plot(result_file_names,
 
     fig, ax = plt.subplots(figsize=(12, 8))
     try:
+        bar_width = 0.1
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
+            x_pos = np.arange(len(file_data)) + i * bar_width
             pd_queue_columns = [col for col in file_data.columns if 'PD' in col and 'queue' in col]
             file_data['pd_queue_mean'] = file_data[pd_queue_columns].mean(axis=1)
             e_queue_columns = [col for col in file_data.columns if 'E' in col and 'queue' in col]
@@ -178,14 +180,14 @@ def create_ttft_plot(result_file_names,
 
             bottom = np.zeros(len(file_data['index']))
             bars = []
-            for j, metrics_name in enumerate(metrics_names):
-                bar = ax.bar(file_data['index'], file_data[metrics_name], bottom=bottom,
+            for metrics_name in metrics_names:
+                bar = ax.bar(x_pos, file_data[metrics_name], bottom=bottom,
                               label=metrics_name, color=color_map[metrics_name], alpha=0.8)
                 bars.append(bar)
-
-                ax.text(j, bottom, file_data[metrics_name],
-                                ha='center', va='center', fontsize=10,
-                                fontweight='bold', color='white')
+                for value, bar in zip(file_data[metrics_name], bars):
+                    ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), value,
+                                    ha='center', va='center', fontsize=10,
+                                    fontweight='bold', color='white')
                 bottom += np.array(file_data[metrics_name])
 
             ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
