@@ -121,20 +121,23 @@ class RemoteEPDServer:
                 for line in iter(pipe.readline, ''):
                     if line:
                         print(f"{prefix}: {line}", end='')
-                        if "PD" in prefix and self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
+                        if self.env_dict["TIMECOUNT_ENABLED"] is not None and self.env_dict["TIMECOUNT_ENABLED"]=="1":
                             self._extract_ttft_data(line)
 
         except Exception as e:
             print(f"error: {e}")
 
-    def _extract_ttft_data(self, text):
-        patterns = {
-            'e2e': r'Avg e2e time requests: ([\d.]+) ms',
-            'queue': r'Avg queue time requests: ([\d.]+) ms',
-            'prefill': r'Avg prefill time requests: ([\d.]+) ms',
-            'output_token': r'Avg mean time per output token requests: ([\d.]+) ms',
-            'first_token': r'Avg time to first token: ([\d.]+) ms'
-        }
+    def _extract_ttft_data(self, text, prefix):
+        if "PROXY" in prefix.upper():
+            patterns = {
+                'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
+                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'
+            }
+        else:
+            patterns = {
+                f'{prefix}_queue': r'Avg queue time requests: ([\d.]+) ms',
+                f'{prefix}_prefill': r'Avg prefill time requests: ([\d.]+) ms',
+            }
         for key, pattern in patterns.items():
             match = re.search(pattern, text)
             if match:
