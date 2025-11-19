@@ -181,20 +181,23 @@ def create_ttft_plot(result_file_names,
             bottom = np.zeros(len(file_data['index']))
 
             for metrics_name in metrics_names:
-                bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom,
-                              label=metrics_name, color=color_map[metrics_name], alpha=0.8)
-      
+                bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom, width=bar_width,
+                              label=f"{file_name}_{metrics_name}", color=color_map[metrics_name], alpha=0.7)
+
                 for value, bar in zip(file_data[metrics_name], bars):
                     ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), value,
                                     ha='center', va='center', fontsize=10,
                                     fontweight='bold', color='white')
                 bottom += np.array(file_data[metrics_name])
 
-            ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
-            ax.set_ylabel('ms', fontsize=12)
-            ax.set_title('TTFT Breakdown', fontsize=14, fontweight='bold')
-            ax.legend(loc='upper left')
-            ax.grid(axis='y', alpha=0.3)
+            ax.set_xticklabels(file_data['index'])
+
+        ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
+        ax.xaxis.set_major_locator(ticker.AutoLocator)
+        ax.set_ylabel('ms', fontsize=12)
+        ax.set_title('TTFT Breakdown', fontsize=14, fontweight='bold')
+        ax.legend(loc='upper left')
+        ax.grid(axis='y', alpha=0.3)
 
         if len(result_file_names) == 1:
             plt.savefig(f'./{result_file_names[0]}.png',
