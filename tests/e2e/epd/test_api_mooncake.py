@@ -1298,34 +1298,6 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_001(model: str, tp_size: int
         "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
         "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
-    warmup_cases = [{
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, dataset_name),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen",
-        "num_prompts":
-        50,
-        "max_out_len":
-        256,
-        "batch_size":
-        16,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        0,
-        "seed":
-        77,
-    }]
     api_port = 10001
     try:
         RemoteEPDServer(run_mode="worker",
