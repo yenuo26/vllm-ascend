@@ -3554,8 +3554,7 @@ async def test_3e5pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
                                e_num=3,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               proxy_args=proxy_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
