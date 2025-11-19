@@ -3031,7 +3031,7 @@ async def test_1e2pd_shared_tcp_002(model: str, tp_size: int, dataset_name: str)
         "request_rate": 0.28,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_1E1PD_merge_shared_TCP_noprefix_caching",
+        "result_file_name": f"{dataset_name}_1E2PD_shared_TCP_noprefix_caching",
         "threshold": 0.97
     }
     aisbench_cases = []
