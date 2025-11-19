@@ -457,7 +457,8 @@ class RemoteEPDServer:
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
         p = Proxy(**self.proxy_config)
-        self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
+        if self.proxy_args is not None and "--router" in self.proxy_args:
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
         return p
 
     def _start_disagg_proxy(self):
