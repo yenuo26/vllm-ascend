@@ -9,6 +9,7 @@ import copy
 import subprocess
 import sys
 import threading
+import traceback
 import time
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
@@ -127,6 +128,7 @@ class RemoteEPDServer:
 
         except Exception as e:
             print(f"error: {e}")
+            traceback.print_exc()
 
     def _extract_ttft_data(self, text, prefix):
         if "PROXY" in prefix.upper():
