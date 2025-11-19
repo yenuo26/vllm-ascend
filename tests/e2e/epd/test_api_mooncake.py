@@ -1300,17 +1300,23 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_001(model: str, tp_size: int
     ]
     api_port = 10001
     try:
-        RemoteEPDServer(run_mode="worker",
-                               store_type="mooncake",
-                               proxy_type="api_server",
-                               api_server_port=api_port,
-                               pd_num=2,
-                               e_num=1,
-                               env_dict=env_dict,
-                               e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args,
-                               proxy_args=proxy_args)
+        async with RemoteEPDServer(run_mode="worker",
+                                   store_type="mooncake",
+                                   proxy_type="api_server",
+                                   api_server_port=api_port,
+                                   pd_num=2,
+                                   e_num=1,
+                                   env_dict=env_dict,
+                                   e_serve_args=e_server_args,
+                                   pd_serve_args=pd_server_args,
+                                   mooncake_args=mooncake_args,
+                                   proxy_args=proxy_args) as server:
+            # warm up
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
     except Exception as message:
         print(f"error message is: {str(message)}")
         assert "Invalid value" in str(message), "init success"
@@ -1365,7 +1371,6 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
                                    pd_serve_args=pd_server_args,
                                    mooncake_args=mooncake_args,
                                    proxy_args=proxy_args) as server:
-            print("123444444")
             # warm up
             run_aisbench_cases(model=model,
                                port=api_port,
@@ -1373,7 +1378,6 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
                                verify=False,
                                save=False)
     except Exception as message:
-        print("123455555")
         print(f"error message is: {str(message)}")
         assert "Protocol not supported" in str(message), "init success"
 
