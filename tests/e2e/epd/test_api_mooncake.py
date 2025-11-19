@@ -2650,11 +2650,6 @@ async def test_1e1pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
-    ]
     warmup_cases = [{
         "case_type":
             "performance",
@@ -2717,8 +2712,7 @@ async def test_1e1pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -2758,11 +2752,6 @@ async def test_1e1pd_merge_shared_tcp_001(model: str, tp_size: int, dataset_name
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
     warmup_cases = [{
         "case_type":
@@ -2827,8 +2816,7 @@ async def test_1e1pd_merge_shared_tcp_001(model: str, tp_size: int, dataset_name
                                env_dict=env_dict,
                                is_epd_same_card=True,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -2869,11 +2857,6 @@ async def test_1e2pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
     warmup_cases = [{
         "case_type":
@@ -2937,8 +2920,7 @@ async def test_1e2pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -2980,11 +2962,6 @@ async def test_1e2pd_shared_tcp_002(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
     warmup_cases = [{
         "case_type":
@@ -3048,8 +3025,7 @@ async def test_1e2pd_shared_tcp_002(model: str, tp_size: int, dataset_name: str)
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3090,11 +3066,6 @@ async def test_1e2pd_shared_tcp_003(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
     warmup_cases = [{
         "case_type":
@@ -3158,8 +3129,7 @@ async def test_1e2pd_shared_tcp_003(model: str, tp_size: int, dataset_name: str)
                                e_num=1,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3203,11 +3173,6 @@ async def test_1e2pd_shared_tcp_004(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -3272,7 +3237,7 @@ async def test_1e2pd_shared_tcp_004(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               proxy_args=proxy_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3314,11 +3279,6 @@ async def test_1e2pd_shared_tcp_005(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -3383,7 +3343,7 @@ async def test_1e2pd_shared_tcp_005(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               proxy_args=proxy_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3427,11 +3387,6 @@ async def test_1e2pd_shared_tcp_006(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -3496,7 +3451,7 @@ async def test_1e2pd_shared_tcp_006(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               proxy_args=proxy_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3536,11 +3491,6 @@ async def test_3e5pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
     warmup_cases = [{
         "case_type":
@@ -3605,7 +3555,7 @@ async def test_3e5pd_shared_tcp_001(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               proxy_args=proxy_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
