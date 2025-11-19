@@ -1319,7 +1319,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_001(model: str, tp_size: int
                                save=False)
     except Exception as message:
         print(f"error message is: {str(message)}")
-        assert "Invalid value" in str(message), "init success"
+        assert "invalid choice" in str(message), "init success"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
