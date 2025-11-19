@@ -163,9 +163,10 @@ def create_ttft_plot(result_file_names,
         for i, name in enumerate(metrics_names)
     }
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(18, 18))
     try:
-        bar_width = 0.1
+        bar_width = 0.05
+        x_labels = []
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
             x_pos = np.arange(len(file_data)) + i * bar_width
@@ -182,18 +183,27 @@ def create_ttft_plot(result_file_names,
 
             for metrics_name in metrics_names:
                 bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom, width=bar_width,
-                              label=f"{file_name}_{metrics_name}", color=color_map[metrics_name], alpha=0.7)
+                              label=metrics_name, color=color_map[metrics_name], alpha=0.7, linewidth=0.1)
 
                 for value, bar in zip(file_data[metrics_name], bars):
                     ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), value,
-                                    ha='center', va='center', fontsize=10,
+                                    ha='center', va='center', fontsize=8,
                                     fontweight='bold', color='white')
                 bottom += np.array(file_data[metrics_name])
 
-            ax.set_xticklabels(file_data['index'])
+            for value in file_data['index']:
+                x_labels.append(f"{value}_{file_name}")
+
+
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))  # 自动去重
+        ax.legend(by_label.values(), by_label.keys())
 
         ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
-        ax.xaxis.set_major_locator(ticker.AutoLocator)
+        ax.xaxis.set_major_locator(ticker.AutoLocator())
+
+
+        ax.set_xticklabels(x_labels)
         ax.set_ylabel('ms', fontsize=12)
         ax.set_title('TTFT Breakdown', fontsize=14, fontweight='bold')
         ax.legend(loc='upper left')
