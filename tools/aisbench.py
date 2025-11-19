@@ -166,7 +166,7 @@ def create_ttft_plot(result_file_names,
 
     fig, ax = plt.subplots(figsize=(18, 18))
     try:
-        bar_width = 0.05
+        bar_width = 0.2
         x_labels = []
         x_poss = []
         for i, file_name in enumerate(result_file_names):
@@ -186,6 +186,7 @@ def create_ttft_plot(result_file_names,
 
             for metrics_name in metrics_names:
                 bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom, width=bar_width, linestyle='-',
+                              edgecolor='black',
                               color=color_map[metrics_name], alpha=0.7, linewidth=0.8)
 
                 for value, bar in zip(file_data[metrics_name], bars):
@@ -195,8 +196,7 @@ def create_ttft_plot(result_file_names,
                 bottom += np.array(file_data[metrics_name])
 
             for value in file_data['index']:
-                label = file_name.split("ttft")[0]
-                x_labels.append(f"{value}_{label}")
+                x_labels.append(f"{value}_{file_name}")
 
 
 
