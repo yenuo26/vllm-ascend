@@ -228,7 +228,7 @@ class RemoteEPDServer:
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
         self._run_server_new_session(api_server_args, self.env_dict,
-                                     "[PRXOY] ")
+                                     "[PROXY] ")
 
     def _start_mooncake(self) -> None:
         self._init_mooncake_config()
@@ -447,6 +447,8 @@ class RemoteEPDServer:
             self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
+        if self.proxy_args is not None and "--router" in self.proxy_args:
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
 
         return Proxy(**self.proxy_config)
 
