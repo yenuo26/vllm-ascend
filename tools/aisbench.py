@@ -179,11 +179,11 @@ def create_ttft_plot(result_file_names,
             file_data['e_prefill_mean'] = file_data[e_prefill_columns].mean(axis=1)
 
             bottom = np.zeros(len(file_data['index']))
-            bars = []
+
             for metrics_name in metrics_names:
-                bar = ax.bar(x_pos, file_data[metrics_name], bottom=bottom,
+                bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom,
                               label=metrics_name, color=color_map[metrics_name], alpha=0.8)
-                bars.append(bar)
+      
                 for value, bar in zip(file_data[metrics_name], bars):
                     ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), value,
                                     ha='center', va='center', fontsize=10,
