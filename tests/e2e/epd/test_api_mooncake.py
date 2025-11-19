@@ -1647,7 +1647,7 @@ async def test_1e2pd_mooncake_tcp_export_transfer_protocol_002(model: str, tp_si
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_mooncake_tcp_TRANSFER_PROTOCOL_003(model: str, tp_size: int, dataset_name: str):
+async def test_1e2pd_mooncake_tcp_export_transfer_protocol_003(model: str, tp_size: int, dataset_name: str):
     """TRANSFER_PROTOCOL不携带"""
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
