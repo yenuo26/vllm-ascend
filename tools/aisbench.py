@@ -172,7 +172,7 @@ def create_ttft_plot(result_file_names,
         for i, file_name in enumerate(result_file_names):
             file_data = pd.read_csv(f"./{file_name}.csv")
             x_pos = np.arange(len(file_data)) + i * bar_width
-            x_poss.append(x_pos)
+            x_poss.extend(x_pos)
             pd_queue_columns = [col for col in file_data.columns if 'PD' in col and 'queue' in col]
             file_data['pd_queue_mean'] = file_data[pd_queue_columns].mean(axis=1)
             e_queue_columns = [col for col in file_data.columns if 'E' in col and 'queue' in col]
@@ -195,7 +195,8 @@ def create_ttft_plot(result_file_names,
                 bottom += np.array(file_data[metrics_name])
 
             for value in file_data['index']:
-                x_labels.append(f"{value}_{file_name}")
+                label = file_name.split("ttft")[0]
+                x_labels.append(f"{value}_{label}")
 
 
 
@@ -204,7 +205,7 @@ def create_ttft_plot(result_file_names,
         ax.legend(handles=legend_elements, loc='upper left')
 
         ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
-        ax.set_xticks(x_pos)
+        ax.set_xticks(x_poss)
         ax.set_xticklabels(x_labels)
         ax.set_ylabel('ms', fontsize=12)
         ax.set_title('TTFT Breakdown', fontsize=14, fontweight='bold')
