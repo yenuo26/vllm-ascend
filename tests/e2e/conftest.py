@@ -431,7 +431,6 @@ class RemoteEPDServer:
         self.proxy_config = {
             'proxy_addr': self.proxy_addr,
             'encode_addr_list': self.e_addr_list,
-            'enable_health_monitor': self.enable_health_monitor,
             'model_name': self.model
         }
         if self.pd_addr_list:
@@ -441,8 +440,10 @@ class RemoteEPDServer:
                 'p_addr_list': self.p_addr_list,
                 'd_addr_list': self.d_addr_list
             })
-        if self.proxy_transfer_protocol is not None:
-            self.proxy_config['transfer_protocol'] = self.proxy_transfer_protocol
+        if "--transfer_protocol" in self.proxy_args:
+            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
+        if "--enable-health-monitor" in self.proxy_args:
+            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
 
         return Proxy(**self.proxy_config)
 
@@ -660,14 +661,6 @@ class RemoteEPDServer:
 
         self.mooncake_args = mooncake_args
         self.proxy_args = proxy_args
-        self.enable_health_monitor = False
-        self.proxy_transfer_protocol = None
-        if proxy_args is not None:
-            for i, arg in enumerate(proxy_args):
-                if "--enable-health-monitor" in arg:
-                    self.enable_health_monitor = True
-                if "--transfer-protocol" in arg:
-                    self.proxy_transfer_protocol = proxy_args[i + 1]
 
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
