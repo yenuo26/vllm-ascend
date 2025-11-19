@@ -26,6 +26,7 @@ from PIL import Image
 from datetime import datetime
 from lm_service.apis.vllm.proxy import Proxy
 from lm_service.protocol.protocol import ServerType
+from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,

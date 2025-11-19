@@ -178,27 +178,15 @@ def create_ttft_plot(result_file_names,
 
             bottom = np.zeros(len(file_data['index']))
             bars = []
-            for metrics_name in metrics_names:
+            for j, metrics_name in enumerate(metrics_names):
                 bar = ax.bar(file_data['index'], file_data[metrics_name], bottom=bottom,
                               label=metrics_name, color=color_map[metrics_name], alpha=0.8)
                 bars.append(bar)
-                bottom += np.array(file_data[metrics_name])
 
-            # 添加数值标签
-            bottom = np.zeros(len(file_data['index']))
-            for i, (label, values) in enumerate(file_data[1:-1]):
-                for j, (category, value) in enumerate(zip(file_data['index'], values)):
-                    if value > 0:  # 只在有值的位置显示标签
-                        ax.text(j, bottom[j] + value / 2, f'{value}',
+                ax.text(j, bottom, file_data[metrics_name],
                                 ha='center', va='center', fontsize=10,
                                 fontweight='bold', color='white')
-                bottom += np.array(values)
-
-            # 添加总计标签
-            total_values = sum(np.array(values) for values in file_data[1:-1])
-            for j, (category, total) in enumerate(zip(file_data['index'], total_values)):
-                ax.text(j, total + 2, f'总计: {total}', ha='center', va='bottom',
-                        fontsize=11, fontweight='bold', color='#2c3e50')
+                bottom += np.array(file_data[metrics_name])
 
             ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
             ax.set_ylabel('ms', fontsize=12)

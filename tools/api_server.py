@@ -18,6 +18,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from lm_service.apis.vllm.proxy import Proxy
+from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
 
 from vllm.multimodal.image import convert_image_mode
 from vllm.sampling_params import SamplingParams
