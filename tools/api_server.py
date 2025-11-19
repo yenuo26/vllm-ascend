@@ -216,11 +216,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     proxy_config_dict = json.loads(args.proxy_config)
-    if proxy_config_dict["router"] == "RandomRouter":
+    if proxy_config_dict.get("router", "test") == "RandomRouter":
         proxy_config_dict["router"] = RandomRouter
-    elif proxy_config_dict["router"] == "RoundRobinRouter":
+    elif proxy_config_dict.get("router", "test") == "RoundRobinRouter":
         proxy_config_dict["router"] = RoundRobinRouter
-    else:
+    elif proxy_config_dict.get("router", "test") == "LeastInFlightRouter":
         proxy_config_dict["router"] = LeastInFlightRouter
     app.state.proxy = Proxy(**proxy_config_dict)
     app.state.is_load_image = args.is_load_image
