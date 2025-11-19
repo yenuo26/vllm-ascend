@@ -1375,7 +1375,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
     except Exception as message:
         print("123455555")
         print(f"error message is: {str(message)}")
-        assert "Invaalid value" in str(message), "init success"
+        assert "Protocol not supported" in str(message), "init success"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
