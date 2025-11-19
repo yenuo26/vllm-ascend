@@ -2177,7 +2177,7 @@ async def test_1e2pd_mooncake_tcp_004(model: str, tp_size: int, dataset_name: st
         "--transfer-protocol", "tcp"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -2188,7 +2188,7 @@ async def test_1e2pd_mooncake_tcp_004(model: str, tp_size: int, dataset_name: st
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -2201,7 +2201,7 @@ async def test_1e2pd_mooncake_tcp_004(model: str, tp_size: int, dataset_name: st
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -2294,7 +2294,7 @@ async def test_1e2pd_mooncake_tcp_005(model: str, tp_size: int, dataset_name: st
         "--transfer-protocol", "tcp"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -2305,7 +2305,7 @@ async def test_1e2pd_mooncake_tcp_005(model: str, tp_size: int, dataset_name: st
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -2317,7 +2317,7 @@ async def test_1e2pd_mooncake_tcp_005(model: str, tp_size: int, dataset_name: st
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -2410,7 +2410,7 @@ async def test_1e2pd_mooncake_tcp_006(model: str, tp_size: int, dataset_name: st
         "--transfer-protocol", "tcp"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -2421,7 +2421,7 @@ async def test_1e2pd_mooncake_tcp_006(model: str, tp_size: int, dataset_name: st
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -2434,7 +2434,7 @@ async def test_1e2pd_mooncake_tcp_006(model: str, tp_size: int, dataset_name: st
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -3183,7 +3183,7 @@ async def test_1e2pd_shared_tcp_004(model: str, tp_size: int, dataset_name: str)
         "--transfer-protocol", "tcp"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -3194,7 +3194,7 @@ async def test_1e2pd_shared_tcp_004(model: str, tp_size: int, dataset_name: str)
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -3207,7 +3207,7 @@ async def test_1e2pd_shared_tcp_004(model: str, tp_size: int, dataset_name: str)
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
@@ -3295,7 +3295,7 @@ async def test_1e2pd_shared_tcp_005(model: str, tp_size: int, dataset_name: str)
         "--transfer-protocol", "tcp"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -3306,7 +3306,7 @@ async def test_1e2pd_shared_tcp_005(model: str, tp_size: int, dataset_name: str)
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -3407,7 +3407,7 @@ async def test_1e2pd_shared_tcp_006(model: str, tp_size: int, dataset_name: str)
         "--transfer-protocol", "tcp"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -3418,7 +3418,7 @@ async def test_1e2pd_shared_tcp_006(model: str, tp_size: int, dataset_name: str)
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -3431,7 +3431,7 @@ async def test_1e2pd_shared_tcp_006(model: str, tp_size: int, dataset_name: str)
     mooncake_args = [
         "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9"
     ]
     warmup_cases = [{
         "case_type":
