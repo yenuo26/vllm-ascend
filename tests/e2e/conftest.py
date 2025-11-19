@@ -443,9 +443,9 @@ class RemoteEPDServer:
                 'p_addr_list': self.p_addr_list,
                 'd_addr_list': self.d_addr_list
             })
-        if "--transfer_protocol" in self.proxy_args:
+        if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
             self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
-        if "--enable-health-monitor" in self.proxy_args:
+        if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
 
         return Proxy(**self.proxy_config)
