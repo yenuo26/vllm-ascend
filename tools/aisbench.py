@@ -22,6 +22,7 @@ import subprocess
 import traceback
 from collections import defaultdict
 from datetime import date
+from matplotlib.patches import Patch
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -182,8 +183,8 @@ def create_ttft_plot(result_file_names,
             bottom = np.zeros(len(file_data['index']))
 
             for metrics_name in metrics_names:
-                bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom, width=bar_width,
-                              label=metrics_name, color=color_map[metrics_name], alpha=0.7, linewidth=0.1)
+                bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom, width=bar_width, linestyle='-',
+                              color=color_map[metrics_name], alpha=0.7, linewidth=0.8)
 
                 for value, bar in zip(file_data[metrics_name], bars):
                     ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), value,
@@ -193,20 +194,17 @@ def create_ttft_plot(result_file_names,
 
             for value in file_data['index']:
                 x_labels.append(f"{value}_{file_name}")
+            ax.set_xticks(x_pos)
 
 
-        handles, labels = ax.get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))  # 自动去重
-        ax.legend(by_label.values(), by_label.keys())
+        legend_elements = [Patch(facecolor=color_map[metrics_name], label=metrics_name)
+                           for metrics_name in metrics_names]
+        ax.legend(handles=legend_elements, loc='upper left')
 
         ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
-        ax.xaxis.set_major_locator(ticker.AutoLocator())
-
-
         ax.set_xticklabels(x_labels)
         ax.set_ylabel('ms', fontsize=12)
         ax.set_title('TTFT Breakdown', fontsize=14, fontweight='bold')
-        ax.legend(loc='upper left')
         ax.grid(axis='y', alpha=0.3)
 
         if len(result_file_names) == 1:
