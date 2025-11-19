@@ -1273,7 +1273,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_001(model: str, tp_size: int
         "--transfer-protocol", ""
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1284,7 +1284,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_001(model: str, tp_size: int
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -1327,7 +1327,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
         "--transfer-protocol", "http"
     ]
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
+        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "http",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1338,7 +1338,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
+        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "http",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -1374,11 +1374,11 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e2pd_mooncake_tcp_transfer_protocol_003(model: str, tp_size: int, dataset_name: str):
-    """transfer_protocol为异常值"""
+    """transfer_protocol为不携带"""
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "tcp",
+        "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1389,7 +1389,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_003(model: str, tp_size: int
         '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
+        "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -1423,7 +1423,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_003(model: str, tp_size: int
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_mooncake_tcp_export_transfer_protocol_001(model: str, tp_size: int, dataset_name: str):
+async def test_1e2pd_mooncake_tcp_env_transfer_protocol_001(model: str, tp_size: int, dataset_name: str):
     """TRANSFER_PROTOCOL为空"""
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
