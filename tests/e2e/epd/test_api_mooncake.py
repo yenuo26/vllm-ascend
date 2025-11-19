@@ -3272,8 +3272,7 @@ async def test_1e2pd_shared_tcp_004(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args,
-                               proxy_args=proxy_args) as server:
+                               mooncake_args=mooncake_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3384,8 +3383,7 @@ async def test_1e2pd_shared_tcp_005(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args,
-                               proxy_args=proxy_args) as server:
+                               mooncake_args=mooncake_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
@@ -3498,8 +3496,7 @@ async def test_1e2pd_shared_tcp_006(model: str, tp_size: int, dataset_name: str)
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args,
-                               proxy_args=proxy_args) as server:
+                               mooncake_args=mooncake_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
