@@ -100,7 +100,6 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     torch.npu.reset_peak_memory_stats()
 
 
-
 def write_to_execl(data, path):
     if path is not None:
         if not os.path.exists(path):
@@ -109,8 +108,7 @@ def write_to_execl(data, path):
         else:
             existing_df = pd.read_csv(path)
             new_df = pd.DataFrame(data, index=[0])
-            combined_df = pd.concat([existing_df, new_df],
-                                    ignore_index=True)
+            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
             combined_df.to_csv(path, index=False)
 
 
@@ -160,9 +158,7 @@ class RemoteEPDServer:
         return self.p
 
     def save_ttft_data(self, file_name, index):
-        data = {
-            "index": index
-        }
+        data = {"index": index}
         data.update(self.metrics)
         write_to_execl(data, f"./{file_name}.csv")
         print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
@@ -183,7 +179,8 @@ class RemoteEPDServer:
     def _extract_ttft_data(self, text, prefix):
         if "PROXY" in prefix.upper():
             patterns = {
-                'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
+                'transfer_to_encode':
+                r'Avg proxy to encoder requests: ([\d.]+) ms',
                 'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'
             }
         else:
@@ -195,7 +192,6 @@ class RemoteEPDServer:
             match = re.search(pattern, text)
             if match:
                 self.metrics[key] = float(match.group(1))
-
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -259,31 +255,31 @@ class RemoteEPDServer:
         stderr_thread.start()
         self._proc_list.append(proc)
 
-    def _run_in_remote_container(self, host, container_name, server_cmd: list[str],
-                                env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
-
+    def _run_in_remote_container(self, host, container_name,
+                                 server_cmd: list[str],
+                                 env_dict: Optional[dict[str, str]],
+                                 log_prefix: str) -> None:
 
         docker_cmd = ["docker", "exec", "-i"]
         if env_dict:
             for key, value in env_dict.items():
                 docker_cmd.extend(["-e", f"{key}={value}"])
-        docker_cmd.extend(
-                    ["LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/openssl-3.2.6/lib:$LD_LIBRARY_PATH"])
+        docker_cmd.extend([
+            "LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/openssl-3.2.6/lib:$LD_LIBRARY_PATH"
+        ])
         docker_cmd.append(container_name)
         docker_cmd.extend(server_cmd)
 
         ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
 
-        proc = subprocess.Popen(
-            ssh_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL,
-            start_new_session=True,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
+        proc = subprocess.Popen(ssh_cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdin=subprocess.DEVNULL,
+                                start_new_session=True,
+                                text=True,
+                                bufsize=1,
+                                universal_newlines=True)
         stdout_thread = threading.Thread(target=self._read_output,
                                          args=(proc.stdout, log_prefix),
                                          daemon=True)
@@ -295,11 +291,11 @@ class RemoteEPDServer:
         stderr_thread.start()
         self._proc_list.append(proc)
 
-
     def _start_api_server(self) -> None:
         api_server_args = [
             "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--proxy-config", json.dumps(self.proxy_config)
+            str(self.api_server_port), "--proxy-config",
+            json.dumps(self.proxy_config)
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
@@ -335,15 +331,16 @@ class RemoteEPDServer:
                     "metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
             if "--rpc_port" in arg:
                 rpc_port = self.mooncake_args[i + 1]
-                mooncake_json[
-                    "master_server_address"] = f"0.0.0.0:{rpc_port}"
+                mooncake_json["master_server_address"] = f"0.0.0.0:{rpc_port}"
 
         config_path = ""
         if self.store_type == "mooncake":
-            for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
+            for i, arg in enumerate(self.e_serve_args_list +
+                                    self.pd_serve_args_list):
                 index = arg.index("--ec-transfer-config")
-                config_path = json.loads(arg[index + 1]).get(
-                    "ec_connector_extra_config").get("ec_mooncake_config_file_path")
+                config_path = json.loads(
+                    arg[index + 1]).get("ec_connector_extra_config").get(
+                        "ec_mooncake_config_file_path")
 
         if self.kv_store_type == "mooncake":
             config_path = self.env_dict["MOONCAKE_CONFIG_PATH"]
@@ -395,9 +392,9 @@ class RemoteEPDServer:
         cluster_ips = get_cluster_ips()
 
         serve_arg_cmd = [
-                "taskset", "-c", "0-96", "python", "-m",
-                "lm_service.entrypoints.worker"
-            ]
+            "taskset", "-c", "0-96", "python", "-m",
+            "lm_service.entrypoints.worker"
+        ]
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
@@ -427,13 +424,17 @@ class RemoteEPDServer:
                     raise ValueError("model must be same between workers")
                 self.model = e_serve_arg[index_e + 1]
 
-            if self.node_info is not None and self.node_info.get_node_info("e") is not None:
+            if self.node_info is not None and self.node_info.get_node_info(
+                    "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
-                self._run_in_remote_container(host=cluster_ips[node_id],
-                                              container_name=self.node_info.get_node_info("e", i).container_name,
-                                              server_cmd=e_serve_arg, env_dict=self.env_dict,
-                                              log_prefix=f"[ENCODE_{i}] ",
-                                              )
+                self._run_in_remote_container(
+                    host=cluster_ips[node_id],
+                    container_name=self.node_info.get_node_info(
+                        "e", i).container_name,
+                    server_cmd=e_serve_arg,
+                    env_dict=self.env_dict,
+                    log_prefix=f"[ENCODE_{i}] ",
+                )
             else:
                 self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
@@ -441,15 +442,15 @@ class RemoteEPDServer:
             if self.is_epd_same_card:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             else:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
-                    i + self.e_num)
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
+                                                                 self.e_num)
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
             if "--model" not in pd_serve_arg:
                 raise ValueError("must carry --model")
             else:
                 index_pd = pd_serve_arg.index("--model")
-                if self.model is not None and pd_serve_arg[
-                    index_pd + 1] != self.model:
+                if self.model is not None and pd_serve_arg[index_pd +
+                                                           1] != self.model:
                     raise ValueError("model must be same between workers")
 
             config = self._get_addr_config(pd_serve_arg, i, "PD")
@@ -481,16 +482,19 @@ class RemoteEPDServer:
                 log_prefix = f"[PD_{i}] "
                 role = "pd"
 
-            if self.node_info is not None and self.node_info.get_node_info(role) is not None:
+            if self.node_info is not None and self.node_info.get_node_info(
+                    role) is not None:
                 node_id = self.node_info.get_node_info(role, i).node_id
-                self._run_in_remote_container(host=cluster_ips[node_id],
-                                              container_name=self.node_info.get_node_info(role, i).container_name,
-                                              server_cmd=pd_serve_arg, env_dict=self.env_dict,
-                                              log_prefix=log_prefix,
-                                              )
+                self._run_in_remote_container(
+                    host=cluster_ips[node_id],
+                    container_name=self.node_info.get_node_info(
+                        role, i).container_name,
+                    server_cmd=pd_serve_arg,
+                    env_dict=self.env_dict,
+                    log_prefix=log_prefix,
+                )
             else:
                 self._run_server(pd_serve_arg, self.env_dict, log_prefix)
-
 
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
@@ -508,20 +512,26 @@ class RemoteEPDServer:
                 'd_addr_list': self.d_addr_list
             })
         if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
-            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
+            self.proxy_config['transfer_protocol'] = self.proxy_args[
+                self.proxy_args.index("--transfer_protocol") + 1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
-            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
+            self.proxy_config['enable_health_monitor'] = self.proxy_args[
+                self.proxy_args.index("--enable-health-monitor") + 1]
         if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
-            if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
+            self.proxy_config['router'] = self.proxy_args[
+                self.proxy_args.index("--router") + 1]
+            if self.proxy_args[self.proxy_args.index("router") +
+                               1] == "RandomRouter":
                 self.proxy_config['router'] = RandomRouter
-            elif self.proxy_args[self.proxy_args.index("router")+1] == "RoundRobinRouter":
+            elif self.proxy_args[self.proxy_args.index("router") +
+                                 1] == "RoundRobinRouter":
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
         p = Proxy(**self.proxy_config)
         if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
+            self.proxy_config['router'] = self.proxy_args[
+                self.proxy_args.index("--router") + 1]
         return p
 
     def _start_disagg_proxy(self):
@@ -552,8 +562,7 @@ class RemoteEPDServer:
             index_e = e_serve_arg.index("--port")
             self.e_addr_list.append(
                 f"http://localhost:{e_serve_arg[index_e + 1]}")
-            self._run_server(e_serve_arg, self.env_dict,
-                             f"[ENCODE_{i}] ")
+            self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
@@ -562,7 +571,6 @@ class RemoteEPDServer:
             self.pd_addr_list.append(
                 f"http://localhost:{pd_serve_arg[index_pd + 1]}")
             self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
-
 
     async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
         sleep_times = 10
@@ -591,14 +599,14 @@ class RemoteEPDServer:
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
                             ServerType.P_INSTANCE, iid),
-                            timeout=timeout_times))
+                                         timeout=timeout_times))
                     for iid in range(len(self.p_addr_list))
                 ]
                 tasks_2 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
                             ServerType.D_INSTANCE, iid),
-                            timeout=timeout_times))
+                                         timeout=timeout_times))
                     for iid in range(len(self.d_addr_list))
                 ]
                 tasks = tasks_0 + tasks_1 + tasks_2
@@ -736,7 +744,8 @@ class RemoteEPDServer:
         if isinstance(pd_serve_args, list):
             if not all(isinstance(item, list) for item in pd_serve_args):
                 for i in range(self.pd_num):
-                    self.pd_serve_args_list.append(copy.deepcopy(pd_serve_args))
+                    self.pd_serve_args_list.append(
+                        copy.deepcopy(pd_serve_args))
             else:
                 self.pd_serve_args_list = pd_serve_args
         else:
