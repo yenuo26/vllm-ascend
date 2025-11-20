@@ -261,22 +261,20 @@ class RemoteEPDServer:
 
     def _run_in_remote_container(self, host, container_name, server_cmd: list[str],
                                 env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
-        env_str = ""
+
+
+        docker_cmd = ["docker", "exec", "-i"]
         if env_dict:
-            env_parts = [f"-e {key}='{value}'" for key, value in env_dict.items()]
-            env_str = " ".join(env_parts) + " "
+            for key, value in env_dict.items():
+                docker_cmd.extend(["-e", f"{key}={value}"])
 
-        docker_opts = "-i"
+        docker_cmd.append(container_name)
+        docker_cmd.extend(server_cmd)
 
-        command_str = " ".join(f"'{arg}'" for arg in server_cmd)
-
-        docker_cmd = f"docker exec {docker_opts} {env_str}{container_name} {command_str}"
-
-        ssh_cmd = f"ssh root@{host} '{docker_cmd}'"
+        ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
 
         proc = subprocess.Popen(
             ssh_cmd,
-            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.DEVNULL,
