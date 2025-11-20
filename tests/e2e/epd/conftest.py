@@ -2,6 +2,7 @@ import pytest
 import os
 import yaml
 
+
 def load_config():
     """读取配置文件"""
     current_dir = os.path.dirname(os.path.abspath(__file__))

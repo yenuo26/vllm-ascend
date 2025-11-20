@@ -44,13 +44,13 @@ def get_cluster_ips(word_size: int = 2) -> list[str]:
     0: leader
     1~N-1: workers
     """
-    leader_dns = os.getenv("LWS_LEADER_ADDRESS")
+    leader_dns = os.getenv("LEADER_ADDRESS")
     if not leader_dns:
-        raise RuntimeError("LWS_LEADER_ADDRESS is not set")
+        raise RuntimeError("LEADER_ADDRESS is not set")
     cluster_dns = [leader_dns]
+    other_dns = os.getenv("OTHER_ADDRESS").split(";")
     for i in range(1, word_size):
-        cur_dns = f"vllm-0-{i}.vllm.vllm-project"
-        cluster_dns.append(cur_dns)
+        cluster_dns.append(other_dns[i])
     return [socket.gethostbyname(dns) for dns in cluster_dns]
 
 
