@@ -241,6 +241,7 @@ async def test_1e2pd_mooncake_tcp_001(model: str, tp_size: int, dataset_name: st
                                api_server_port=api_port,
                                pd_num=2,
                                e_num=1,
+                               node_info=cluster,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
