@@ -261,11 +261,17 @@ class RemoteEPDServer:
                                  log_prefix: str) -> None:
 
         docker_cmd = ["docker", "exec", "-i"]
+        docker_cmd.append(container_name)
+
+        env_vars = "LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/openssl-3.2.6/lib:$LD_LIBRARY_PATH"
         if env_dict:
             for key, value in env_dict.items():
-                docker_cmd.extend(["-e", f"{key}={value}"])
-        docker_cmd.append(container_name)
-        docker_cmd.extend(["export", "LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/openssl-3.2.6/lib:$LD_LIBRARY_PATH"])
+                env_vars += f" {key}={value}"
+
+        docker_cmd.extend(["env", env_vars] + server_cmd)
+
+       
+
         docker_cmd.extend(server_cmd)
 
         ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
