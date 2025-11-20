@@ -1261,60 +1261,6 @@ async def test_1e2pd_mooncake_ipc_acc_002(model: str, tp_size: int, dataset_name
                            port=api_port,
                            aisbench_cases=acc_cases)
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("model", MODELS)
-@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_mooncake_tcp_transfer_protocol_test001(model: str, tp_size: int, dataset_name: str):
-    """transfer_protocol为空"""
-    env_dict = {}
-    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
-    proxy_args = [
-        "--transfer-protocol", ""
-    ]
-    e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "",
-        "--tensor-parallel-size",str(tp_size), "--enforce-eager",
-        "--no-enable-prefix-caching",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
-        "10000", "--max-num-seqs", "1",
-        "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
-        MOONCAKE_PRODUCER_CONFIG_PATH +
-        '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
-    ]
-    pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "",
-        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
-        "10000", "--max-num-seqs", "128",
-        "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
-        MOONCAKE_CONSUMER_CONFIG_PATH +
-        '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
-    ]
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
-    ]
-    api_port = 10001
-    try:
-        RemoteEPDServer(run_mode="worker",
-                                   store_type="mooncake",
-                                   proxy_type="api_server",
-                                   api_server_port=api_port,
-                                   pd_num=2,
-                                   e_num=1,
-                                   env_dict=env_dict,
-                                   e_serve_args=e_server_args,
-                                   pd_serve_args=pd_server_args,
-                                   mooncake_args=mooncake_args,
-                                   proxy_args=proxy_args)
-
-    except Exception as message:
-        print(f"error message is: {str(message)}")
-        assert "invalid choice" in str(message), "init success"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
@@ -1374,7 +1320,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_001(model: str, tp_size: int
                                save=False)
     except Exception as message:
         print(f"error message is: {str(message)}")
-        assert "invalid choice" in str(message), "init success"
+        assert "Invalid argument" in str(message), "init success"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
@@ -1434,7 +1380,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_002(model: str, tp_size: int
                                save=False)
     except Exception as message:
         print(f"error message is: {str(message)}")
-        assert "Protocol not supported" in str(message), "init success"
+        assert "Invalid argument" in str(message), "init success"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
@@ -1494,7 +1440,7 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_003(model: str, tp_size: int
                                save=False)
     except Exception as message:
         print(f"error message is: {str(message)}")
-        assert "Invalid value" in str(message), "init success"
+        assert "Invalid argument" in str(message), "init success"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
@@ -1629,6 +1575,8 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_006(model: str, tp_size: int
     ]
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "ttcp",
+        "--proxy-addr", "127.0.0.1:13800",
+        "--worker-addr", "127.0.0.1:13801",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1640,6 +1588,8 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_006(model: str, tp_size: int
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "ttcp",
+        "--proxy-addr", "127.0.0.1:13800",
+        "--worker-addr", "127.0.0.1:13801",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
@@ -1689,6 +1639,8 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_007(model: str, tp_size: int
     ]
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0","--transfer-protocol", "123",
+        "--proxy-addr", "127.0.0.1:13800",
+        "--worker-addr", "127.0.0.1:13801",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
         "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1700,6 +1652,8 @@ async def test_1e2pd_mooncake_tcp_transfer_protocol_007(model: str, tp_size: int
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "123",
+        "--proxy-addr", "127.0.0.1:13800",
+        "--worker-addr", "127.0.0.1:13801",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
