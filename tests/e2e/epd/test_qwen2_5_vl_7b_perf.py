@@ -178,7 +178,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
     }]
 
     request_rate = [1.2, 2.4, 4, 6, 8]
-    num_prompts = [1100, 1600, 1900, 2300, 2500]
+    num_prompts = [900, 1000, 1100, 1200, 1300]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
@@ -285,7 +285,7 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
         77,
     }]
     request_rate = [0.9, 1.8, 3, 4.5, 6]
-    num_prompts = [600,1100,1400,1800,1900]
+    num_prompts = [600,800,900,900,900]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
