@@ -117,7 +117,7 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
 
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
-                               store_type="mooncake",
+                               store_type="kv-mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
