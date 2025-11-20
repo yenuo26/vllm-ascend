@@ -428,7 +428,7 @@ class RemoteEPDServer:
                     raise ValueError("model must be same between workers")
                 self.model = e_serve_arg[index_e + 1]
 
-            if self.node_info is not None:
+            if self.node_info.get_node_info("e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
                 self._run_in_remote_container(host=cluster_ips[node_id],
                                               container_name=self.node_info.get_node_info("e", i).container_name,
@@ -482,7 +482,7 @@ class RemoteEPDServer:
                 log_prefix = f"[PD_{i}] "
                 role = "pd"
 
-            if self.node_info is not None:
+            if self.node_info.get_node_info(role) is not None:
                 node_id = self.node_info.get_node_info(role, i).node_id
                 self._run_in_remote_container(host=cluster_ips[node_id],
                                               container_name=self.node_info.get_node_info(role, i).container_name,
