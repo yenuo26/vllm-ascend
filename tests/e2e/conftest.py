@@ -167,13 +167,13 @@ class RemoteEPDServer:
         write_to_execl(data, f"./{file_name}.csv")
         print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
 
-    def _read_output(self, pipe, prefix, env_dict):
+    def _read_output(self, pipe, prefix):
         try:
             with pipe:
                 for line in iter(pipe.readline, ''):
                     if line:
                         print(f"{prefix}: {line}", end='')
-                        if env_dict.get("TIMECOUNT_ENABLED", 0) == "1":
+                        if self.env_dict.get("TIMECOUNT_ENABLED", 0) == "1":
                             self._extract_ttft_data(line, prefix)
 
         except Exception as e:
