@@ -267,7 +267,8 @@ class RemoteEPDServer:
         if env_dict:
             for key, value in env_dict.items():
                 docker_cmd.extend(["-e", f"{key}={value}"])
-
+        docker_cmd.extend(
+                    ["LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/openssl-3.2.6/lib:$LD_LIBRARY_PATH"])
         docker_cmd.append(container_name)
         docker_cmd.extend(server_cmd)
 
