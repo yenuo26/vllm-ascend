@@ -43,6 +43,9 @@ from vllm.transformers_utils.utils import maybe_model_redirect
 from tests.e2e.model_utils import (TokensTextLogprobs,
                                    TokensTextLogprobsPromptLogprobs)
 from tests.e2e.nightly.multi_node.config.multi_node_config import NodeInfo
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
+from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
+
 from vllm_ascend.ascend_config import clear_ascend_config
 # TODO: remove this part after the patch merged into vllm, if
 # we not explicitly patch here, some of them might be effectiveless
@@ -111,19 +114,66 @@ def write_to_execl(data, path):
             combined_df.to_csv(path, index=False)
 
 
+# import docker
+# from docker.models.containers import Container
+#
+#
+# class RemoteContainerManager:
+#     def __init__(self, host):
+#         self.host = host
+#         self.client = docker.DockerClient(
+#             base_url=f"ssh://root@{host}"
+#         )
+#
+#     def exec_in_container(self, container_name, command, log_prefix, metrics, env=None):
+#         try:
+#             container = self.client.containers.get(container_name)
+#
+#             exec_id = self.client.api.exec_create(
+#                 container.id,
+#                 cmd=command,
+#                 environment=env,
+#                 stdout=True,
+#                 stderr=True,
+#                 stdin=False,
+#                 tty=False
+#             )
+#             exec_socket = self.client.api.exec_start(
+#                 exec_id['Id'],
+#                 detach=False,
+#                 tty=False,
+#                 stream=True
+#             )
+#             stdout_thread = threading.Thread(target=read_output,
+#                                              args=(exec_socket, log_prefix, metrics),
+#                                              daemon=True)
+#
+#             stdout_thread.start()
+#
+#         except Exception as e:
+#             print(f"[{container_name}] 💥 执行失败: {e}")
+
+
 class RemoteEPDServer:
 
     def get_proxy(self) -> Proxy:
         return self.p
 
-    def _read_output(self, pipe, prefix):
-        """在单独线程中读取输出"""
+    def save_ttft_data(self, file_name, index):
+        data = {
+            "index": index
+        }
+        data.update(self.metrics)
+        write_to_execl(data, f"./{file_name}.csv")
+        print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
+
+    def _read_output(self, pipe, prefix, env_dict):
         try:
             with pipe:
                 for line in iter(pipe.readline, ''):
                     if line:
                         print(f"{prefix}: {line}", end='')
-                        if self.env_dict.get("TIMECOUNT_ENABLED", 0)=="1":
+                        if env_dict.get("TIMECOUNT_ENABLED", 0) == "1":
                             self._extract_ttft_data(line, prefix)
 
         except Exception as e:
@@ -146,14 +196,6 @@ class RemoteEPDServer:
             if match:
                 self.metrics[key] = float(match.group(1))
 
-    def save_ttft_data(self, file_name, index):
-        data = {
-            "index": index
-        }
-        data.update(self.metrics)
-        write_to_execl(data, f"./{file_name}.csv")
-        print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
-
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -172,7 +214,6 @@ class RemoteEPDServer:
             stderr=subprocess.PIPE,
             universal_newlines=True,  # 文本模式
             bufsize=1)
-        # 创建线程读取输出
         stdout_thread = threading.Thread(target=self._read_output,
                                          args=(proc.stdout, log_prefix),
                                          daemon=True)
@@ -217,6 +258,44 @@ class RemoteEPDServer:
         stdout_thread.start()
         stderr_thread.start()
         self._proc_list.append(proc)
+
+    def _run_in_remote_container(self, host, container_name, server_cmd: list[str],
+                                env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
+        env_str = ""
+        if env_dict:
+            env_parts = [f"-e {key}='{value}'" for key, value in env_dict]
+            env_str = " ".join(env_parts) + " "
+
+        docker_opts = "-it"
+
+        command_str = " ".join(f"'{arg}'" for arg in server_cmd)
+
+        docker_cmd = f"docker exec {docker_opts} {env_str}{container_name} {command_str}"
+
+        ssh_cmd = f"ssh root@{host} '{docker_cmd}'"
+
+        proc = subprocess.Popen(
+            ssh_cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+        stdout_thread = threading.Thread(target=self._read_output,
+                                         args=(proc.stdout, log_prefix),
+                                         daemon=True)
+        stderr_thread = threading.Thread(target=self._read_output,
+                                         args=(proc.stderr, log_prefix),
+                                         daemon=True)
+
+        stdout_thread.start()
+        stderr_thread.start()
+        self._proc_list.append(proc)
+
 
     def _start_api_server(self) -> None:
         api_server_args = [
@@ -314,6 +393,8 @@ class RemoteEPDServer:
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
 
+        cluster_ips = get_cluster_ips()
+
         serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
                 "lm_service.entrypoints.worker"
@@ -347,7 +428,15 @@ class RemoteEPDServer:
                     raise ValueError("model must be same between workers")
                 self.model = e_serve_arg[index_e + 1]
 
-            self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
+            if self.node_info is not None:
+                node_id = self.node_info.get_node_info("e", i).node_id
+                self._run_in_remote_container(host=cluster_ips[node_id],
+                                              container_name=self.node_info.get_node_info("e", i).container_name,
+                                              server_cmd=e_serve_arg, env_dict=self.env_dict,
+                                              log_prefix=f"[ENCODE_{i}] ",
+                                              )
+            else:
+                self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
             if self.is_epd_same_card:
@@ -377,19 +466,32 @@ class RemoteEPDServer:
 
             worker_index = pd_serve_arg.index("--worker-addr")
             log_prefix = ""
+            role = ""
             if "--kv-transfer-config" in pd_serve_arg:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
                     self.d_addr_list.append(pd_serve_arg[worker_index + 1])
                     log_prefix = f"[D_{i}] "
+                    role = "d"
                 elif "kv_producer" in pd_serve_arg[kv_index + 1]:
                     self.p_addr_list.append(pd_serve_arg[worker_index + 1])
                     log_prefix = f"[P_{i}] "
+                    role = "p"
             else:
                 self.pd_addr_list.append(pd_serve_arg[worker_index + 1])
                 log_prefix = f"[PD_{i}] "
+                role = "pd"
 
-            self._run_server(pd_serve_arg, self.env_dict, log_prefix)
+            if self.node_info is not None:
+                node_id = self.node_info.get_node_info(role, i).node_id
+                self._run_in_remote_container(host=cluster_ips[node_id],
+                                              container_name=self.node_info.get_node_info(role, i).container_name,
+                                              server_cmd=pd_serve_arg, env_dict=self.env_dict,
+                                              log_prefix=log_prefix,
+                                              )
+            else:
+                self._run_server(pd_serve_arg, self.env_dict, log_prefix)
+
 
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
@@ -580,6 +682,7 @@ class RemoteEPDServer:
                  store_type: Literal["mooncake", "storage"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
+                 node_info: ClusterManager,
                  e_serve_args: Union[list[str], str],
                  pd_serve_args: Union[list[str], str],
                  proxy_type: Literal["disagg_proxy", "proxy",
@@ -619,6 +722,7 @@ class RemoteEPDServer:
         self.d_addr_list = list()
         self.e_serve_args_list = list()
         self.pd_serve_args_list = list()
+        self.node_info = node_info
 
         self.model = None
         if isinstance(e_serve_args, list):

@@ -1,14 +1,14 @@
 import os
 
 import pytest
-import pytest_asyncio
 import copy
 
-from tests.e2e.conftest import RemoteOpenAIServer
+
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
-from tools.aisbench import create_result_plot
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
+
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -27,6 +27,9 @@ MOONCAKE_CONSUMER_CONFIG_PATH = load_config().get("mooncake_config_path") + "con
 async def test_1e2pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: str):
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
+    cluster = ClusterManager()
+    cluster.add_node_config("pd", 1, "epd_vllm_ascend")
+
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",
@@ -115,6 +118,7 @@ async def test_1e2pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: st
                                store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
+                               node_info=cluster,
                                pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
