@@ -406,12 +406,12 @@ class RemoteEPDServer:
                 'p_addr_list': self.p_addr_list,
                 'd_addr_list': self.d_addr_list
             })
-        if self.proxy_args is not None and "transfer_protocol" in self.proxy_args:
-            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("transfer_protocol")+1]
-        if self.proxy_args is not None and "enable-health-monitor" in self.proxy_args:
-            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("enable-health-monitor")+1]
-        if self.proxy_args is not None and "router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
+        if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
+            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
+        if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
+            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
+        if self.proxy_args is not None and "--router" in self.proxy_args:
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
             if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
                 self.proxy_config['router'] = RandomRouter
             elif self.proxy_args[self.proxy_args.index("router")+1] == "RoundRobinRouter":
@@ -419,8 +419,8 @@ class RemoteEPDServer:
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
         p = Proxy(**self.proxy_config)
-        if self.proxy_args is not None and "router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
+        if self.proxy_args is not None and "--router" in self.proxy_args:
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
         return p
 
     def _start_disagg_proxy(self):
@@ -584,7 +584,7 @@ class RemoteEPDServer:
                  pd_serve_args: Union[list[str], str],
                  proxy_type: Literal["disagg_proxy", "proxy",
                                      "api_server"] = None,
-                 kv_store_type: Literal["mooncake"] = "mooncake",
+                 kv_store_type: Literal["mooncake"] = "",
                  mooncake_args: Union[list[str], str] = None,
                  proxy_args: Union[list[str], str] = None,
                  api_server_port: Optional[int] = 10001,
@@ -599,7 +599,7 @@ class RemoteEPDServer:
             raise ValueError(f"run mode must be serve or worker")
         if store_type not in ["mooncake", "storage"]:
             raise ValueError(f"store type must be mooncake or storage")
-        if kv_store_type not in ["mooncake"]:
+        if kv_store_type not in ["mooncake", ""]:
             raise ValueError(f"kv store type must be mooncake")
         if proxy_type is not None and proxy_type not in [
                 "disagg_proxy", "proxy", "api_server"

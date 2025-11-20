@@ -55,7 +55,7 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             SHARED_STORAGE_PATH +
             '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "20001"}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -63,7 +63,7 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "20001"}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
         ]
     ]
 
@@ -117,7 +117,8 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
 
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
-                               store_type="kv-mooncake",
+                               store_type="mooncake",
+                               kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
@@ -170,11 +171,8 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             MOONCAKE_CONSUMER_CONFIG_PATH +
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_producer",'
-            '"kv_parallel_size":1, "kv_port": "20001", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
+
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -182,11 +180,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_consumer",'
-            '"kv_parallel_size":1, "kv_port": "20002", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
         ]
     ]
 
@@ -241,6 +235,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
                                store_type="mooncake",
+                               kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
@@ -294,11 +289,8 @@ async def test_1e1p1d_ipc_mooncake_002(model: str, tp_size: int,
             MOONCAKE_CONSUMER_CONFIG_PATH +
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_producer",'
-            '"kv_parallel_size":1, "kv_port": "20001", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
+
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -306,11 +298,7 @@ async def test_1e1p1d_ipc_mooncake_002(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_consumer",'
-            '"kv_parallel_size":1, "kv_port": "20002", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
         ]
     ]
 
@@ -366,6 +354,7 @@ async def test_1e1p1d_ipc_mooncake_002(model: str, tp_size: int,
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
                                store_type="mooncake",
+                               kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
@@ -420,11 +409,7 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
             MOONCAKE_CONSUMER_CONFIG_PATH +
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_producer",'
-            '"kv_parallel_size":1, "kv_port": "20001", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -433,11 +418,7 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_consumer",'
-            '"kv_parallel_size":1, "kv_port": "20002", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
         ]
     ]
 
@@ -493,6 +474,7 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
                                store_type="mooncake",
+                               kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
@@ -550,11 +532,7 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
             MOONCAKE_CONSUMER_CONFIG_PATH +
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_producer",'
-            '"kv_parallel_size":1, "kv_port": "20001", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -563,14 +541,10 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_consumer",'
-            '"kv_parallel_size":1, "kv_port": "20002", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
         ]
     ]
-    proxy_args = ["router", "RoundRobinRouter"]
+    proxy_args = ["--router", "RoundRobinRouter"]
 
     mooncake_args = [
         "--rpc_port", "50051", "--enable_http_metadata_server=true",
@@ -624,6 +598,7 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
                                store_type="mooncake",
+                               kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
@@ -682,11 +657,8 @@ async def test_1e1p1d_ipc_mooncake_005(model: str, tp_size: int,
             MOONCAKE_CONSUMER_CONFIG_PATH +
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_producer",'
-            '"kv_parallel_size":1, "kv_port": "20001", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
+
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -695,14 +667,10 @@ async def test_1e1p1d_ipc_mooncake_005(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorV1","kv_buffer_device": "npu", "kv_role": "kv_consumer",'
-            '"kv_parallel_size":1, "kv_port": "20002", "engine_id": "0", "kv_rank": "0", '
-            '"kv_connector_module_path": "vllm_ascend.distributed.moocake_connector",'
-            '"kv_connector_extra_config":{"prefill":{"dp_size":1, "tp_size":1},'
-            '"decode": {"dp_size":1, "tp_size":1}}}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
         ]
     ]
-    proxy_args = ["router", "LeastInFlightRouter"]
+    proxy_args = ["--router", "LeastInFlightRouter"]
 
     mooncake_args = [
         "--rpc_port", "50051", "--enable_http_metadata_server=true",
@@ -756,6 +724,7 @@ async def test_1e1p1d_ipc_mooncake_005(model: str, tp_size: int,
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
                                store_type="mooncake",
+                               kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=2,
