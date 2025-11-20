@@ -3,17 +3,20 @@ import contextlib
 import gc
 import json
 import os
+import re
 import shlex
 import copy
 import subprocess
 import sys
 import threading
+import traceback
 import time
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
 
 import httpx
 import numpy as np
+import pandas as pd
 import openai
 import psutil
 import pytest
@@ -21,8 +24,10 @@ import requests
 import torch
 import importlib
 from PIL import Image
-from llm_service.apis.vllm.proxy import Proxy
-from llm_service.protocol.protocol import ServerType
+from datetime import datetime
+from lm_service.apis.vllm.proxy import Proxy
+from lm_service.protocol.protocol import ServerType
+from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
@@ -92,6 +97,20 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     torch.npu.reset_peak_memory_stats()
 
 
+
+def write_to_execl(data, path):
+    if path is not None:
+        if not os.path.exists(path):
+            df = pd.DataFrame(data, index=[0])
+            df.to_csv(path, index=False)
+        else:
+            existing_df = pd.read_csv(path)
+            new_df = pd.DataFrame(data, index=[0])
+            combined_df = pd.concat([existing_df, new_df],
+                                    ignore_index=True)
+            combined_df.to_csv(path, index=False)
+
+
 class RemoteEPDServer:
 
     def get_proxy(self) -> Proxy:
@@ -102,10 +121,39 @@ class RemoteEPDServer:
         try:
             with pipe:
                 for line in iter(pipe.readline, ''):
-                    if line:  # 避免空行
+                    if line:
                         print(f"{prefix}: {line}", end='')
+                        if self.env_dict.get("TIMECOUNT_ENABLED", 0)=="1":
+                            self._extract_ttft_data(line, prefix)
+
         except Exception as e:
             print(f"error: {e}")
+            traceback.print_exc()
+
+    def _extract_ttft_data(self, text, prefix):
+        if "PROXY" in prefix.upper():
+            patterns = {
+                'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
+                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'
+            }
+        else:
+            patterns = {
+                f'{prefix}_queue': r'Avg queue time requests: ([\d.]+) ms',
+                f'{prefix}_prefill': r'Avg prefill time requests: ([\d.]+) ms',
+            }
+        for key, pattern in patterns.items():
+            match = re.search(pattern, text)
+            if match:
+                self.metrics[key] = float(match.group(1))
+
+    def save_ttft_data(self, file_name, index):
+        data = {
+            "index": index
+        }
+        data.update(self.metrics)
+        write_to_execl(data, f"./{file_name}.csv")
+        print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
+
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -183,7 +231,7 @@ class RemoteEPDServer:
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
         self._run_server_new_session(api_server_args, self.env_dict,
-                                     "[PRXOY] ")
+                                     "[PROXY] ")
 
     def _start_mooncake(self) -> None:
         self._init_mooncake_config()
@@ -191,19 +239,9 @@ class RemoteEPDServer:
         self._run_server_new_session(self.mooncake_args, None, "[MOONCAKE] ")
 
     def _init_mooncake_config(self) -> None:
-        producer_json = {
+        mooncake_json = {
             "local_hostname": "0.0.0.0",
             "global_segment_size": 32212254720,
-            "local_buffer_size": 1073741824,
-            "protocol": "tcp",
-            "device_name": "",
-            "replica_num": 1,
-            "fast_transfer": True,
-            "fast_transfer_buffer_size": 1
-        }
-        consumer_json = {
-            "local_hostname": "0.0.0.0",
-            "global_segment_size": 0,
             "local_buffer_size": 1073741824,
             "protocol": "tcp",
             "device_name": "",
@@ -215,33 +253,60 @@ class RemoteEPDServer:
         for i, arg in enumerate(self.mooncake_args):
             if "--http_metadata_server_port" in arg:
                 metadata_server_port = self.mooncake_args[i].split("=")[-1]
-                consumer_json["metadata_server"] = producer_json[
+                mooncake_json[
                     "metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
             if "--rpc_port" in arg:
                 rpc_port = self.mooncake_args[i + 1]
-                consumer_json["master_server_address"] = producer_json[
+                mooncake_json[
                     "master_server_address"] = f"0.0.0.0:{rpc_port}"
 
-
-        for i, arg in enumerate(self.e_serve_args_list):
-            producer_index = arg.index("--ec-transfer-config")
-            producer_path = json.loads(arg[producer_index + 1]).get(
-                "ec_connector_extra_config").get("ec_mooncake_config_file_path")
-            with open(producer_path, 'w', encoding='utf-8') as f:
-                json.dump(producer_json, f, ensure_ascii=False, indent=4)
-            print(f"The mooncake producer config is\n {producer_json}")
-
-
-        for i, arg in enumerate(self.pd_serve_args_list):
-            if "--ec-transfer-config" in arg:
-                consumer_index = arg.index("--ec-transfer-config")
-                consumer_path = json.loads(arg[consumer_index + 1]).get(
+        config_path = ""
+        if self.store_type == "mooncake":
+            for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
+                index = arg.index("--ec-transfer-config")
+                config_path = json.loads(arg[index + 1]).get(
                     "ec_connector_extra_config").get("ec_mooncake_config_file_path")
-                with open(consumer_path, 'w', encoding='utf-8') as f:
-                    json.dump(consumer_json, f, ensure_ascii=False, indent=4)
-                print(f"The mooncake consumer config is\n {consumer_json}")
 
+        if self.kv_store_type == "mooncake":
+            config_path = self.env_dict["MOONCAKE_CONFIG_PATH"]
 
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
+        print(f"The mooncake producer config is\n {mooncake_json}")
+
+    def _get_addr_config(self, args, i, role):
+        protocol = None
+        if self.env_dict.get("TRANSFER_PROTOCOL") is not None:
+            protocol = self.env_dict["TRANSFER_PROTOCOL"].upper()
+        elif "--transfer-protocol" in args:
+            protocol_index = args.index("--transfer-protocol") + 1
+            if protocol_index < len(args):
+                protocol = args[protocol_index].upper()
+        else:
+            protocol = "ipc"
+
+        if protocol == "TCP":
+            if role == "E":
+                return {
+                    "proxy_addr": "127.0.0.1:37000",
+                    "worker_addr": f"127.0.0.1:3800{i}"
+                }
+            else:
+                return {
+                    "proxy_addr": "127.0.0.1:37000",
+                    "worker_addr": f"127.0.0.1:3900{i}"
+                }
+        else:
+            if role == "E":
+                return {
+                    "proxy_addr": f"{self._default_addr_prefix}proxy",
+                    "worker_addr": f"{self._default_addr_prefix}encoder_{i}"
+                }
+            else:
+                return {
+                    "proxy_addr": f"{self._default_addr_prefix}proxy",
+                    "worker_addr": f"{self._default_addr_prefix}pd_{i}"
+                }
 
     def _start_vllm_worker(self):
         if self.env_dict is None:
@@ -251,40 +316,27 @@ class RemoteEPDServer:
 
         serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
-                "llm_service.entrypoints.worker"
+                "lm_service.entrypoints.worker"
             ]
-
-        if self.env_dict.get(
-                "TRANSFER_PROTOCOL"
-        ) is not None and self.env_dict["TRANSFER_PROTOCOL"].upper() == "TCP":
-            is_protocol_tcp = True
-        else:
-            is_protocol_tcp = False
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
+
+            config = self._get_addr_config(e_serve_arg, i, "E")
             if "--proxy-addr" not in e_serve_arg:
-                if is_protocol_tcp:
-                    e_serve_arg = e_serve_arg + [
-                        "--proxy-addr", "127.0.0.1:37000"
-                    ]
-                elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
-                        e_serve_arg.index("--transfer-protocol") +
-                        1].upper() == "TCP":
-                    e_serve_arg = e_serve_arg + [
-                        "--proxy-addr", "127.0.0.1:37000"
-                    ]
-                else:
-                    # defaut proxy-addr is /tmp/proxy
-                    e_serve_arg = e_serve_arg + [
-                        "--proxy-addr", self._default_addr_prefix + "proxy"
-                    ]
+                e_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
+            if "--worker-addr" not in e_serve_arg:
+                e_serve_arg.extend(["--worker-addr", config["worker_addr"]])
+
             index_e = e_serve_arg.index("--proxy-addr")
             if self.proxy_addr is not None and e_serve_arg[
                     index_e + 1] != self.proxy_addr:
                 raise ValueError("proxy addr must be same between workers")
             self.proxy_addr = e_serve_arg[index_e + 1]
+
+            index_e = e_serve_arg.index("--worker-addr")
+            self.e_addr_list.append(e_serve_arg[index_e + 1])
 
             if "--model" not in e_serve_arg:
                 raise ValueError("must carry --model")
@@ -295,25 +347,6 @@ class RemoteEPDServer:
                     raise ValueError("model must be same between workers")
                 self.model = e_serve_arg[index_e + 1]
 
-            if "--worker-addr" not in e_serve_arg:
-                if is_protocol_tcp:
-                    e_serve_arg = e_serve_arg + [
-                        "--worker-addr", "127.0.0.1:3800" + str(i)
-                    ]
-                elif "--transfer-protocol" in e_serve_arg and e_serve_arg[
-                        e_serve_arg.index("--transfer-protocol") +
-                        1].upper() == "TCP":
-                    e_serve_arg = e_serve_arg + [
-                        "--worker-addr", "127.0.0.1:3800" + str(i)
-                    ]
-                else:
-                    # defaut encode-addr is /tmp/encode_{i}
-                    e_serve_arg = e_serve_arg + [
-                        "--worker-addr",
-                        self._default_addr_prefix + "encoder_" + str(i)
-                    ]
-            index_e = e_serve_arg.index("--worker-addr")
-            self.e_addr_list.append(e_serve_arg[index_e + 1])
             self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
@@ -323,53 +356,27 @@ class RemoteEPDServer:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
                     i + self.e_num)
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
-            if "--proxy-addr" not in pd_serve_arg:
-                if is_protocol_tcp:
-                    pd_serve_arg = pd_serve_arg + [
-                        "--proxy-addr", "127.0.0.1:37000"
-                    ]
-                elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
-                        pd_serve_arg.index("--transfer-protocol") +
-                        1].upper() == "TCP":
-                    pd_serve_arg = pd_serve_arg + [
-                        "--proxy-addr", "127.0.0.1:37000"
-                    ]
-                else:
-                    # defaut proxy-addr is /tmp/proxy
-                    pd_serve_arg = pd_serve_arg + [
-                        "--proxy-addr", self._default_addr_prefix + "proxy"
-                    ]
-
-            index_pd = pd_serve_arg.index("--proxy-addr")
-            if self.proxy_addr is not None and pd_serve_arg[
-                    index_pd + 1] != self.proxy_addr:
-                raise ValueError("proxy addr must be same between workers")
             if "--model" not in pd_serve_arg:
                 raise ValueError("must carry --model")
             else:
                 index_pd = pd_serve_arg.index("--model")
                 if self.model is not None and pd_serve_arg[
-                        index_pd + 1] != self.model:
+                    index_pd + 1] != self.model:
                     raise ValueError("model must be same between workers")
 
+            config = self._get_addr_config(pd_serve_arg, i, "PD")
+            if "--proxy-addr" not in pd_serve_arg:
+                pd_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
             if "--worker-addr" not in pd_serve_arg:
-                if is_protocol_tcp:
-                    pd_serve_arg = pd_serve_arg + [
-                        "--worker-addr", "127.0.0.1:3900" + str(i)
-                    ]
-                elif "--transfer-protocol" in pd_serve_arg and pd_serve_arg[
-                        pd_serve_arg.index("--transfer-protocol") +
-                        1].upper() == "TCP":
-                    pd_serve_arg = pd_serve_arg + [
-                        "--worker-addr", "127.0.0.1:3900" + str(i)
-                    ]
-                else:
-                    # defaut pd-addr is /tmp/pd_{i}
-                    pd_serve_arg = pd_serve_arg + [
-                        "--worker-addr",
-                        self._default_addr_prefix + "pd_" + str(i)
-                    ]
+                pd_serve_arg.extend(["--worker-addr", config["worker_addr"]])
+
+            index_pd = pd_serve_arg.index("--proxy-addr")
+            if self.proxy_addr is not None and pd_serve_arg[
+                    index_pd + 1] != self.proxy_addr:
+                raise ValueError("proxy addr must be same between workers")
+
             worker_index = pd_serve_arg.index("--worker-addr")
+            log_prefix = ""
             if "--kv-transfer-config" in pd_serve_arg:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
@@ -381,6 +388,7 @@ class RemoteEPDServer:
             else:
                 self.pd_addr_list.append(pd_serve_arg[worker_index + 1])
                 log_prefix = f"[PD_{i}] "
+
             self._run_server(pd_serve_arg, self.env_dict, log_prefix)
 
     def _start_zmq_proxy(self):
@@ -389,7 +397,6 @@ class RemoteEPDServer:
         self.proxy_config = {
             'proxy_addr': self.proxy_addr,
             'encode_addr_list': self.e_addr_list,
-            'enable_health_monitor': self.enable_health_monitor,
             'model_name': self.model
         }
         if self.pd_addr_list:
@@ -399,10 +406,22 @@ class RemoteEPDServer:
                 'p_addr_list': self.p_addr_list,
                 'd_addr_list': self.d_addr_list
             })
-        if self.proxy_transfer_protocol is not None:
-            self.proxy_config['transfer_protocol'] = self.proxy_transfer_protocol
-
-        return Proxy(**self.proxy_config)
+        if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
+            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
+        if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
+            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
+        if self.proxy_args is not None and "--router" in self.proxy_args:
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
+            if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
+                self.proxy_config['router'] = RandomRouter
+            elif self.proxy_args[self.proxy_args.index("router")+1] == "RoundRobinRouter":
+                self.proxy_config['router'] = RoundRobinRouter
+            else:
+                self.proxy_config['router'] = LeastInFlightRouter
+        p = Proxy(**self.proxy_config)
+        if self.proxy_args is not None and "--router" in self.proxy_args:
+            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
+        return p
 
     def _start_disagg_proxy(self):
         proxy_args = [
@@ -565,6 +584,7 @@ class RemoteEPDServer:
                  pd_serve_args: Union[list[str], str],
                  proxy_type: Literal["disagg_proxy", "proxy",
                                      "api_server"] = None,
+                 kv_store_type: Literal["mooncake"] = "",
                  mooncake_args: Union[list[str], str] = None,
                  proxy_args: Union[list[str], str] = None,
                  api_server_port: Optional[int] = 10001,
@@ -579,6 +599,8 @@ class RemoteEPDServer:
             raise ValueError(f"run mode must be serve or worker")
         if store_type not in ["mooncake", "storage"]:
             raise ValueError(f"store type must be mooncake or storage")
+        if kv_store_type not in ["mooncake", ""]:
+            raise ValueError(f"kv store type must be mooncake")
         if proxy_type is not None and proxy_type not in [
                 "disagg_proxy", "proxy", "api_server"
         ]:
@@ -586,6 +608,7 @@ class RemoteEPDServer:
                 f"proxy type must be disagg_proxy, proxy or api_server")
         self.run_mode = run_mode
         self.store_type = store_type
+        self.kv_store_type = kv_store_type
         self.proxy_type = proxy_type
         self.is_image_load = is_image_load
         self.is_epd_same_card = is_epd_same_card
@@ -618,23 +641,16 @@ class RemoteEPDServer:
 
         self.mooncake_args = mooncake_args
         self.proxy_args = proxy_args
-        self.enable_health_monitor = False
-        self.proxy_transfer_protocol = None
-        if proxy_args is not None:
-            for i, arg in enumerate(proxy_args):
-                if "--enable-health-monitor" in arg:
-                    self.enable_health_monitor = True
-                if "--transfer-protocol" in arg:
-                    self.proxy_transfer_protocol = proxy_args[i + 1]
 
         self.env_dict = env_dict
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
+        self.metrics = {}
 
     async def __aenter__(self):
         # start with
         max_wait_seconds = 1800
-        if self.store_type == "mooncake":
+        if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
         if self.run_mode == "worker":
             self._start_vllm_worker()
