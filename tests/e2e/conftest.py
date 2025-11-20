@@ -450,7 +450,7 @@ class RemoteEPDServer:
             self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("transfer_protocol")+1]
         if self.proxy_args is not None and "enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("enable-health-monitor")+1]
-        if self.proxy_args is not None and "--router" in self.proxy_args:
+        if self.proxy_args is not None and "router" in self.proxy_args:
             self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
             if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
                 self.proxy_config['router'] = RandomRouter
@@ -459,7 +459,7 @@ class RemoteEPDServer:
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
         p = Proxy(**self.proxy_config)
-        if self.proxy_args is not None and "--router" in self.proxy_args:
+        if self.proxy_args is not None and "router" in self.proxy_args:
             self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("router")+1]
         return p
 
