@@ -42,7 +42,6 @@ async def teardown():
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown):
     api_port = 10001
-    env_dict = {"TIMECOUNT_ENABLED": "1"}
     vllm_server_args = [
         "--port",
         str(api_port), "--tensor-parallel-size",
@@ -127,7 +126,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
-    env_dict = {"TIMECOUNT_ENABLED": "1"}
+    env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_HTTP_TIMEOUT_KEEP_ALIVE":"120"}
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -234,7 +233,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
-    env_dict = {"TIMECOUNT_ENABLED": "1"}
+    env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_HTTP_TIMEOUT_KEEP_ALIVE":"120"}
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
