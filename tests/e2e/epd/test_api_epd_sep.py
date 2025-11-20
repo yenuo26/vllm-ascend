@@ -529,6 +529,9 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
                                        dataset_name: str):
+    '''
+    roundrobin策略+mooncake
+    '''
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
@@ -658,6 +661,9 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1p1d_ipc_mooncake_005(model: str, tp_size: int,
                                        dataset_name: str):
+    '''
+    LeastInFlightRouter策略+mooncake
+    '''
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
