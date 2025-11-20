@@ -152,6 +152,9 @@ async def test_1e2pd_mooncake_tcp_001(model: str, tp_size: int, dataset_name: st
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     env_dict["TRANSFER_PROTOCOL"] = "tcp"
+    cluster = ClusterManager()
+    cluster.add_node_info("pd", 1, "epd_vllm_ascend_ci")
+    cluster.add_node_info("pd", 1, "epd_vllm_ascend_ci")
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",str(tp_size), "--enforce-eager",

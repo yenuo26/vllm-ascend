@@ -266,7 +266,7 @@ class RemoteEPDServer:
             env_parts = [f"-e {key}='{value}'" for key, value in env_dict.items()]
             env_str = " ".join(env_parts) + " "
 
-        docker_opts = "-it"
+        docker_opts = "-i"
 
         command_str = " ".join(f"'{arg}'" for arg in server_cmd)
 
