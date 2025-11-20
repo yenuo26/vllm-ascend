@@ -44,7 +44,7 @@ def get_cluster_ips() -> list[str]:
     0: leader
     1~N-1: workers
     """
-    cluster_dns = os.getenv("CLUSTER_ADDRESS")
+    cluster_dns = os.getenv("CLUSTER_ADDRESS").split(";")
     return [socket.gethostbyname(dns) for dns in cluster_dns]
 
 

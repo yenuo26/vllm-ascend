@@ -28,7 +28,8 @@ async def test_1e2pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: st
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     cluster = ClusterManager()
-    cluster.add_node_info("pd", 1, "epd_vllm_ascend_mooncake")
+    cluster.add_node_info("pd", 1, "epd_vllm_ascend_ci")
+    cluster.add_node_info("pd", 1, "epd_vllm_ascend_ci")
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
