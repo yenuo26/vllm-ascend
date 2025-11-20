@@ -263,7 +263,7 @@ class RemoteEPDServer:
                                 env_dict: Optional[dict[str, str]], log_prefix: str) -> None:
         env_str = ""
         if env_dict:
-            env_parts = [f"-e {key}='{value}'" for key, value in env_dict]
+            env_parts = [f"-e {key}='{value}'" for key, value in env_dict.items()]
             env_str = " ".join(env_parts) + " "
 
         docker_opts = "-it"
