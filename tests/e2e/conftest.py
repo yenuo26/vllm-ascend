@@ -266,9 +266,8 @@ class RemoteEPDServer:
             for key, value in env_dict.items():
                 docker_cmd.extend(["-e", f"{key}={value}"])
         docker_cmd.append(container_name)
-        docker_cmd.extend(["bash", "-l", "-c"])
-        command_str = " ".join(shlex.quote(str(arg)) for arg in server_cmd[3:])
-        docker_cmd.append(command_str)
+        command_str = " ".join(server_cmd)
+        docker_cmd.extend(["bash", "-l", "-c", command_str])
         ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
         proc = subprocess.Popen(ssh_cmd,
                                 stdout=subprocess.PIPE,
