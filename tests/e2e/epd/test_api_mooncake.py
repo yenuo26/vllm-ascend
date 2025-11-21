@@ -279,7 +279,8 @@ async def test_1e2pd_mooncake_tcp_002(model: str, tp_size: int, dataset_name: st
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"ec_mooncake_config_file_path":"' +
         MOONCAKE_PRODUCER_CONFIG_PATH +
-        '", "ec_max_num_scheduled_tokens": "1000000000000000000"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
+        '", "ec_max_num_scheduled_tokens": "1000000000000000000"},'
+        '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95","--transfer-protocol", "tcp",
