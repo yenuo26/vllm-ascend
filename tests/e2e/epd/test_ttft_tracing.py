@@ -725,43 +725,14 @@ async def test_longterm_001(model: str, tp_size: int):
 
     env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_LOG_STATS_INTERVAL": "10"}
 
-    warmup_cases = [{
+    case_dict = [{
         "case_type":
-            "performance",
+            "pressure",
         "dataset_path":
             os.path.join(DATASET_PATH, "simulate_truth"),
         "request_conf":
             "vllm_api_stream_chat",
-        "dataset_conf":
-            "textvqa/textvqa_gen",
-        "num_prompts":
-            100,
-        "max_out_len":
-            256,
-        "batch_size":
-            16,
-        "temperature":
-            0.5,
-        "top_k":
-            10,
-        "top_p":
-            0.7,
-        "repetition_penalty":
-            1.2,
-        "request_rate":
-            0.0,
-        "seed":
-            77,
-    }]
-
-    request_rate = [0.28]
-    case_dict = {
-        "case_type":
-            "performance",
-        "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
-        "request_conf":
-            "vllm_api_stream_chat",
+        "pressure_time":86400,
         "dataset_conf":
             "textvqa/textvqa_gen",
         "num_prompts":
@@ -788,12 +759,7 @@ async def test_longterm_001(model: str, tp_size: int):
             "94_longterm_001",
         "threshold":
             0.97
-    }
-    aisbench_cases = []
-    for i in range(len(request_rate)):
-        case_dict["request_rate"] = request_rate[i]
-        new_case_dict = copy.deepcopy(case_dict)
-        aisbench_cases.append(new_case_dict)
+    }]
     api_port = 10001
     async with RemoteEPDServer(start_mode="http",
                                api_server_port=api_port,
@@ -802,18 +768,7 @@ async def test_longterm_001(model: str, tp_size: int):
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
-        # warm up
+
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=warmup_cases, verify=False, save=False)
-        print("sleep 3h")
-        time.sleep(3*60*60)
-        # aisbench test for 2h
-        # end_time = datetime.datetime.now() + datetime.timedelta(hours=2)
-        #
-        # while datetime.datetime.now() < end_time:
-        #     run_aisbench_cases(model=model,
-        #                        port=api_port,
-        #                        aisbench_cases=aisbench_cases)
-
-        print("2 hour test completed")
+                           aisbench_cases=case_dict)

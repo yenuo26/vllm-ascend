@@ -2,6 +2,7 @@ import uuid
 import os
 import numpy as np
 from PIL import Image
+import time
 
 import pytest
 import pytest_asyncio
@@ -1082,14 +1083,14 @@ class TestEPDProxy:
     @pytest.mark.asyncio
     async def test_generate_sampling_params_max_tokens_004(self, setup_teardown):
         """max_tokens为2.1，调用generate接口，调用失败，返回对应报错信息"""
+        p = Proxy(
+            proxy_addr=PROXY_ADDR,
+            encode_addr_list=E_ADDR_LIST,
+            pd_addr_list=PD_ADDR_LIST,
+            model_name=MODEL,
+            enable_health_monitor=True
+        )
         try:
-            p = Proxy(
-                proxy_addr=PROXY_ADDR,
-                encode_addr_list=E_ADDR_LIST,
-                pd_addr_list=PD_ADDR_LIST,
-                model_name=MODEL,
-                enable_health_monitor=True
-            )
             outputs = p.generate(
                 prompt={
                     "prompt": PROMPT_TEMPLATE,
@@ -1100,18 +1101,35 @@ class TestEPDProxy:
                     temperature=0.0
                 ),
                 request_id=str(uuid.uuid4())
-
             )
             output = None
             print("proxy is success")
             async for o in outputs:
                 output = o
                 print(f"{o.outputs}", flush=True)
-            assert output.outputs[0].finish_reason == "stop", "request is success"
-            p.shutdown()
+            assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
-            assert "instance 0 is unhealthy" in str(message), "init success"
+            assert "Invalid Parameters" in str(message), "init success"
+        outputs = p.generate(
+            prompt={
+                "prompt": PROMPT_TEMPLATE,
+                "multi_modal_data": {"image": IMAGE_ARRAY},
+            },
+            sampling_params=SamplingParams(
+                    max_tokens=128,
+                    temperature=0.0
+                ),
+            request_id=str(uuid.uuid4())
+
+        )
+        output = None
+        print("proxy is success")
+        async for o in outputs:
+            output = o
+            print(f"{o.outputs}", flush=True)
+        assert output.outputs[0].finish_reason == "stop", "request is success"
+        p.shutdown()
 
     @pytest.mark.asyncio
     async def test_generate_sampling_params_max_tokens_005(self, setup_teardown):
@@ -1888,14 +1906,14 @@ class TestEPDProxy:
     @pytest.mark.asyncio
     async def test_generate_sampling_params_seed_006(self, setup_teardown):
         """seed为2.1，调用generate接口，调用失败，返回对应报错信息"""
+        p = Proxy(
+            proxy_addr=PROXY_ADDR,
+            encode_addr_list=E_ADDR_LIST,
+            pd_addr_list=PD_ADDR_LIST,
+            model_name=MODEL,
+            enable_health_monitor=True
+        )
         try:
-            p = Proxy(
-                proxy_addr=PROXY_ADDR,
-                encode_addr_list=E_ADDR_LIST,
-                pd_addr_list=PD_ADDR_LIST,
-                model_name=MODEL,
-                enable_health_monitor=True
-            )
             outputs = p.generate(
                 prompt={
                     "prompt": PROMPT_TEMPLATE,
@@ -1907,18 +1925,35 @@ class TestEPDProxy:
                     seed=2.1
                 ),
                 request_id=str(uuid.uuid4())
-
             )
             output = None
             print("proxy is success")
             async for o in outputs:
                 output = o
                 print(f"{o.outputs}", flush=True)
-            assert output.outputs[0].finish_reason == "stop", "request is success"
-            p.shutdown()
+            assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
-            assert "ValidationError" in str(message), "init success"
+            assert "Invalid Parameters" in str(message), "init success"
+        outputs = p.generate(
+            prompt={
+                "prompt": PROMPT_TEMPLATE,
+                "multi_modal_data": {"image": IMAGE_ARRAY},
+            },
+            sampling_params=SamplingParams(
+                max_tokens=128,
+                temperature=0.0,
+                seed=1
+            ),
+            request_id=str(uuid.uuid4())
+        )
+        output = None
+        print("proxy is success")
+        async for o in outputs:
+            output = o
+            print(f"{o.outputs}", flush=True)
+        assert output.outputs[0].finish_reason == "stop", "request is success"
+        p.shutdown()
 
     @pytest.mark.asyncio
     async def test_generate_sampling_params_seed_007(self, setup_teardown):
@@ -2539,14 +2574,14 @@ class TestEPDProxy:
     @pytest.mark.asyncio
     async def test_generate_request_id_003(self, setup_teardown):
         """request_id为非字符串，调用generate接口，调用失败，返回对应报错信息"""
+        p = Proxy(
+            proxy_addr=PROXY_ADDR,
+            encode_addr_list=E_ADDR_LIST,
+            pd_addr_list=PD_ADDR_LIST,
+            model_name=MODEL,
+            enable_health_monitor=True
+        )
         try:
-            p = Proxy(
-                proxy_addr=PROXY_ADDR,
-                encode_addr_list=E_ADDR_LIST,
-                pd_addr_list=PD_ADDR_LIST,
-                model_name=MODEL,
-                enable_health_monitor=True
-            )
             outputs = p.generate(
                 prompt={
                     "prompt": PROMPT_TEMPLATE,
@@ -2554,18 +2589,32 @@ class TestEPDProxy:
                 },
                 sampling_params=SAMPLING_PARAMS,
                 request_id=12345
-
             )
             output = None
             print("proxy is success")
             async for o in outputs:
                 output = o
                 print(f"{o.outputs}", flush=True)
-            assert output.outputs[0].finish_reason == "stop", "request is success"
-            p.shutdown()
+            assert outputs is None, "request is success"
         except Exception as message:
             print(f"error message is: {str(message)}")
             assert "Invalid Parameters" in str(message), "init success"
+        outputs = p.generate(
+            prompt={
+                "prompt": PROMPT_TEMPLATE,
+                "multi_modal_data": {"image": IMAGE_ARRAY},
+            },
+            sampling_params=SAMPLING_PARAMS,
+            request_id=str(uuid.uuid4())
+
+        )
+        output = None
+        print("proxy is success")
+        async for o in outputs:
+            output = o
+            print(f"{o.outputs}", flush=True)
+        assert output.outputs[0].finish_reason == "stop", "request is success"
+        p.shutdown()
 
 
     @pytest.mark.asyncio
