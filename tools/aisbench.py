@@ -202,8 +202,14 @@ def create_ttft_plot(result_file_names,
             ]
             file_data['e_prefill_mean'] = file_data[e_prefill_columns].mean(
                 axis=1)
+            ttft_columns = [
+                col for col in file_data.columns
+                if 'PD' in col and 'ttft' in col
+            ]
+            file_data['ttft_mean'] = file_data[ttft_columns].mean(
+                axis=1)
 
-            file_data['others'] = file_data['ttft'] - file_data[
+            file_data['others'] = file_data['ttft_mean'] - file_data[
                 'e_prefill_mean'] - file_data['pd_prefill_mean'] - file_data[
                     'e_queue_mean'] - file_data['pd_queue_mean'] - file_data[
                 'transfer_to_encode'] - file_data['transfer_to_pd']

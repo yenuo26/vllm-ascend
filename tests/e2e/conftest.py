@@ -136,10 +136,13 @@ class RemoteEPDServer:
                 'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
                 'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms',
             }
-            for flag in self.e_addr_list + self.pd_addr_list:
-                patterns[f'{flag}_ttft'] = fr'{flag}.*Avg proxy ttft: ([\d.]+) ms'
-                patterns[f'{flag}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
-                patterns[f'{flag}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for i, flag in enumerate(self.e_addr_list):
+                patterns[f'E{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'E{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for i, flag in enumerate(self.pd_addr_list):
+                patterns[f'PD{i}_ttft'] = fr'{flag}.*Avg proxy ttft: ([\d.]+) ms'
+                patterns[f'PD{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'PD{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
             for key, pattern in patterns.items():
                 match = re.search(pattern, text)
                 if match:
