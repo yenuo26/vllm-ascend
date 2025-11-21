@@ -4592,6 +4592,449 @@ async def test_1e2pd_mooncake_tcp_acc_002(model: str, tp_size: int, dataset_name
         run_aisbench_cases(model=model,
                            port=api_port,
                            aisbench_cases=acc_cases)
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_001(model: str, tp_size: int, dataset_name: str):
+    '''
+    相同图片同请求开启前缀缓存
+    '''
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP_samereq",
+        "threshold": 0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
+    api_port = 10002
+
+    run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+    # aisbench test
+    run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=aisbench_cases)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_002(model: str, tp_size: int, dataset_name: str):
+    '''
+    相同图片同请求关闭前缀缓存
+    '''
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP_samereq_noprefix_caching",
+        "threshold": 0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
+    api_port = 10002
+
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=warmup_cases,
+                       verify=False,
+                       save=False)
+    # aisbench test
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=aisbench_cases)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_003(model: str, tp_size: int, dataset_name: str):
+    '''
+    相同图片跨请求开启前缀缓存
+    '''
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth_diffreq"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_diffreq"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP_diffreq",
+        "threshold": 0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
+    api_port = 10002
+
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=warmup_cases,
+                       verify=False,
+                       save=False)
+    # aisbench test
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=aisbench_cases)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_004(model: str, tp_size: int, dataset_name: str):
+    '''
+    相同图片跨请求关闭前缀缓存
+    '''
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth_diffreq"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_diffreq"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP_diffreq_noprefix_caching",
+        "threshold": 0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
+    api_port = 10002
+
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=warmup_cases,
+                       verify=False,
+                       save=False)
+    # aisbench test
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=aisbench_cases)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_005(model: str, tp_size: int, dataset_name: str):
+    '''
+    不同图片开启前缀缓存
+    '''
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP",
+        "threshold": 0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
+    api_port = 10002
+
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=warmup_cases,
+                       verify=False,
+                       save=False)
+    # aisbench test
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=aisbench_cases)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_006(model: str, tp_size: int, dataset_name: str):
+    '''
+    不同图片关闭前缀缓存
+    '''
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    request_rate = [0.28, 0.78, 1.28, 1.78]
+    case_dict = {
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP_noprefix_caching",
+        "threshold": 0.97
+    }
+    aisbench_cases = []
+    for i in range(len(request_rate)):
+        case_dict["request_rate"] = request_rate[i]
+        new_case_dict = copy.deepcopy(case_dict)
+        aisbench_cases.append(new_case_dict)
+    api_port = 10002
+
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=warmup_cases,
+                       verify=False,
+                       save=False)
+    # aisbench test
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=aisbench_cases)
 # @pytest.mark.asyncio
 # @pytest.mark.parametrize("model", MODELS)
 # @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
