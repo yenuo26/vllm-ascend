@@ -7,6 +7,7 @@ import re
 import shlex
 import copy
 import subprocess
+import tempfile
 import sys
 import threading
 import traceback
@@ -321,36 +322,63 @@ class RemoteEPDServer:
             "device_name": "",
             "replica_num": 1,
             "fast_transfer": True,
-            "fast_transfer_buffer_size": 1
+            "fast_transfer_buffer_size": 1,
+            "metadata_server": "http://0.0.0.0:8081/metadata",
+            "master_server_address": "0.0.0.0:50051"
         }
-
         for i, arg in enumerate(self.mooncake_args):
             if "--http_metadata_server_port" in arg:
                 metadata_server_port = self.mooncake_args[i].split("=")[-1]
-                mooncake_json[
-                    "metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
+                if self.node_info is not None:
+                    mooncake_json[
+                        "metadata_server"] = f"http://{self.cluster_ips[0]}:{metadata_server_port}/metadata"
+
             if "--rpc_port" in arg:
                 rpc_port = self.mooncake_args[i + 1]
-                mooncake_json["master_server_address"] = f"0.0.0.0:{rpc_port}"
+                if self.node_info is not None:
+                    mooncake_json["master_server_address"] = f"{self.cluster_ips[0]}:{rpc_port}"
 
-        config_path = ""
+        config_paths = set()
         if self.store_type == "mooncake":
             for i, arg in enumerate(self.e_serve_args_list +
                                     self.pd_serve_args_list):
                 index = arg.index("--ec-transfer-config")
-                config_path = json.loads(
+                config_paths.add(json.loads(
                     arg[index + 1]).get("ec_connector_extra_config").get(
-                        "ec_mooncake_config_file_path")
+                        "ec_mooncake_config_file_path"))
 
         if self.kv_store_type == "mooncake":
-            config_path = self.env_dict["MOONCAKE_CONFIG_PATH"]
+            config_paths.add(self.env_dict["MOONCAKE_CONFIG_PATH"])
+        if self.node_info is not None:
+            for host in self.cluster_ips[1:]:
+                mooncake_json["local_hostname"] = host
+                for config_path in config_paths:
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                        json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
+                        local_config_path = f.name
+                    try:
+                        scp_cmd = ["scp", local_config_path, f"root@{host}:{config_path}"]
+                        subprocess.run(scp_cmd, check=True)
+                    finally:
+                        os.unlink(local_config_path)
+            mooncake_json["local_hostname"] = self.cluster_ips[0]
+        for config_path in config_paths:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
 
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
-        print(f"The mooncake producer config is\n {mooncake_json}")
 
     def _get_addr_config(self, args, i, role):
         protocol = None
+
+        if self.node_info is not None and self.node_info.get_node_info(
+                role) is not None:
+            node_id = self.node_info.get_node_info(role, i).node_id
+            host = self.cluster_ips[node_id]
+            proxy_host = self.cluster_ips[0]
+        else:
+            host = "127.0.0.1"
+            proxy_host = "127.0.0.1"
+
         if self.env_dict.get("TRANSFER_PROTOCOL") is not None:
             protocol = self.env_dict["TRANSFER_PROTOCOL"].upper()
         elif "--transfer-protocol" in args:
@@ -363,13 +391,13 @@ class RemoteEPDServer:
         if protocol == "TCP":
             if role == "E":
                 return {
-                    "proxy_addr": "127.0.0.1:37000",
-                    "worker_addr": f"127.0.0.1:3800{i}"
+                    "proxy_addr": f"{proxy_host}:37000",
+                    "worker_addr": f"{host}:3800{i}"
                 }
             else:
                 return {
-                    "proxy_addr": "127.0.0.1:37000",
-                    "worker_addr": f"127.0.0.1:3900{i}"
+                    "proxy_addr": f"{proxy_host}:37000",
+                    "worker_addr": f"{host}:3900{i}"
                 }
         else:
             if role == "E":
@@ -389,7 +417,6 @@ class RemoteEPDServer:
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
 
-        cluster_ips = get_cluster_ips()
 
         serve_arg_cmd = [
             "taskset", "-c", "0-96", "python", "-m",
@@ -428,7 +455,7 @@ class RemoteEPDServer:
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
                 self._run_in_remote_container(
-                    host=cluster_ips[node_id],
+                    host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
                         "e", i).container_name,
                     server_cmd=e_serve_arg,
@@ -486,7 +513,7 @@ class RemoteEPDServer:
                     role) is not None:
                 node_id = self.node_info.get_node_info(role, i).node_id
                 self._run_in_remote_container(
-                    host=cluster_ips[node_id],
+                    host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
                         role, i).container_name,
                     server_cmd=pd_serve_arg,
@@ -758,6 +785,8 @@ class RemoteEPDServer:
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
         self.metrics = {}
+        if node_info is None:
+            self.cluster_ips = get_cluster_ips()
 
     async def __aenter__(self):
         # start with

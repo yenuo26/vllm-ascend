@@ -35,4 +35,3 @@ class ClusterManager:
         if node_type in self.node_info and index < len(self.node_info[node_type]):
             return self.node_info[node_type][index]
         return None
-
