@@ -370,10 +370,12 @@ class RemoteEPDServer:
     def _get_addr_config(self, args, i, role):
         protocol = None
 
-        if self.node_info is not None and self.node_info.get_node_info(
-                role.lower()) is not None:
-            node_id = self.node_info.get_node_info(role.lower(), i).node_id
-            host = self.cluster_ips[node_id]
+        if self.node_info is not None:
+            if self.node_info.get_node_info(role.lower()) is not None:
+                node_id = self.node_info.get_node_info(role.lower(), i).node_id
+                host = self.cluster_ips[node_id]
+            else:
+                host = self.cluster_ips[0]
             proxy_host = self.cluster_ips[0]
         else:
             host = "127.0.0.1"
