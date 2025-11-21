@@ -135,17 +135,15 @@ class RemoteEPDServer:
             patterns = {
                 'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
                 'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms',
-                'ttft': r'Avg proxy ttft: ([\d.]+) ms'
+                'ttft': r'Avg proxy ttft: ([\d.]+) ms',
             }
-        else:
-            patterns = {
-                f'{prefix}_queue': r'Avg queue time requests: ([\d.]+) ms',
-                f'{prefix}_prefill': r'Avg prefill time requests: ([\d.]+) ms',
-            }
-        for key, pattern in patterns.items():
-            match = re.search(pattern, text)
-            if match:
-                self.metrics[key] = float(match.group(1))
+            for flag in self.e_addr_list + self.pd_addr_list:
+                patterns[f'{flag}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'{flag}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for key, pattern in patterns.items():
+                match = re.search(pattern, text)
+                if match:
+                    self.metrics[key] = float(match.group(1))
 
     def save_ttft_data(self, file_name, index):
         data = {
