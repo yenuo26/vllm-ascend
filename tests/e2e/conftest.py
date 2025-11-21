@@ -371,8 +371,8 @@ class RemoteEPDServer:
         protocol = None
 
         if self.node_info is not None and self.node_info.get_node_info(
-                role) is not None:
-            node_id = self.node_info.get_node_info(role, i).node_id
+                role.lower()) is not None:
+            node_id = self.node_info.get_node_info(role.lower(), i).node_id
             host = self.cluster_ips[node_id]
             proxy_host = self.cluster_ips[0]
         else:
@@ -389,7 +389,7 @@ class RemoteEPDServer:
             protocol = "ipc"
 
         if protocol == "TCP":
-            if role == "E":
+            if role.lower() == "e":
                 return {
                     "proxy_addr": f"{proxy_host}:37000",
                     "worker_addr": f"{host}:3800{i}"
@@ -400,7 +400,7 @@ class RemoteEPDServer:
                     "worker_addr": f"{host}:3900{i}"
                 }
         else:
-            if role == "E":
+            if role.lower() == "e":
                 return {
                     "proxy_addr": f"{self._default_addr_prefix}proxy",
                     "worker_addr": f"{self._default_addr_prefix}encoder_{i}"
@@ -785,7 +785,7 @@ class RemoteEPDServer:
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
         self.metrics = {}
-        if node_info is None:
+        if node_info is not None:
             self.cluster_ips = get_cluster_ips()
 
     async def __aenter__(self):
