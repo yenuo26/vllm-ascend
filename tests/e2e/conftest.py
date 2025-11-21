@@ -134,7 +134,8 @@ class RemoteEPDServer:
         if "PROXY" in prefix.upper():
             patterns = {
                 'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
-                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'
+                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms',
+                'ttft': r'Avg proxy ttft: ([\d.]+) ms'
             }
         else:
             patterns = {
