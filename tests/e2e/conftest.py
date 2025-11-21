@@ -276,17 +276,16 @@ class RemoteEPDServer:
         print(f"The mooncake producer config is\n {mooncake_json}")
 
     def _get_addr_config(self, args, i, role):
-        protocol = None
         if self.env_dict.get("TRANSFER_PROTOCOL") is not None:
-            protocol = self.env_dict["TRANSFER_PROTOCOL"].upper()
+            self.protocol = self.env_dict["TRANSFER_PROTOCOL"].lower()
         elif "--transfer-protocol" in args:
             protocol_index = args.index("--transfer-protocol") + 1
             if protocol_index < len(args):
-                protocol = args[protocol_index].upper()
+                self.protocol = args[protocol_index].lower()
         else:
-            protocol = "ipc"
+            self.protocol = "ipc"
 
-        if protocol == "TCP":
+        if self.protocol == "tcp":
             if role == "E":
                 return {
                     "proxy_addr": "127.0.0.1:37000",
@@ -473,33 +472,33 @@ class RemoteEPDServer:
             tasks_0 = [
                 asyncio.create_task(
                     asyncio.wait_for(self.p.check_health(
-                        ServerType.E_INSTANCE, iid),
+                        ServerType.E_INSTANCE, f"{self.protocol}://{addr}"),
                                      timeout=timeout_times))
-                for iid in range(self.e_num)
+                for addr in self.e_addr_list
             ]
             if self.pd_addr_list:
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.PD_INSTANCE, iid),
+                            ServerType.PD_INSTANCE, f"{self.protocol}://{addr}"),
                                          timeout=timeout_times))
-                    for iid in range(self.pd_num)
+                    for addr in self.pd_addr_list
                 ]
                 tasks = tasks_0 + tasks_1
             else:
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.P_INSTANCE, iid),
+                            ServerType.P_INSTANCE, f"{self.protocol}://{addr}"),
                             timeout=timeout_times))
-                    for iid in range(len(self.p_addr_list))
+                    for addr in self.p_addr_list
                 ]
                 tasks_2 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.D_INSTANCE, iid),
+                            ServerType.D_INSTANCE, f"{self.protocol}://{addr}"),
                             timeout=timeout_times))
-                    for iid in range(len(self.d_addr_list))
+                    for addr in self.d_addr_list
                 ]
                 tasks = tasks_0 + tasks_1 + tasks_2
 
@@ -609,6 +608,7 @@ class RemoteEPDServer:
                 f"proxy type must be disagg_proxy, proxy or api_server")
         self.run_mode = run_mode
         self.store_type = store_type
+        self.protocol = ""
         self.kv_store_type = kv_store_type
         self.proxy_type = proxy_type
         self.is_image_load = is_image_load
