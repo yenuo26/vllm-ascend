@@ -26,21 +26,21 @@ async def teardown():
     for dataset in DATASET_NAME:
         create_result_plot(result_file_names=[
             f"qwen2_5_vl_7b_{dataset}_PD_mix",
-            f"qwen2_5_vl_7b_{dataset}_1E2PD",
-            f"qwen2_5_vl_7b_{dataset}_1E3PD"
-        ],result_figure_prefix=dataset)
+            f"qwen2_5_vl_7b_{dataset}_1E2PD", f"qwen2_5_vl_7b_{dataset}_1E3PD"
+        ],
+                           result_figure_prefix=dataset)
         create_ttft_plot(result_file_names=[
-            f"{dataset}_1E2PD_ttft",
-            f"{dataset}_1E3PD_ttft"
-        ], result_figure_prefix=f"{dataset}_ttft")
-
+            f"{dataset}_1E2PD_ttft", f"{dataset}_1E3PD_ttft"
+        ],
+                         result_figure_prefix=f"{dataset}_ttft")
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown):
+async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
+                          teardown):
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -50,32 +50,19 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown)
         "--gpu-memory-utilization", "0.95"
     ]
     warmup_cases = [{
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, dataset_name),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen_base64",
-        "num_prompts":
-        50,
-        "max_out_len":
-        256,
-        "batch_size":
-        16,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        0,
-        "seed":
-        77,
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 50,
+        "max_out_len": 256,
+        "batch_size": 16,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0,
+        "seed": 77,
     }]
 
     request_rate = [0.3, 0.6, 1, 1.5, 2]
@@ -121,12 +108,17 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, teardown)
                            port=api_port,
                            aisbench_cases=aisbench_cases)
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
-    env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_HTTP_TIMEOUT_KEEP_ALIVE":"120"}
+async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
+                         teardown):
+    env_dict = {
+        "TIMECOUNT_ENABLED": "1",
+        "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
+    }
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -148,32 +140,19 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
     ]
 
     warmup_cases = [{
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, dataset_name),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen_base64",
-        "num_prompts":
-        50,
-        "max_out_len":
-        256,
-        "batch_size":
-        16,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        0,
-        "seed":
-        77,
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 50,
+        "max_out_len": 256,
+        "batch_size": 16,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0,
+        "seed": 77,
     }]
 
     request_rate = [1.2, 2.4, 4, 6, 8]
@@ -224,16 +203,19 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str, teardown):
                                card_num=4,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E3PD_ttft",
-                                  index=aisbench_case["request_rate"]/4)
-
+                                  index=aisbench_case["request_rate"] / 4)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
-    env_dict = {"TIMECOUNT_ENABLED": "1","VLLM_HTTP_TIMEOUT_KEEP_ALIVE":"120"}
+async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
+                         teardown):
+    env_dict = {
+        "TIMECOUNT_ENABLED": "1",
+        "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
+    }
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -256,35 +238,22 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
     ]
 
     warmup_cases = [{
-        "case_type":
-        "performance",
-        "dataset_path":
-        os.path.join(DATASET_PATH, dataset_name),
-        "request_conf":
-        "vllm_api_stream_chat",
-        "dataset_conf":
-        "textvqa/textvqa_gen_base64",
-        "num_prompts":
-        50,
-        "max_out_len":
-        256,
-        "batch_size":
-        16,
-        "temperature":
-        0.5,
-        "top_k":
-        10,
-        "top_p":
-        0.7,
-        "repetition_penalty":
-        1.2,
-        "request_rate":
-        0,
-        "seed":
-        77,
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 50,
+        "max_out_len": 256,
+        "batch_size": 16,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0,
+        "seed": 77,
     }]
     request_rate = [0.9, 1.8, 3, 4.5, 6]
-    num_prompts = [600,800,900,900,900]
+    num_prompts = [600, 800, 900, 900, 900]
     case_dict = {
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
@@ -331,5 +300,4 @@ async def test_1e2pd_001(model: str, tp_size: int,dataset_name: str, teardown):
                                card_num=3,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E2PD_ttft",
-                                  index=aisbench_case["request_rate"]/3)
-
+                                  index=aisbench_case["request_rate"] / 3)
