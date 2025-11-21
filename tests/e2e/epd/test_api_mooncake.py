@@ -5035,6 +5035,37 @@ async def test_1e2pd_cross_p_e_pd_mooncake_tcp_006(model: str, tp_size: int, dat
     run_aisbench_cases(model=model,
                        port=api_port,
                        aisbench_cases=aisbench_cases)
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_longterm_001(model: str, tp_size: int, dataset_name: str):
+    case_dict = [{
+        "case_type": "pressure",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf": "vllm_api_stream_chat",
+        "pressure_time": 86400,
+        "dataset_conf": "textvqa/textvqa_gen",
+        "num_prompts": 200,
+        "max_out_len": 256,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP_longterm",
+        "threshold": 0.97
+    }]
+    api_port = 10002
+
+    # aisbench test
+    run_aisbench_cases(model=model,
+                       port=api_port,
+                       aisbench_cases=case_dict)
 # @pytest.mark.asyncio
 # @pytest.mark.parametrize("model", MODELS)
 # @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
