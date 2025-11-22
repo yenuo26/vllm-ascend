@@ -268,43 +268,37 @@ class ContainerManager:
         process_info = {
             'ssh_proc': proc,
             'host': host,
-            'container_id': self._extract_container_id(docker_cmd),
+            'container_name': container_name,
             'process_pattern': ' '.join(server_cmd)
         }
         self._container_processes.append(process_info)
 
-    def _extract_container_id(self, docker_cmd):
-        for i, arg in enumerate(docker_cmd):
-            if arg in ["-i"] and i + 1 < len(docker_cmd):
-                return docker_cmd[i + 1]
-        return None
-
     def kill_container_process_only(self):
         for process_info in self._container_processes:
             ssh_proc = process_info['ssh_proc']
-            container_id = process_info['container_id']
+            container_name = process_info['container_name']
             host = process_info['host']
             pattern = process_info['process_pattern']
 
             try:
                 kill_cmd = [
                     "ssh", f"root@{host}",
-                    "docker", "exec", container_id,
+                    "docker", "exec", container_name,
                     "pkill", "-f", "-TERM", f"'{pattern}'"  # 先发送TERM信号
                 ]
                 subprocess.run(kill_cmd, timeout=10, capture_output=True)
                 time.sleep(2)
                 kill_cmd_force = [
                     "ssh", f"root@{host}",
-                    "docker", "exec", container_id,
+                    "docker", "exec", container_name,
                     "pkill", "-f", "-KILL", f"'{pattern}'"  # 强制杀死
                 ]
                 subprocess.run(kill_cmd_force, timeout=10, capture_output=True)
 
-                print(f"container process tree in {container_id} of {host} is killed")
+                print(f"container process tree in {container_name} of {host} is killed")
 
             except Exception as e:
-                print(f"kill process tree in {container_id} of {host} failed: {e}")
+                print(f"kill process tree in {container_name} of {host} failed: {e}")
 
             try:
                 ssh_proc.terminate()
