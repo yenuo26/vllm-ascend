@@ -268,8 +268,7 @@ class ContainerManager:
         process_info = {
             'ssh_proc': proc,
             'host': host,
-            'container_name': container_name,
-            'process_pattern': ' '.join(server_cmd)
+            'container_name': container_name
         }
         self._container_processes.append(process_info)
 
@@ -278,20 +277,19 @@ class ContainerManager:
             ssh_proc = process_info['ssh_proc']
             container_name = process_info['container_name']
             host = process_info['host']
-            pattern = process_info['process_pattern']
 
             try:
                 kill_cmd = [
                     "ssh", f"root@{host}",
                     "docker", "exec", container_name,
-                    "pkill", "-f", "-TERM", f"'{pattern}'"  # 先发送TERM信号
+                    "pkill", "-f", "-TERM", "python"  # 先发送TERM信号
                 ]
                 subprocess.run(kill_cmd, timeout=10, capture_output=True)
                 time.sleep(2)
                 kill_cmd_force = [
                     "ssh", f"root@{host}",
                     "docker", "exec", container_name,
-                    "pkill", "-f", "-KILL", f"'{pattern}'"  # 强制杀死
+                    "pkill", "-f", "-KILL", "python"  # 强制杀死
                 ]
                 subprocess.run(kill_cmd_force, timeout=10, capture_output=True)
 
