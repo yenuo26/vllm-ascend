@@ -679,6 +679,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int, prefi
                                store_type="storage",
                                proxy_type="api_server",
                                api_server_port=api_port,
+                               is_epd_same_card=True,
                                pd_num=pd_num,
                                e_num=e_num,
                                node_info=cluster,

@@ -434,8 +434,8 @@ class RemoteEPDServer:
 
         config_paths = set()
         if self.store_type == "mooncake":
-            for i, arg in enumerate(self._share_info.get_addr_list("e")+
-                                    self._share_info.get_addr_list("pd")):
+            for i, arg in enumerate(self.e_serve_args_list +
+                                    self.pd_serve_args_list):
                 index = arg.index("--ec-transfer-config")
                 config_paths.add(json.loads(
                     arg[index + 1]).get("ec_connector_extra_config").get(
