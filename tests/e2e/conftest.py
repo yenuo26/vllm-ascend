@@ -222,6 +222,42 @@ class RemoteEPDServer:
         stderr_thread.start()
         self._proc_list.append(proc)
 
+    def _run_in_remote_container(self, host, container_name,
+                                 server_cmd: list[str],
+                                 env_dict: Optional[dict[str, str]],
+                                 log_prefix: str) -> None:
+
+        docker_cmd = ["docker", "exec", "-i"]
+
+        if env_dict:
+            for key, value in env_dict.items():
+                docker_cmd.extend(["-e", f"{key}={value}"])
+        docker_cmd.append(container_name)
+        for i in range(3, len(server_cmd)):
+            arg = server_cmd[i]
+            if arg.startswith('{') and arg.endswith('}'):
+                server_cmd[i] = f"'{arg}'"
+        docker_cmd.extend(server_cmd)
+        ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
+        proc = subprocess.Popen(ssh_cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdin=subprocess.DEVNULL,
+                                start_new_session=True,
+                                text=True,
+                                bufsize=1,
+                                universal_newlines=True)
+        stdout_thread = threading.Thread(target=self._read_output,
+                                         args=(proc.stdout, log_prefix),
+                                         daemon=True)
+        stderr_thread = threading.Thread(target=self._read_output,
+                                         args=(proc.stderr, log_prefix),
+                                         daemon=True)
+
+        stdout_thread.start()
+        stderr_thread.start()
+        self._proc_list.append(proc)
+
     def _start_api_server(self) -> None:
         api_server_args = [
             "--host", "127.0.0.1", "--port",
