@@ -711,3 +711,125 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int, prefi
                            port=api_port,
                            aisbench_cases=aisbench_cases)
 
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+async def test_1e2pd_cross_p_e_pd_mooncake_tcp_002(model: str, tp_size: int):
+    '''
+    proxy-epd 跨机部署, 1E2PD
+    前缀缓存：开启
+    数据集：模拟现网数据集
+    测试类型：stability
+    ec transfer: mooncake
+    '''
+    env_dict = {}
+    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
+    env_dict["TRANSFER_PROTOCOL"] = "tcp"
+    e_num = 1
+    pd_num = 2
+    cluster = ClusterManager()
+    for i in range(e_num):
+        cluster.add_node_info("e", 1, "epd_vllm_ascend_mooncake")
+    for i in range(pd_num):
+        cluster.add_node_info("pd", 2, "epd_vllm_ascend_mooncake")
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1",
+        "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+    ]
+
+    mooncake_args = [
+        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
+        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
+        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+    ]
+
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen_base64",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    dataset_name = ["simulate_truth"]
+    aisbench_cases = [{
+        "case_type": "pressure",
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "batch_size": 128,
+        "temperature": 0.5,
+        "pressure_time": 86400,
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.28,
+        "baseline": 1,
+        "seed": 77,
+        "threshold": 0.97,
+        "result_file_name": f"{dataset_name}_1E2PD_cross_p_e_pd_mooncake_TCP"
+    }]
+
+    api_port = 10002
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="storage",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=pd_num,
+                               e_num=e_num,
+                               node_info=cluster,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args,
+                               mooncake_args=mooncake_args) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+        # test stability
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=aisbench_cases)
+
