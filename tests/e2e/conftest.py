@@ -101,6 +101,7 @@ def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
     torch.npu.reset_peak_memory_stats()
 
 
+
 def write_to_execl(data, path):
     if path is not None:
         if not os.path.exists(path):
@@ -109,48 +110,9 @@ def write_to_execl(data, path):
         else:
             existing_df = pd.read_csv(path)
             new_df = pd.DataFrame(data, index=[0])
-            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+            combined_df = pd.concat([existing_df, new_df],
+                                    ignore_index=True)
             combined_df.to_csv(path, index=False)
-
-
-# import docker
-# from docker.models.containers import Container
-#
-#
-# class RemoteContainerManager:
-#     def __init__(self, host):
-#         self.host = host
-#         self.client = docker.DockerClient(
-#             base_url=f"ssh://root@{host}"
-#         )
-#
-#     def exec_in_container(self, container_name, command, log_prefix, metrics, env=None):
-#         try:
-#             container = self.client.containers.get(container_name)
-#
-#             exec_id = self.client.api.exec_create(
-#                 container.id,
-#                 cmd=command,
-#                 environment=env,
-#                 stdout=True,
-#                 stderr=True,
-#                 stdin=False,
-#                 tty=False
-#             )
-#             exec_socket = self.client.api.exec_start(
-#                 exec_id['Id'],
-#                 detach=False,
-#                 tty=False,
-#                 stream=True
-#             )
-#             stdout_thread = threading.Thread(target=read_output,
-#                                              args=(exec_socket, log_prefix, metrics),
-#                                              daemon=True)
-#
-#             stdout_thread.start()
-#
-#         except Exception as e:
-#             print(f"[{container_name}] 💥 执行失败: {e}")
 
 
 class RemoteEPDServer:
@@ -158,13 +120,8 @@ class RemoteEPDServer:
     def get_proxy(self) -> Proxy:
         return self.p
 
-    def save_ttft_data(self, file_name, index):
-        data = {"index": index}
-        data.update(self.metrics)
-        write_to_execl(data, f"./{file_name}.csv")
-        print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
-
     def _read_output(self, pipe, prefix):
+        """在单独线程中读取输出"""
         try:
             with pipe:
                 for line in iter(pipe.readline, ''):
@@ -182,17 +139,27 @@ class RemoteEPDServer:
             patterns = {
                 'transfer_to_encode':
                 r'Avg proxy to encoder requests: ([\d.]+) ms',
-                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'
-            }
-        else:
-            patterns = {
-                f'{prefix}_queue': r'Avg queue time requests: ([\d.]+) ms',
-                f'{prefix}_prefill': r'Avg prefill time requests: ([\d.]+) ms',
-            }
-        for key, pattern in patterns.items():
-            match = re.search(pattern, text)
-            if match:
-                self.metrics[key] = float(match.group(1))
+                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'}
+            for i, flag in enumerate(self.e_addr_list):
+                patterns[f'E{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'E{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for i, flag in enumerate(self.pd_addr_list):
+                patterns[f'PD{i}_ttft'] = fr'{flag}.*Avg proxy ttft: ([\d.]+) ms'
+                patterns[f'PD{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'PD{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for key, pattern in patterns.items():
+                match = re.search(pattern, text)
+                if match:
+                    self.metrics[key] = float(match.group(1))
+
+    def save_ttft_data(self, file_name, index):
+        data = {
+            "index": index
+        }
+        data.update(self.metrics)
+        write_to_execl(data, f"./{file_name}.csv")
+        print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
+
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -241,46 +208,9 @@ class RemoteEPDServer:
             stdin=subprocess.DEVNULL,
             start_new_session=True,
             text=True,
-            bufsize=1,  # 行缓冲
+            bufsize=1,
             universal_newlines=True)
 
-        # 创建线程读取输出
-        stdout_thread = threading.Thread(target=self._read_output,
-                                         args=(proc.stdout, log_prefix),
-                                         daemon=True)
-        stderr_thread = threading.Thread(target=self._read_output,
-                                         args=(proc.stderr, log_prefix),
-                                         daemon=True)
-
-        stdout_thread.start()
-        stderr_thread.start()
-        self._proc_list.append(proc)
-
-    def _run_in_remote_container(self, host, container_name,
-                                 server_cmd: list[str],
-                                 env_dict: Optional[dict[str, str]],
-                                 log_prefix: str) -> None:
-
-        docker_cmd = ["docker", "exec", "-i"]
-
-        if env_dict:
-            for key, value in env_dict.items():
-                docker_cmd.extend(["-e", f"{key}={value}"])
-        docker_cmd.append(container_name)
-        for i in range(3, len(server_cmd)):
-            arg = server_cmd[i]
-            if arg.startswith('{') and arg.endswith('}'):
-                server_cmd[i] = f"'{arg}'"
-        docker_cmd.extend(server_cmd)
-        ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
-        proc = subprocess.Popen(ssh_cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdin=subprocess.DEVNULL,
-                                start_new_session=True,
-                                text=True,
-                                bufsize=1,
-                                universal_newlines=True)
         stdout_thread = threading.Thread(target=self._read_output,
                                          args=(proc.stdout, log_prefix),
                                          daemon=True)
@@ -368,29 +298,26 @@ class RemoteEPDServer:
 
 
     def _get_addr_config(self, args, i, role):
-        protocol = None
-
-        if self.node_info is not None:
-            if self.node_info.get_node_info(role.lower()) is not None:
-                node_id = self.node_info.get_node_info(role.lower(), i).node_id
-                host = self.cluster_ips[node_id]
-            else:
-                host = self.cluster_ips[0]
-            proxy_host = self.cluster_ips[0]
-        else:
-            host = "127.0.0.1"
-            proxy_host = "127.0.0.1"
-
         if self.env_dict.get("TRANSFER_PROTOCOL") is not None:
-            protocol = self.env_dict["TRANSFER_PROTOCOL"].upper()
+            self.protocol = self.env_dict["TRANSFER_PROTOCOL"].lower()
         elif "--transfer-protocol" in args:
             protocol_index = args.index("--transfer-protocol") + 1
             if protocol_index < len(args):
-                protocol = args[protocol_index].upper()
+                self.protocol = args[protocol_index].lower()
         else:
-            protocol = "ipc"
+            self.protocol = "ipc"
 
-        if protocol == "TCP":
+        if self.protocol == "tcp":
+            if self.node_info is not None:
+                if self.node_info.get_node_info(role.lower()) is not None:
+                    node_id = self.node_info.get_node_info(role.lower(), i).node_id
+                    host = self.cluster_ips[node_id]
+                else:
+                    host = self.cluster_ips[0]
+                proxy_host = self.cluster_ips[0]
+            else:
+                host = "127.0.0.1"
+                proxy_host = "127.0.0.1"
             if role.lower() == "e":
                 return {
                     "proxy_addr": f"{proxy_host}:37000",
@@ -419,11 +346,10 @@ class RemoteEPDServer:
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
 
-
         serve_arg_cmd = [
-            "taskset", "-c", "0-96", "python", "-m",
-            "lm_service.entrypoints.worker"
-        ]
+                "taskset", "-c", "0-96", "python", "-m",
+                "lm_service.entrypoints.worker"
+            ]
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
@@ -610,33 +536,33 @@ class RemoteEPDServer:
             tasks_0 = [
                 asyncio.create_task(
                     asyncio.wait_for(self.p.check_health(
-                        ServerType.E_INSTANCE, iid),
+                        ServerType.E_INSTANCE, f"{self.protocol}://{addr}"),
                                      timeout=timeout_times))
-                for iid in range(self.e_num)
+                for addr in self.e_addr_list
             ]
             if self.pd_addr_list:
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.PD_INSTANCE, iid),
+                            ServerType.PD_INSTANCE, f"{self.protocol}://{addr}"),
                                          timeout=timeout_times))
-                    for iid in range(self.pd_num)
+                    for addr in self.pd_addr_list
                 ]
                 tasks = tasks_0 + tasks_1
             else:
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.P_INSTANCE, iid),
-                                         timeout=timeout_times))
-                    for iid in range(len(self.p_addr_list))
+                            ServerType.P_INSTANCE, f"{self.protocol}://{addr}"),
+                            timeout=timeout_times))
+                    for addr in self.p_addr_list
                 ]
                 tasks_2 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.D_INSTANCE, iid),
-                                         timeout=timeout_times))
-                    for iid in range(len(self.d_addr_list))
+                            ServerType.D_INSTANCE, f"{self.protocol}://{addr}"),
+                            timeout=timeout_times))
+                    for addr in self.d_addr_list
                 ]
                 tasks = tasks_0 + tasks_1 + tasks_2
 
@@ -747,6 +673,7 @@ class RemoteEPDServer:
                 f"proxy type must be disagg_proxy, proxy or api_server")
         self.run_mode = run_mode
         self.store_type = store_type
+        self.protocol = ""
         self.kv_store_type = kv_store_type
         self.proxy_type = proxy_type
         self.is_image_load = is_image_load
