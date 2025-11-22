@@ -554,7 +554,7 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
-                self.run_in_remote_container(
+                self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
                         "e", i).container_name,
