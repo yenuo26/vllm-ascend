@@ -489,12 +489,6 @@ async def test_1e1pd_sc_cross_p_epd_storage_tcp_001(model: str, tp_size: int):
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
 
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
-    ]
-
     warmup_cases = [{
         "case_type":
             "performance",
@@ -562,8 +556,7 @@ async def test_1e1pd_sc_cross_p_epd_storage_tcp_001(model: str, tp_size: int):
                                env_dict=env_dict,
                                is_epd_same_card=True,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
 
         # warm up
         run_aisbench_cases(model=model,
@@ -624,12 +617,6 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int, prefi
     ]
     if not prefix_cache:
         pd_server_args.append("--no-enable-prefix-caching")
-
-    mooncake_args = [
-        "--rpc_port", "50052", "--enable_http_metadata_server=true", "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8082", "--rpc_thread_num", "8", "--default_kv_lease_ttl", "10000",
-        "eviction_ratio", "0.05", "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
-    ]
 
     warmup_cases = [{
         "case_type":
@@ -697,8 +684,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int, prefi
                                node_info=cluster,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               mooncake_args=mooncake_args) as server:
+                               pd_serve_args=pd_server_args) as server:
 
         # warm up
         run_aisbench_cases(model=model,
@@ -789,8 +775,6 @@ async def test_1e2pd_cross_p_e_pd_mooncake_tcp_002(model: str, tp_size: int):
         "seed":
             77,
     }]
-
-    dataset_name = ["simulate_truth"]
     aisbench_cases = [{
         "case_type": "pressure",
         "request_conf": "vllm_api_stream_chat",
@@ -798,7 +782,7 @@ async def test_1e2pd_cross_p_e_pd_mooncake_tcp_002(model: str, tp_size: int):
         "batch_size": 128,
         "temperature": 0.5,
         "pressure_time": 86400,
-        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
