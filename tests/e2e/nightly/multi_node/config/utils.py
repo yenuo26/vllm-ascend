@@ -38,19 +38,13 @@ def temp_env(env_dict):
 #         dist.destroy_process_group()
 
 
-def get_cluster_ips(word_size: int = 2) -> list[str]:
+def get_cluster_ips() -> list[str]:
     """
     Returns the IP addresses of all nodes in the cluster.
     0: leader
     1~N-1: workers
     """
-    leader_dns = os.getenv("LEADER_ADDRESS")
-    if not leader_dns:
-        raise RuntimeError("LEADER_ADDRESS is not set")
-    cluster_dns = [leader_dns]
-    other_dns = os.getenv("OTHER_ADDRESS").split(";")
-    for i in range(1, word_size):
-        cluster_dns.append(other_dns[i])
+    cluster_dns = os.getenv("CLUSTER_ADDRESS").split(";")
     return [socket.gethostbyname(dns) for dns in cluster_dns]
 
 

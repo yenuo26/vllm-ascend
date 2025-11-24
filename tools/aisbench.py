@@ -75,20 +75,22 @@ def create_result_plot(result_file_names,
             df = pd.read_csv(f"./{name}.csv")
             x = df['Request rate/Card']
             #remove data unit
-            metrics_names = ['TTFT_Average', 'TPOT_Average', 'E2EL_Average', 'Request Throughput/Card',
-                             'Total Token Throughput/Card']
+            metrics_names = [
+                'TTFT_Average', 'TPOT_Average', 'E2EL_Average',
+                'Request Throughput/Card', 'Total Token Throughput/Card'
+            ]
 
             for j in range(3):
                 df[metrics_names[j]] = df[metrics_names[j]].str.extract(
-                r'(\d+\.?\d*)').astype(float)
+                    r'(\d+\.?\d*)').astype(float)
 
             color = color_map[name]
             for axes_obj, metrics_name in zip(axes_indexs, metrics_names):
                 axes_obj.plot(x,
-                                df[metrics_name],
-                                linewidth=2,
-                                color=color,
-                                label=name)
+                              df[metrics_name],
+                              linewidth=2,
+                              color=color,
+                              label=name)
                 axes_obj.plot(x, df[metrics_name], color=color, markersize=4)
                 # display num for data point
                 for i, (xi, yi) in enumerate(zip(x, df[metrics_name])):
@@ -103,15 +105,18 @@ def create_result_plot(result_file_names,
                         color='black')
 
             axes[1, 2].plot(df['Request Throughput/Card'],
-                                df['E2EL_Average'],
-                                linewidth=2,
-                                color=color,
-                                label=name)
+                            df['E2EL_Average'],
+                            linewidth=2,
+                            color=color,
+                            label=name)
             axes[1, 2].plot(df['Request Throughput/Card'],
-                                df['E2EL_Average'],color=color, markersize=4)
+                            df['E2EL_Average'],
+                            color=color,
+                            markersize=4)
             # display num for data point
-            for i, (xi, yi) in enumerate(zip(df['Request Throughput/Card'], df['E2EL_Average'])):
-                axes[1,2].annotate(
+            for i, (xi, yi) in enumerate(
+                    zip(df['Request Throughput/Card'], df['E2EL_Average'])):
+                axes[1, 2].annotate(
                     f'{yi:.2f}',
                     (xi, yi),
                     textcoords="offset points",
@@ -128,7 +133,6 @@ def create_result_plot(result_file_names,
             axes_obj.xaxis.set_major_locator(ticker.AutoLocator())
             axes_obj.xaxis.set_major_formatter(ticker.ScalarFormatter())
             axes_obj.legend()
-
 
         plt.tight_layout()
 
@@ -157,8 +161,10 @@ def create_ttft_plot(result_file_names,
     plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
-    metrics_names = ['pd_queue_mean', 'e_queue_mean', 'pd_prefill_mean', 'e_prefill_mean',
-                     'transfer_to_encode', 'transfer_to_pd']
+    metrics_names = [
+        'pd_queue_mean', 'e_queue_mean', 'pd_prefill_mean', 'e_prefill_mean',
+        'transfer_to_encode', 'transfer_to_pd', 'others'
+    ]
     color_map = {
         name: colors[i % len(colors)]
         for i, name in enumerate(metrics_names)
@@ -173,35 +179,73 @@ def create_ttft_plot(result_file_names,
             file_data = pd.read_csv(f"./{file_name}.csv")
             x_pos = np.arange(len(file_data)) + i * bar_width
             x_poss.extend(x_pos)
-            pd_queue_columns = [col for col in file_data.columns if 'PD' in col and 'queue' in col]
-            file_data['pd_queue_mean'] = file_data[pd_queue_columns].mean(axis=1)
-            e_queue_columns = [col for col in file_data.columns if 'E' in col and 'queue' in col]
+            pd_queue_columns = [
+                col for col in file_data.columns
+                if 'PD' in col and 'queue' in col
+            ]
+            file_data['pd_queue_mean'] = file_data[pd_queue_columns].mean(
+                axis=1)
+            e_queue_columns = [
+                col for col in file_data.columns
+                if 'E' in col and 'queue' in col
+            ]
             file_data['e_queue_mean'] = file_data[e_queue_columns].mean(axis=1)
-            pd_prefill_columns = [col for col in file_data.columns if 'PD' in col and 'prefill' in col]
-            file_data['pd_prefill_mean'] = file_data[pd_prefill_columns].mean(axis=1)
-            e_prefill_columns = [col for col in file_data.columns if 'E' in col and 'prefill' in col]
-            file_data['e_prefill_mean'] = file_data[e_prefill_columns].mean(axis=1)
+            pd_prefill_columns = [
+                col for col in file_data.columns
+                if 'PD' in col and 'prefill' in col
+            ]
+            file_data['pd_prefill_mean'] = file_data[pd_prefill_columns].mean(
+                axis=1)
+            e_prefill_columns = [
+                col for col in file_data.columns
+                if 'E' in col and 'prefill' in col
+            ]
+            file_data['e_prefill_mean'] = file_data[e_prefill_columns].mean(
+                axis=1)
+            ttft_columns = [
+                col for col in file_data.columns
+                if 'PD' in col and 'ttft' in col
+            ]
+            file_data['ttft_mean'] = file_data[ttft_columns].mean(
+                axis=1)
+
+            file_data['others'] = file_data['ttft_mean'] - file_data[
+                'e_prefill_mean'] - file_data['pd_prefill_mean'] - file_data[
+                    'e_queue_mean'] - file_data['pd_queue_mean'] - file_data[
+                'transfer_to_encode'] - file_data['transfer_to_pd']
 
             bottom = np.zeros(len(file_data['index']))
 
             for metrics_name in metrics_names:
-                bars = ax.bar(x_pos, file_data[metrics_name], bottom=bottom, width=bar_width, linestyle='-',
+                bars = ax.bar(x_pos,
+                              file_data[metrics_name],
+                              bottom=bottom,
+                              width=bar_width,
+                              linestyle='-',
                               edgecolor='black',
-                              color=color_map[metrics_name], alpha=0.7, linewidth=0.8)
+                              color=color_map[metrics_name],
+                              alpha=0.7,
+                              linewidth=0.8)
 
-                for value, bar, single_bottom in zip(file_data[metrics_name], bars, bottom):
-                    ax.text(bar.get_x() + bar.get_width() / 2, single_bottom, value,
-                                    ha='center', va='center', fontsize=8,
-                                    fontweight='bold', color='black')
+                for value, bar, single_bottom in zip(file_data[metrics_name],
+                                                     bars, bottom):
+                    ax.text(bar.get_x() + bar.get_width() / 2,
+                            single_bottom,
+                            value,
+                            ha='center',
+                            va='center',
+                            fontsize=8,
+                            fontweight='bold',
+                            color='black')
                 bottom += np.array(file_data[metrics_name])
 
             for value in file_data['index']:
                 x_labels.append(f"{value}_{file_name}")
 
-
-
-        legend_elements = [Patch(facecolor=color_map[metrics_name], label=metrics_name)
-                           for metrics_name in metrics_names]
+        legend_elements = [
+            Patch(facecolor=color_map[metrics_name], label=metrics_name)
+            for metrics_name in metrics_names
+        ]
         ax.legend(handles=legend_elements, loc='upper left')
 
         ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)

@@ -7,6 +7,7 @@ import re
 import shlex
 import copy
 import subprocess
+import tempfile
 import sys
 import threading
 import traceback
@@ -43,6 +44,9 @@ from vllm.transformers_utils.utils import maybe_model_redirect
 from tests.e2e.model_utils import (TokensTextLogprobs,
                                    TokensTextLogprobsPromptLogprobs)
 from tests.e2e.nightly.multi_node.config.multi_node_config import NodeInfo
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
+from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
+
 from vllm_ascend.ascend_config import clear_ascend_config
 # TODO: remove this part after the patch merged into vllm, if
 # we not explicitly patch here, some of them might be effectiveless
@@ -111,49 +115,215 @@ def write_to_execl(data, path):
             combined_df.to_csv(path, index=False)
 
 
-class RemoteEPDServer:
+class SharedInfoManager:
+    def __init__(self):
+        self._metrics = {}
+        self._e_addr_list = []
+        self._pd_addr_list = []
+        self._p_addr_list = []
+        self._d_addr_list = []
+        self._enable_ttft_breakdown = False
+        self._check_info = ""
+        self._lock = threading.Lock()
 
-    def get_proxy(self) -> Proxy:
-        return self.p
+    def update_metrics(self, metrics):
+        with self._lock:
+            self._metrics = metrics
 
-    def _read_output(self, pipe, prefix):
-        """在单独线程中读取输出"""
+    def get_metrics(self):
+        with self._lock:
+            return self._metrics.copy()
+
+
+    def open_breakdown(self):
+        with self._lock:
+            self._enable_ttft_breakdown = True
+
+    def get_breakdown_status(self):
+        with self._lock:
+            return self._enable_ttft_breakdown
+
+    def update_check_info(self, check_info):
+        with self._lock:
+            self._check_info = check_info
+
+    def get_check_info(self):
+        with self._lock:
+            return self._check_info
+
+    def add_addr_list(self, addr, role):
+        with self._lock:
+            if role.lower() == 'e':
+                self._e_addr_list.append(addr)
+            elif role.lower() == 'p':
+                self._p_addr_list.append(addr)
+            elif role.lower() == 'd':
+                self._d_addr_list.append(addr)
+            else:
+                self._pd_addr_list.append(addr)
+
+    def get_addr_list(self, role):
+        with self._lock:
+            if role.lower() == 'e':
+                return self._e_addr_list.copy()
+            elif role.lower() == 'p':
+                return self._p_addr_list.copy()
+            elif role.lower() == 'd':
+                return self._d_addr_list.copy()
+            else:
+                return self._pd_addr_list.copy()
+
+class OutputManager:
+    def __init__(self, share_info:SharedInfoManager):
+        self.info = share_info
+        self._text = ""
+        self._check_result = False
+
+    def read_output(self, pipe, prefix):
         try:
             with pipe:
                 for line in iter(pipe.readline, ''):
                     if line:
+                        self._text = line
                         print(f"{prefix}: {line}", end='')
-                        if self.env_dict.get("TIMECOUNT_ENABLED", 0)=="1":
+                        if self.info.get_breakdown_status():
                             self._extract_ttft_data(line, prefix)
+                        if not self.info.get_check_info():
+                            self._check_result = self._check_assign_info(line, self.info.get_check_info())
+
 
         except Exception as e:
             print(f"error: {e}")
             traceback.print_exc()
 
+    def _check_assign_info(self, text, check_info):
+        if check_info in text:
+            return True
+        else:
+            return False
+
+    def get_check_result(self):
+        return self._check_result
+
     def _extract_ttft_data(self, text, prefix):
+        metrics = self.info.get_metrics()
         if "PROXY" in prefix.upper():
             patterns = {
-                'transfer_to_encode': r'Avg proxy to encoder requests: ([\d.]+) ms',
-                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'
-            }
-        else:
-            patterns = {
-                f'{prefix}_queue': r'Avg queue time requests: ([\d.]+) ms',
-                f'{prefix}_prefill': r'Avg prefill time requests: ([\d.]+) ms',
-            }
-        for key, pattern in patterns.items():
-            match = re.search(pattern, text)
-            if match:
-                self.metrics[key] = float(match.group(1))
+                'transfer_to_encode':
+                r'Avg proxy to encoder requests: ([\d.]+) ms',
+                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'}
+            for i, flag in enumerate(self.info.get_addr_list("e")):
+                patterns[f'E{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'E{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for i, flag in enumerate(self.info.get_addr_list("pd")):
+                patterns[f'PD{i}_ttft'] = fr'{flag}.*Avg proxy ttft: ([\d.]+) ms'
+                patterns[f'PD{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
+                patterns[f'PD{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+            for key, pattern in patterns.items():
+                match = re.search(pattern, text)
+                if match:
+                    metrics[key] = float(match.group(1))
+        self.info.update_metrics(metrics)
+
+
+class ContainerManager:
+    def __init__(self, output: OutputManager):
+        self._container_processes = []
+        self._output = output
+
+    def run_in_remote_container(self, host, container_name,
+                                 server_cmd: list[str],
+                                 env_dict: Optional[dict[str, str]],
+                                 log_prefix: str) -> None:
+
+        docker_cmd = ["docker", "exec", "-i"]
+
+        if env_dict:
+            for key, value in env_dict.items():
+                docker_cmd.extend(["-e", f"{key}={value}"])
+        docker_cmd.append(container_name)
+        for i in range(3, len(server_cmd)):
+            arg = server_cmd[i]
+            if arg.startswith('{') and arg.endswith('}'):
+                server_cmd[i] = f"'{arg}'"
+        docker_cmd.extend(server_cmd)
+        ssh_cmd = ["ssh", f"root@{host}"] + docker_cmd
+        proc = subprocess.Popen(ssh_cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdin=subprocess.DEVNULL,
+                                start_new_session=True,
+                                text=True,
+                                bufsize=1,
+                                universal_newlines=True)
+        stdout_thread = threading.Thread(target=self._output.read_output,
+                                         args=(proc.stdout, log_prefix),
+                                         daemon=True)
+        stderr_thread = threading.Thread(target=self._output.read_output,
+                                         args=(proc.stderr, log_prefix),
+                                         daemon=True)
+
+        stdout_thread.start()
+        stderr_thread.start()
+        process_info = {
+            'ssh_proc': proc,
+            'host': host,
+            'container_name': container_name
+        }
+        self._container_processes.append(process_info)
+
+    def kill_container_process_only(self):
+        for process_info in self._container_processes:
+            ssh_proc = process_info['ssh_proc']
+            container_name = process_info['container_name']
+            host = process_info['host']
+
+            try:
+                kill_cmd = [
+                    "ssh", f"root@{host}",
+                    "docker", "exec", container_name,
+                    "pkill", "-f", "-TERM", "python"  # 先发送TERM信号
+                ]
+                subprocess.run(kill_cmd, timeout=10, capture_output=True)
+                time.sleep(2)
+                kill_cmd_force = [
+                    "ssh", f"root@{host}",
+                    "docker", "exec", container_name,
+                    "pkill", "-f", "-KILL", "python"  # 强制杀死
+                ]
+                subprocess.run(kill_cmd_force, timeout=10, capture_output=True)
+
+                print(f"container process tree in {container_name} of {host} is killed")
+
+            except Exception as e:
+                print(f"kill process tree in {container_name} of {host} failed: {e}")
+
+            try:
+                ssh_proc.terminate()
+                ssh_proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                ssh_proc.kill()
+
+
+class RemoteEPDServer:
+    def get_proxy(self) -> Proxy:
+        return self.p
+
+    def check_log(self, check_info, timeout) -> bool:
+        self._share_info.update_check_info(check_info)
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if self._output.get_check_result():
+                return True
+        return False
 
     def save_ttft_data(self, file_name, index):
         data = {
             "index": index
         }
-        data.update(self.metrics)
+        data.update(self._share_info.get_metrics())
         write_to_execl(data, f"./{file_name}.csv")
         print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
-
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -172,11 +342,10 @@ class RemoteEPDServer:
             stderr=subprocess.PIPE,
             universal_newlines=True,  # 文本模式
             bufsize=1)
-        # 创建线程读取输出
-        stdout_thread = threading.Thread(target=self._read_output,
+        stdout_thread = threading.Thread(target=self._output.read_output,
                                          args=(proc.stdout, log_prefix),
                                          daemon=True)
-        stderr_thread = threading.Thread(target=self._read_output,
+        stderr_thread = threading.Thread(target=self._output.read_output,
                                          args=(proc.stderr, log_prefix),
                                          daemon=True)
 
@@ -203,14 +372,13 @@ class RemoteEPDServer:
             stdin=subprocess.DEVNULL,
             start_new_session=True,
             text=True,
-            bufsize=1,  # 行缓冲
+            bufsize=1,
             universal_newlines=True)
 
-        # 创建线程读取输出
-        stdout_thread = threading.Thread(target=self._read_output,
+        stdout_thread = threading.Thread(target=self._output.read_output,
                                          args=(proc.stdout, log_prefix),
                                          daemon=True)
-        stderr_thread = threading.Thread(target=self._read_output,
+        stderr_thread = threading.Thread(target=self._output.read_output,
                                          args=(proc.stderr, log_prefix),
                                          daemon=True)
 
@@ -221,7 +389,8 @@ class RemoteEPDServer:
     def _start_api_server(self) -> None:
         api_server_args = [
             "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--proxy-config", json.dumps(self.proxy_config)
+            str(self.api_server_port), "--proxy-config",
+            json.dumps(self.proxy_config)
         ]
         if self.is_image_load:
             api_server_args.append("--is-load-image")
@@ -247,57 +416,84 @@ class RemoteEPDServer:
             "device_name": "",
             "replica_num": 1,
             "fast_transfer": True,
-            "fast_transfer_buffer_size": 1
+            "fast_transfer_buffer_size": 1,
+            "metadata_server": "http://0.0.0.0:8081/metadata",
+            "master_server_address": "0.0.0.0:50051"
         }
-
         for i, arg in enumerate(self.mooncake_args):
             if "--http_metadata_server_port" in arg:
                 metadata_server_port = self.mooncake_args[i].split("=")[-1]
-                mooncake_json[
-                    "metadata_server"] = f"http://0.0.0.0:{metadata_server_port}/metadata"
+                if self.node_info is not None:
+                    mooncake_json[
+                        "metadata_server"] = f"http://{self.cluster_ips[0]}:{metadata_server_port}/metadata"
+
             if "--rpc_port" in arg:
                 rpc_port = self.mooncake_args[i + 1]
-                mooncake_json[
-                    "master_server_address"] = f"0.0.0.0:{rpc_port}"
+                if self.node_info is not None:
+                    mooncake_json["master_server_address"] = f"{self.cluster_ips[0]}:{rpc_port}"
 
-        config_path = ""
+        config_paths = set()
         if self.store_type == "mooncake":
-            for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
+            for i, arg in enumerate(self.e_serve_args_list +
+                                    self.pd_serve_args_list):
                 index = arg.index("--ec-transfer-config")
-                config_path = json.loads(arg[index + 1]).get(
-                    "ec_connector_extra_config").get("ec_mooncake_config_file_path")
+                config_paths.add(json.loads(
+                    arg[index + 1]).get("ec_connector_extra_config").get(
+                        "ec_mooncake_config_file_path"))
 
         if self.kv_store_type == "mooncake":
-            config_path = self.env_dict["MOONCAKE_CONFIG_PATH"]
+            config_paths.add(self.env_dict["MOONCAKE_CONFIG_PATH"])
+        if self.node_info is not None:
+            for host in self.cluster_ips[1:]:
+                mooncake_json["local_hostname"] = host
+                for config_path in config_paths:
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                        json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
+                        local_config_path = f.name
+                    try:
+                        scp_cmd = ["scp", local_config_path, f"root@{host}:{config_path}"]
+                        subprocess.run(scp_cmd, check=True)
+                    finally:
+                        os.unlink(local_config_path)
+            mooncake_json["local_hostname"] = self.cluster_ips[0]
+        for config_path in config_paths:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
 
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
-        print(f"The mooncake producer config is\n {mooncake_json}")
 
     def _get_addr_config(self, args, i, role):
-        protocol = None
         if self.env_dict.get("TRANSFER_PROTOCOL") is not None:
-            protocol = self.env_dict["TRANSFER_PROTOCOL"].upper()
+            self.protocol = self.env_dict["TRANSFER_PROTOCOL"].lower()
         elif "--transfer-protocol" in args:
             protocol_index = args.index("--transfer-protocol") + 1
             if protocol_index < len(args):
-                protocol = args[protocol_index].upper()
+                self.protocol = args[protocol_index].lower()
         else:
-            protocol = "ipc"
+            self.protocol = "ipc"
 
-        if protocol == "TCP":
-            if role == "E":
+        if self.protocol == "tcp":
+            if self.node_info is not None:
+                if self.node_info.get_node_info(role.lower()) is not None:
+                    node_id = self.node_info.get_node_info(role.lower(), i).node_id
+                    host = self.cluster_ips[node_id]
+                else:
+                    host = self.cluster_ips[0]
+                proxy_host = self.cluster_ips[0]
+            else:
+                host = "127.0.0.1"
+                proxy_host = "127.0.0.1"
+            if role.lower() == "e":
                 return {
-                    "proxy_addr": "127.0.0.1:37000",
-                    "worker_addr": f"127.0.0.1:3800{i}"
+                    "proxy_addr": f"{proxy_host}:37000",
+                    "worker_addr": f"{host}:3800{i}"
                 }
             else:
                 return {
-                    "proxy_addr": "127.0.0.1:37000",
-                    "worker_addr": f"127.0.0.1:3900{i}"
+                    "proxy_addr": f"{proxy_host}:37000",
+                    "worker_addr": f"{host}:3900{i}"
                 }
         else:
-            if role == "E":
+            if role.lower() == "e":
                 return {
                     "proxy_addr": f"{self._default_addr_prefix}proxy",
                     "worker_addr": f"{self._default_addr_prefix}encoder_{i}"
@@ -336,7 +532,7 @@ class RemoteEPDServer:
             self.proxy_addr = e_serve_arg[index_e + 1]
 
             index_e = e_serve_arg.index("--worker-addr")
-            self.e_addr_list.append(e_serve_arg[index_e + 1])
+            self._share_info.add_addr_list(e_serve_arg[index_e + 1], "e")
 
             if "--model" not in e_serve_arg:
                 raise ValueError("must carry --model")
@@ -347,21 +543,33 @@ class RemoteEPDServer:
                     raise ValueError("model must be same between workers")
                 self.model = e_serve_arg[index_e + 1]
 
-            self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
+            if self.node_info is not None and self.node_info.get_node_info(
+                    "e") is not None:
+                node_id = self.node_info.get_node_info("e", i).node_id
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[node_id],
+                    container_name=self.node_info.get_node_info(
+                        "e", i).container_name,
+                    server_cmd=e_serve_arg,
+                    env_dict=self.env_dict,
+                    log_prefix=f"[ENCODE_{i}] ",
+                )
+            else:
+                self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
             if self.is_epd_same_card:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             else:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(
-                    i + self.e_num)
+                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
+                                                                 self.e_num)
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
             if "--model" not in pd_serve_arg:
                 raise ValueError("must carry --model")
             else:
                 index_pd = pd_serve_arg.index("--model")
-                if self.model is not None and pd_serve_arg[
-                    index_pd + 1] != self.model:
+                if self.model is not None and pd_serve_arg[index_pd +
+                                                           1] != self.model:
                     raise ValueError("model must be same between workers")
 
             config = self._get_addr_config(pd_serve_arg, i, "PD")
@@ -377,58 +585,79 @@ class RemoteEPDServer:
 
             worker_index = pd_serve_arg.index("--worker-addr")
             log_prefix = ""
+            role = ""
             if "--kv-transfer-config" in pd_serve_arg:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
-                    self.d_addr_list.append(pd_serve_arg[worker_index + 1])
+                    self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "d")
                     log_prefix = f"[D_{i}] "
+                    role = "d"
                 elif "kv_producer" in pd_serve_arg[kv_index + 1]:
-                    self.p_addr_list.append(pd_serve_arg[worker_index + 1])
+                    self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "p")
                     log_prefix = f"[P_{i}] "
+                    role = "p"
             else:
-                self.pd_addr_list.append(pd_serve_arg[worker_index + 1])
+                self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "pd")
                 log_prefix = f"[PD_{i}] "
+                role = "pd"
 
-            self._run_server(pd_serve_arg, self.env_dict, log_prefix)
+            if self.node_info is not None and self.node_info.get_node_info(
+                    role) is not None:
+                node_id = self.node_info.get_node_info(role, i).node_id
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[node_id],
+                    container_name=self.node_info.get_node_info(
+                        role, i).container_name,
+                    server_cmd=pd_serve_arg,
+                    env_dict=self.env_dict,
+                    log_prefix=log_prefix)
+            else:
+                self._run_server(pd_serve_arg, self.env_dict, log_prefix)
 
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
             os.environ[key] = value
         self.proxy_config = {
             'proxy_addr': self.proxy_addr,
-            'encode_addr_list': self.e_addr_list,
+            'encode_addr_list': self._share_info.get_addr_list("e"),
             'model_name': self.model
         }
-        if self.pd_addr_list:
-            self.proxy_config['pd_addr_list'] = self.pd_addr_list
+        if self._share_info.get_addr_list("pd"):
+            self.proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
         else:
             self.proxy_config.update({
-                'p_addr_list': self.p_addr_list,
-                'd_addr_list': self.d_addr_list
+                'p_addr_list': self._share_info.get_addr_list("p"),
+                'd_addr_list': self._share_info.get_addr_list("d")
             })
         if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
-            self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
+            self.proxy_config['transfer_protocol'] = self.proxy_args[
+                self.proxy_args.index("--transfer_protocol") + 1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
-            self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
+            self.proxy_config['enable_health_monitor'] = self.proxy_args[
+                self.proxy_args.index("--enable-health-monitor") + 1]
         if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
-            if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
+            self.proxy_config['router'] = self.proxy_args[
+                self.proxy_args.index("--router") + 1]
+            if self.proxy_args[self.proxy_args.index("router") +
+                               1] == "RandomRouter":
                 self.proxy_config['router'] = RandomRouter
-            elif self.proxy_args[self.proxy_args.index("router")+1] == "RoundRobinRouter":
+            elif self.proxy_args[self.proxy_args.index("router") +
+                                 1] == "RoundRobinRouter":
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
         p = Proxy(**self.proxy_config)
         if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
+            self.proxy_config['router'] = self.proxy_args[
+                self.proxy_args.index("--router") + 1]
         return p
 
     def _start_disagg_proxy(self):
         proxy_args = [
             "--host", "127.0.0.1", "--port",
             str(self.api_server_port), "--encode-servers-urls",
-            ",".join(self.e_addr_list), "--decode-servers-urls",
-            ",".join(self.pd_addr_list), "--prefill-servers-urls", "disable"
+            ",".join(self._share_info.get_addr_list("e")), "--decode-servers-urls",
+            ",".join(self._share_info.get_addr_list("pd")), "--prefill-servers-urls", "disable"
         ]
         proxy_path = os.path.join(
             VLLM_PATH,
@@ -449,19 +678,15 @@ class RemoteEPDServer:
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
             index_e = e_serve_arg.index("--port")
-            self.e_addr_list.append(
-                f"http://localhost:{e_serve_arg[index_e + 1]}")
-            self._run_server(e_serve_arg, self.env_dict,
-                             f"[ENCODE_{i}] ")
+            self._share_info.add_addr_list(f"http://localhost:{e_serve_arg[index_e + 1]}", "e")
+            self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
             self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
             index_pd = pd_serve_arg.index("--port")
-            self.pd_addr_list.append(
-                f"http://localhost:{pd_serve_arg[index_pd + 1]}")
+            self._share_info.add_addr_list(f"http://localhost:{pd_serve_arg[index_pd + 1]}", "pd")
             self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
-
 
     async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
         sleep_times = 10
@@ -472,33 +697,33 @@ class RemoteEPDServer:
             tasks_0 = [
                 asyncio.create_task(
                     asyncio.wait_for(self.p.check_health(
-                        ServerType.E_INSTANCE, iid),
+                        ServerType.E_INSTANCE, f"{self.protocol}://{addr}"),
                                      timeout=timeout_times))
-                for iid in range(self.e_num)
+                for addr in self._share_info.get_addr_list("e")
             ]
-            if self.pd_addr_list:
+            if self._share_info.get_addr_list("pd"):
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.PD_INSTANCE, iid),
+                            ServerType.PD_INSTANCE, f"{self.protocol}://{addr}"),
                                          timeout=timeout_times))
-                    for iid in range(self.pd_num)
+                    for addr in self._share_info.get_addr_list("pd")
                 ]
                 tasks = tasks_0 + tasks_1
             else:
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.P_INSTANCE, iid),
+                            ServerType.P_INSTANCE, f"{self.protocol}://{addr}"),
                             timeout=timeout_times))
-                    for iid in range(len(self.p_addr_list))
+                    for addr in self._share_info.get_addr_list("p")
                 ]
                 tasks_2 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.D_INSTANCE, iid),
+                            ServerType.D_INSTANCE, f"{self.protocol}://{addr}"),
                             timeout=timeout_times))
-                    for iid in range(len(self.d_addr_list))
+                    for addr in self._share_info.get_addr_list("d")
                 ]
                 tasks = tasks_0 + tasks_1 + tasks_2
 
@@ -587,10 +812,14 @@ class RemoteEPDServer:
                  kv_store_type: Literal["mooncake"] = "",
                  mooncake_args: Union[list[str], str] = None,
                  proxy_args: Union[list[str], str] = None,
+                 node_info: ClusterManager = None,
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
                  env_dict: Optional[dict[str, str]] = None) -> None:
+        self._share_info = SharedInfoManager()
+        self._output = OutputManager(self._share_info)
+        self._container = ContainerManager(self._output)
         self._proc_list = list()
         self.e_num = e_num
         self.pd_num = pd_num
@@ -608,18 +837,15 @@ class RemoteEPDServer:
                 f"proxy type must be disagg_proxy, proxy or api_server")
         self.run_mode = run_mode
         self.store_type = store_type
+        self.protocol = ""
         self.kv_store_type = kv_store_type
         self.proxy_type = proxy_type
         self.is_image_load = is_image_load
         self.is_epd_same_card = is_epd_same_card
         self.api_server_port = api_server_port
-        self.e_addr_list = list()
-        self.pd_addr_list = list()
-        self.p_addr_list = list()
-        self.d_addr_list = list()
         self.e_serve_args_list = list()
         self.pd_serve_args_list = list()
-
+        self.node_info = node_info
         self.model = None
         if isinstance(e_serve_args, list):
             if not all(isinstance(item, list) for item in e_serve_args):
@@ -633,7 +859,8 @@ class RemoteEPDServer:
         if isinstance(pd_serve_args, list):
             if not all(isinstance(item, list) for item in pd_serve_args):
                 for i in range(self.pd_num):
-                    self.pd_serve_args_list.append(copy.deepcopy(pd_serve_args))
+                    self.pd_serve_args_list.append(
+                        copy.deepcopy(pd_serve_args))
             else:
                 self.pd_serve_args_list = pd_serve_args
         else:
@@ -641,11 +868,13 @@ class RemoteEPDServer:
 
         self.mooncake_args = mooncake_args
         self.proxy_args = proxy_args
-
         self.env_dict = env_dict
+        if env_dict.get("TIMECOUNT_ENABLED", 0) == "1":
+            self._share_info.open_breakdown()
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
-        self.metrics = {}
+        if node_info is not None:
+            self.cluster_ips = get_cluster_ips()
 
     async def __aenter__(self):
         # start with
@@ -674,6 +903,7 @@ class RemoteEPDServer:
         # exit with
         for proc in self._proc_list:
             self._kill_process_tree(proc.pid)
+        self._container.kill_container_process_only()
         print("vllm instance and api server is stoping")
         if self.p is not None:
             self.p.shutdown()
