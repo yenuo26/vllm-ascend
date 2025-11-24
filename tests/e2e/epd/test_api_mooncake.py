@@ -776,6 +776,7 @@ async def test_1e2pd_cross_p_e_pd_mooncake_tcp_002(model: str, tp_size: int):
         "seed":
             77,
     }]
+    dataset_name = "simulate_truth"
     aisbench_cases = [{
         "case_type": "pressure",
         "request_conf": "vllm_api_stream_chat",
@@ -783,7 +784,7 @@ async def test_1e2pd_cross_p_e_pd_mooncake_tcp_002(model: str, tp_size: int):
         "batch_size": 128,
         "temperature": 0.5,
         "pressure_time": 86400,
-        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth"),
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
