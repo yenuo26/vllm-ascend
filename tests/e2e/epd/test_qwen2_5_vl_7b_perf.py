@@ -34,15 +34,17 @@ async def teardown():
         ],
                          result_figure_prefix=f"{dataset}_ttft")
 
+
 REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (1, 480), (1.5, 480), (2, 500)]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
-                          request_rate: int, num_prompts: int,
-                          teardown):
+                          request_rate: int, num_prompts: int, teardown):
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -109,8 +111,7 @@ REQUEST_CONFIG = [(1.2, 900), (2.4, 1000), (4, 1100), (6, 1200), (8, 1300)]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
-                         request_rate: int, num_prompts: int,
-                         teardown):
+                         request_rate: int, num_prompts: int, teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
@@ -193,14 +194,14 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
             server.save_ttft_data(file_name=f"{dataset_name}_1E3PD_ttft",
                                   index=aisbench_case["request_rate"] / 4)
 
+
 REQUEST_CONFIG = [(0.9, 600), (1.8, 800), (3, 900), (4.5, 900), (6, 900)]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
-                         request_rate: int, num_prompts: int,
-                         teardown):
+                         request_rate: int, num_prompts: int, teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
