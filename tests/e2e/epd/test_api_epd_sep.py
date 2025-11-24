@@ -1,14 +1,11 @@
+import copy
 import os
 
 import pytest
-import pytest_asyncio
-import copy
 
-from tests.e2e.conftest import RemoteOpenAIServer
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
-from tools.aisbench import create_result_plot
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -32,7 +29,6 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
                                                dataset_name: str):
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
-    env_dict["MOONCAKE_CONFIG_PATH"] = MOONCAKE_PRODUCER_CONFIG_PATH
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
@@ -121,7 +117,7 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
 
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
-                               store_type="mooncake",
+                               store_type="storage",
                                kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
@@ -175,8 +171,9 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             MOONCAKE_CONSUMER_CONFIG_PATH +
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
-
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50052"}'
+            '"kv_connector_extra_config": {"local_hostname": "localhost", "metadata_server": "http://localhost:8082/metadata",'
+            '"protocol": "tcp", "device_name": "", "master_server_address": "localhost:50052", "global_segment_size": 30000000000}}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -184,7 +181,9 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
+            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50052"}'
+            '"kv_connector_extra_config": {"local_hostname": "localhost", "metadata_server": "http://localhost:8082/metadata",'
+            '"protocol": "tcp", "device_name": "", "master_server_address": "localhost:50052", "global_segment_size": 30000000000}}'
         ]
     ]
 

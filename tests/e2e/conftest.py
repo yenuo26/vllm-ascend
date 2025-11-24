@@ -404,8 +404,17 @@ class RemoteEPDServer:
 
     def _start_mooncake(self) -> None:
         self._init_mooncake_config()
-        self.mooncake_args = ["mooncake_master", *self.mooncake_args]
-        self._run_server_new_session(self.mooncake_args, None, "[MOONCAKE] ")
+        mooncake_args_list = list()
+        if isinstance(self.mooncake_args, list):
+            if not all(isinstance(item, list) for item in self.mooncake_args):
+                mooncake_args_list.append(copy.deepcopy(self.mooncake_args))
+            else:
+                mooncake_args_list = self.mooncake_args
+        else:
+            raise RuntimeError("mooncake_args must be a list")
+        for arg in mooncake_args_list:
+            mooncake_arg = ["mooncake_master", *arg]
+            self._run_server_new_session(mooncake_arg, None, "[MOONCAKE] ")
 
     def _init_mooncake_config(self) -> None:
         mooncake_json = {
