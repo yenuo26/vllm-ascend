@@ -34,14 +34,14 @@ async def teardown():
         ],
                          result_figure_prefix=f"{dataset}_ttft")
 
-REQUEST_CONFIG = [[0.3, 180], [0.6, 400], [1, 480], [1.5, 480], [2, 500]]
+REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (1, 480), (1.5, 480), (2, 500)]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_config", REQUEST_CONFIG)
+@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
-                          request_config: list,
+                          request_rate: int, num_prompts: int,
                           teardown):
     api_port = 10001
     vllm_server_args = [
@@ -72,13 +72,13 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": request_config[1],
+        "num_prompts": num_prompts,
         "batch_size": 1024,
         "temperature": 0.5,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_config[0],
+        "request_rate": request_rate,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_PD_mix",
@@ -103,16 +103,13 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [[1.2, 900], [2.4, 1000], [4, 1100], [6, 1200], [8, 1300]]
-
-
+REQUEST_CONFIG = [(1.2, 900), (2.4, 1000), (4, 1100), (6, 1200), (8, 1300)]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_config", REQUEST_CONFIG)
+@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
-                         request_config:list,
+                         request_rate: int, num_prompts: int,
                          teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
@@ -159,13 +156,13 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": request_config[1],
+        "num_prompts": num_prompts,
         "batch_size": 1024,
         "temperature": 0.5,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_config[0],
+        "request_rate": request_rate,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
@@ -196,14 +193,13 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
             server.save_ttft_data(file_name=f"{dataset_name}_1E3PD_ttft",
                                   index=aisbench_case["request_rate"] / 4)
 
-REQUEST_CONFIG = [[0.9, 600], [1.8, 800], [3, 900], [4.5, 900], [6, 900]]
+REQUEST_CONFIG = [(0.9, 600), (1.8, 800), (3, 900), (4.5, 900), (6, 900)]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_config", REQUEST_CONFIG)
+@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
-                         request_config: list,
+                         request_rate: int, num_prompts: int,
                          teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
@@ -250,13 +246,13 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": request_config[1],
+        "num_prompts": num_prompts,
         "batch_size": 1024,
         "temperature": 0.5,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_config[0],
+        "request_rate": request_rate,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E2PD",
