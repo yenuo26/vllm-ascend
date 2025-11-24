@@ -424,6 +424,7 @@ class RemoteEPDServer:
             host = self.cluster_ips[0]
         else:
             host = "0.0.0.0"
+
         for i, arg in enumerate(self.mooncake_args):
             if "--http_metadata_server_port" in arg:
                 metadata_server_port = self.mooncake_args[i].split("=")[-1]
@@ -433,7 +434,6 @@ class RemoteEPDServer:
             if "--rpc_port" in arg:
                 rpc_port = self.mooncake_args[i + 1]
                 mooncake_json["master_server_address"] = f"{host}:{rpc_port}"
-
 
         config_paths = set()
         if self.store_type == "mooncake":
