@@ -17,10 +17,9 @@ TENSOR_PARALLELS = [1]
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 ENABLE_PREFIX = [True, False]
 
-
-
-
 DATASET_NAME = ["simulate_truth"]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
@@ -143,6 +142,8 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
 
 REQUEST_RATE = [0.28, 0.78, 1.28, 1.78]
 DATASET_NAME = ["image_4", "simulate_truth"]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
@@ -150,7 +151,8 @@ DATASET_NAME = ["image_4", "simulate_truth"]
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("enable_prefix", ENABLE_PREFIX)
 async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
-                                       dataset_name: str, request_rate:float, enable_prefix:bool):
+                                       dataset_name: str, request_rate: float,
+                                       enable_prefix: bool):
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
@@ -159,10 +161,11 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"local_hostname":"localhost","metadata_server": "http://localhost:8085/metadata",'
-        '"global_segment_size": 32212254720, "local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-        '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, "fast_transfer_buffer_size": 1'
-        '"ec_max_num_scheduled_tokens": "1000000000000000000"},'
+        '{"ec_connector_extra_config":{"local_hostname":"localhost",'
+        '"metadata_server": "http://localhost:8085/metadata","global_segment_size": 32212254720, '
+        '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+        '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, '
+        '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
 
@@ -173,15 +176,18 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
-            '{"ec_connector_extra_config":{"local_hostname":"localhost","metadata_server": "http://localhost:8085/metadata",'
-            '"global_segment_size": 32212254720, "local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-            '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, "fast_transfer_buffer_size": 1'
-            '"ec_max_num_scheduled_tokens": "1000000000000000000"},'
+            '{"ec_connector_extra_config":{"local_hostname":"localhost",'
+            '"metadata_server": "http://localhost:8085/metadata","global_segment_size": 32212254720, '
+            '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+            '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, '
+            '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"},'
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
-            '"kv_connector_extra_config": {"local_hostname": "localhost", "metadata_server": "http://localhost:8081/metadata",'
-            '"protocol": "tcp", "device_name": "", "master_server_address": "localhost:50051", "global_segment_size": 30000000000}}'
+            '{"kv_connector_extra_config": {"local_hostname": "localhost", '
+            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -189,25 +195,30 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051"}'
-            '"kv_connector_extra_config": {"local_hostname": "localhost", "metadata_server": "http://localhost:8081/metadata",'
-            '"protocol": "tcp", "device_name": "", "master_server_address": "localhost:50051", "global_segment_size": 30000000000}}'
+            '{"kv_connector_extra_config": {"local_hostname": "localhost", '
+            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}'
         ]
     ]
 
-    mooncake_args = [[
-        "--rpc_port", "50051", "--enable_http_metadata_server=true",
-        "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
-        "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9005"
-    ],[
-        "--rpc_port", "50055", "--enable_http_metadata_server=true",
-        "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8085", "--rpc_thread_num", "8",
-        "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
-    ]]
+    mooncake_args = [
+        [
+            "--rpc_port", "50051", "--enable_http_metadata_server=true",
+            "--http_metadata_server_host=0.0.0.0",
+            "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
+            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9005"
+        ],
+        [
+            "--rpc_port", "50055", "--enable_http_metadata_server=true",
+            "--http_metadata_server_host=0.0.0.0",
+            "--http_metadata_server_port=8085", "--rpc_thread_num", "8",
+            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        ]
+    ]
 
     warmup_cases = [{
         "case_type": "performance",
@@ -236,7 +247,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*3,
+        "request_rate": request_rate * 3,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_1E1P1D_mooncake",
@@ -266,7 +277,6 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
                            port=api_port,
                            card_num=3,
                            aisbench_cases=aisbench_cases)
-
 
 
 @pytest.mark.asyncio
@@ -300,7 +310,6 @@ async def test_1e1p1d_ipc_mooncake_002(model: str, tp_size: int,
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
-
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -385,7 +394,6 @@ async def test_1e1p1d_ipc_mooncake_002(model: str, tp_size: int,
                            port=api_port,
                            card_num=3,
                            aisbench_cases=aisbench_cases)
-
 
 
 @pytest.mark.asyncio
@@ -410,8 +418,7 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
     pd_server_args = [
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
-            "--no-enable-prefix-caching",
-            "--tensor-parallel-size",
+            "--no-enable-prefix-caching", "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
@@ -423,8 +430,7 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
-            "--no-enable-prefix-caching",
-            "--tensor-parallel-size",
+            "--no-enable-prefix-caching", "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
@@ -505,7 +511,6 @@ async def test_1e1p1d_ipc_mooncake_003(model: str, tp_size: int,
                            port=api_port,
                            card_num=3,
                            aisbench_cases=aisbench_cases)
-
 
 
 @pytest.mark.asyncio
@@ -533,8 +538,7 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
     pd_server_args = [
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
-            "--no-enable-prefix-caching",
-            "--tensor-parallel-size",
+            "--no-enable-prefix-caching", "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
@@ -546,8 +550,7 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
-            "--no-enable-prefix-caching",
-            "--tensor-parallel-size",
+            "--no-enable-prefix-caching", "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
@@ -632,7 +635,6 @@ async def test_1e1p1d_ipc_mooncake_004(model: str, tp_size: int,
                            aisbench_cases=aisbench_cases)
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
@@ -658,8 +660,7 @@ async def test_1e1p1d_ipc_mooncake_005(model: str, tp_size: int,
     pd_server_args = [
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
-            "--no-enable-prefix-caching",
-            "--tensor-parallel-size",
+            "--no-enable-prefix-caching", "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
@@ -668,12 +669,10 @@ async def test_1e1p1d_ipc_mooncake_005(model: str, tp_size: int,
             '"},"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051"}'
-
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
-            "--no-enable-prefix-caching",
-            "--tensor-parallel-size",
+            "--no-enable-prefix-caching", "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
