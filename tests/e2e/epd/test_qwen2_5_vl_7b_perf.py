@@ -50,7 +50,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
         "--port",
         str(api_port), "--tensor-parallel-size",
         str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
-        "10000", "--max-num-seqs", "100", "--enforce-eager",
+        "10000", "--max-num-seqs", "300", "--enforce-eager",
         "--gpu-memory-utilization", "0.95"
     ]
     warmup_cases = [{
@@ -130,7 +130,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     pd_server_args = [
         "--model", model, "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
+        str(tp_size), "--max-num-seqs", "300", "--gpu-memory-utilization",
         "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -222,7 +222,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
     pd_server_args = [
         "--model", model, "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
+        str(tp_size), "--max-num-seqs", "300", "--gpu-memory-utilization",
         "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
