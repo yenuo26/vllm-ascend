@@ -17,8 +17,7 @@ from PIL import Image
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from lm_service.apis.vllm.proxy import Proxy
-from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
+from vllm.disaggregated.proxy import Proxy
 
 from vllm.multimodal.image import convert_image_mode
 from vllm.sampling_params import SamplingParams
@@ -216,12 +215,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     proxy_config_dict = json.loads(args.proxy_config)
-    if proxy_config_dict.get("router", "test") == "RandomRouter":
-        proxy_config_dict["router"] = RandomRouter
-    elif proxy_config_dict.get("router", "test") == "RoundRobinRouter":
-        proxy_config_dict["router"] = RoundRobinRouter
-    elif proxy_config_dict.get("router", "test") == "LeastInFlightRouter":
-        proxy_config_dict["router"] = LeastInFlightRouter
     app.state.proxy = Proxy(**proxy_config_dict)
     app.state.is_load_image = args.is_load_image
     print(f"Starting API server on {args.host}:{args.port}")

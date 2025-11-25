@@ -25,9 +25,8 @@ import torch
 import importlib
 from PIL import Image
 from datetime import datetime
-from lm_service.apis.vllm.proxy import Proxy
-from lm_service.protocol.protocol import ServerType
-from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
+from vllm.disaggregated.proxy import Proxy
+from vllm.disaggregated.protocol import ServerType
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
@@ -317,7 +316,7 @@ class RemoteEPDServer:
 
         serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
-                "lm_service.entrypoints.worker"
+                "vllm.entrypoints.disaggregated.worker"
             ]
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
@@ -411,17 +410,8 @@ class RemoteEPDServer:
             self.proxy_config['transfer_protocol'] = self.proxy_args[self.proxy_args.index("--transfer_protocol")+1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[self.proxy_args.index("--enable-health-monitor")+1]
-        if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
-            if self.proxy_args[self.proxy_args.index("router")+1] == "RandomRouter":
-                self.proxy_config['router'] = RandomRouter
-            elif self.proxy_args[self.proxy_args.index("router")+1] == "RoundRobinRouter":
-                self.proxy_config['router'] = RoundRobinRouter
-            else:
-                self.proxy_config['router'] = LeastInFlightRouter
+
         p = Proxy(**self.proxy_config)
-        if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[self.proxy_args.index("--router")+1]
         return p
 
     def _start_disagg_proxy(self):
@@ -473,35 +463,19 @@ class RemoteEPDServer:
             tasks_0 = [
                 asyncio.create_task(
                     asyncio.wait_for(self.p.check_health(
-                        ServerType.E_INSTANCE, f"{self.protocol}://{addr}"),
+                        ServerType.E_INSTANCE, iid),
                                      timeout=timeout_times))
-                for addr in self.e_addr_list
+                for iid in self.e_num
             ]
             if self.pd_addr_list:
                 tasks_1 = [
                     asyncio.create_task(
                         asyncio.wait_for(self.p.check_health(
-                            ServerType.PD_INSTANCE, f"{self.protocol}://{addr}"),
+                            ServerType.PD_INSTANCE, iid),
                                          timeout=timeout_times))
-                    for addr in self.pd_addr_list
+                    for iid in self.pd_num
                 ]
                 tasks = tasks_0 + tasks_1
-            else:
-                tasks_1 = [
-                    asyncio.create_task(
-                        asyncio.wait_for(self.p.check_health(
-                            ServerType.P_INSTANCE, f"{self.protocol}://{addr}"),
-                            timeout=timeout_times))
-                    for addr in self.p_addr_list
-                ]
-                tasks_2 = [
-                    asyncio.create_task(
-                        asyncio.wait_for(self.p.check_health(
-                            ServerType.D_INSTANCE, f"{self.protocol}://{addr}"),
-                            timeout=timeout_times))
-                    for addr in self.d_addr_list
-                ]
-                tasks = tasks_0 + tasks_1 + tasks_2
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
             if all([isinstance(result, bool) and result
