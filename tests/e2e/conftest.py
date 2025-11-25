@@ -26,7 +26,6 @@ import importlib
 from PIL import Image
 from datetime import datetime
 from vllm.disaggregated.proxy import Proxy
-from vllm.disaggregated.protocol import ServerType
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
@@ -458,35 +457,9 @@ class RemoteEPDServer:
         sleep_times = 10
         timeout_times = 3
         start_time = time.time()
+        await asyncio.sleep(90)
 
-        while time.time() - start_time < max_wait_seconds:
-            tasks_0 = [
-                asyncio.create_task(
-                    asyncio.wait_for(self.p.check_health(
-                        ServerType.E_INSTANCE, iid),
-                                     timeout=timeout_times))
-                for iid in self.e_num
-            ]
-            if self.pd_addr_list:
-                tasks_1 = [
-                    asyncio.create_task(
-                        asyncio.wait_for(self.p.check_health(
-                            ServerType.PD_INSTANCE, iid),
-                                         timeout=timeout_times))
-                    for iid in self.pd_num
-                ]
-                tasks = tasks_0 + tasks_1
 
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            if all([isinstance(result, bool) and result
-                    for result in results]):
-                print("All instances are ready")
-                return
-            else:
-                print(f"current results: {results}")
-                await asyncio.sleep(sleep_times)
-
-        raise RuntimeError("epd instance start failed!")
 
     def _kill_process_tree(self, pid):
         """kill process and its children"""
