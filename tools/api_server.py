@@ -10,8 +10,6 @@ import msgspec
 import json
 import numpy as np
 import uvicorn
-import lm_service.envs as lm_service_envs
-import vllm.envs as envs
 
 from PIL import Image
 from fastapi import FastAPI, HTTPException, Request
@@ -140,8 +138,6 @@ async def chat_completions(request: Request):
                     yield f"data: {msgspec.json.encode(chunk).decode()}\n\n"
                 # End of stream
                 yield "data: [DONE]\n\n"
-                if lm_service_envs.TIMECOUNT_ENABLED:
-                    asyncio.create_task(app.state.proxy.log_metrics())
 
             return StreamingResponse(stream_generator(),
                                      media_type="text/event-stream")
@@ -184,9 +180,6 @@ async def chat_completions(request: Request):
                         "total_tokens": total_tokens
                     }
                 }
-                if lm_service_envs.TIMECOUNT_ENABLED:
-                    await asyncio.sleep(envs.VLLM_LOG_STATS_INTERVAL)
-                    await app.state.proxy.log_metrics()
                 return JSONResponse(content=response)
             else:
                 raise HTTPException(status_code=500,
