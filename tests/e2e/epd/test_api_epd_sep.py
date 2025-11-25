@@ -152,7 +152,6 @@ DATASET_NAME = ["image_4", "simulate_truth"]
 async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate:float, enable_prefix:bool):
     env_dict = {}
-    cluster_ip = get_cluster_ips()
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
@@ -160,9 +159,9 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{cluster_ip[0]}","metadata_server": "http://{cluster_ip[0]}:8085/metadata",'
-        f'"global_segment_size": 32212254720, "local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-        f'"master_server_address": "{cluster_ip[0]}:50055","replica_num": 1, "fast_transfer":true, "fast_transfer_buffer_size": 1'
+        '{"ec_connector_extra_config":{"local_hostname":"localhost","metadata_server": "http://localhost:8085/metadata",'
+        '"global_segment_size": 32212254720, "local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+        '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, "fast_transfer_buffer_size": 1'
         '"ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
@@ -174,9 +173,9 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
-            f'{{"ec_connector_extra_config":{{"local_hostname":"{cluster_ip[0]}","metadata_server": "http://{cluster_ip[0]}:8085/metadata",'
-            f'"global_segment_size": 32212254720, "local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-            f'"master_server_address": "{cluster_ip[0]}:50055","replica_num": 1, "fast_transfer":true, "fast_transfer_buffer_size": 1'
+            '{"ec_connector_extra_config":{"local_hostname":"localhost","metadata_server": "http://localhost:8085/metadata",'
+            '"global_segment_size": 32212254720, "local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+            '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, "fast_transfer_buffer_size": 1'
             '"ec_max_num_scheduled_tokens": "1000000000000000000"},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"},'
             "--kv-transfer-config",
@@ -201,7 +200,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
         "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9", "--metrics_port 9003"
+        "--eviction_high_watermark_ratio", "0.9", "--metrics_port 9005"
     ],[
         "--rpc_port", "50055", "--enable_http_metadata_server=true",
         "--http_metadata_server_host=0.0.0.0",
