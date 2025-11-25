@@ -200,13 +200,13 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
         "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9", "--metrics_port 9005"
+        "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9005"
     ],[
         "--rpc_port", "50055", "--enable_http_metadata_server=true",
         "--http_metadata_server_host=0.0.0.0",
         "--http_metadata_server_port=8085", "--rpc_thread_num", "8",
         "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9", "--metrics_port 9004"
+        "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]]
 
     warmup_cases = [{
