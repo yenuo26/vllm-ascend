@@ -181,7 +181,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
             '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
-            '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"},'
+            '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"local_hostname": "localhost", '
             '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
