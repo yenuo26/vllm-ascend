@@ -7,7 +7,6 @@ import re
 import shlex
 import copy
 import subprocess
-import tempfile
 import sys
 import threading
 import traceback
@@ -324,6 +323,18 @@ class RemoteEPDServer:
         data.update(self._share_info.get_metrics())
         write_to_execl(data, f"./{file_name}.csv")
         print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
+
+    def _delete_shm(self) -> None:
+        for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
+            index = arg.index("--ec-transfer-config")
+            shm_path = json.loads(arg[index + 1]).get(
+                "ec_connector_extra_config").get("shared_storage_path")
+            args = [
+                "rm", "-r", "-f", f"{shm_path}/*"
+            ]
+            print(f"delete shm_path is: {shm_path}")
+            self._run_server(args, None,"[DELETE] ")
+
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -836,6 +847,8 @@ class RemoteEPDServer:
         max_wait_seconds = 1800
         if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
+        if self.store_type == "storage":
+            self._delete_shm()
         if self.run_mode == "worker":
             self._start_vllm_worker()
             self.p = self._start_zmq_proxy()

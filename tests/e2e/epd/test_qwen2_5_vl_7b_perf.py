@@ -35,18 +35,22 @@ async def teardown():
                          result_figure_prefix=f"{dataset}_ttft")
 
 
+REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (1, 480), (1.5, 480), (2, 500)]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
-                          teardown):
+                          request_rate: int, num_prompts: int, teardown):
     api_port = 10001
     vllm_server_args = [
         "--port",
         str(api_port), "--tensor-parallel-size",
         str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
-        "10000", "--max-num-seqs", "100", "--enforce-eager",
+        "10000", "--max-num-seqs", "300", "--enforce-eager",
         "--gpu-memory-utilization", "0.95"
     ]
     warmup_cases = [{
@@ -65,31 +69,23 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
         "seed": 77,
     }]
 
-    request_rate = [0.3, 0.6, 1, 1.5, 2]
-    num_prompts = [180, 400, 480, 480, 500]
-    case_dict = {
+    aisbench_cases = [{
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": 200,
+        "num_prompts": num_prompts,
         "batch_size": 1024,
         "temperature": 0.5,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": 0.28,
+        "request_rate": request_rate,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_PD_mix",
         "threshold": 0.97
-    }
-    aisbench_cases = []
-    for i in range(len(request_rate)):
-        case_dict["request_rate"] = request_rate[i]
-        case_dict["num_prompts"] = num_prompts[i]
-        new_case_dict = copy.deepcopy(case_dict)
-        aisbench_cases.append(new_case_dict)
+    }]
 
     with RemoteOpenAIServer(model,
                             vllm_server_args,
@@ -109,12 +105,14 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
+REQUEST_CONFIG = [(1.2, 900), (2.4, 1000), (4, 1100), (6, 1200), (8, 1300)]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
-                         teardown):
+                         request_rate: int, num_prompts: int, teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
@@ -132,7 +130,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     pd_server_args = [
         "--model", model, "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
+        str(tp_size), "--max-num-seqs", "300", "--gpu-memory-utilization",
         "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -155,31 +153,23 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         "seed": 77,
     }]
 
-    request_rate = [1.2, 2.4, 4, 6, 8]
-    num_prompts = [900, 1000, 1100, 1200, 1300]
-    case_dict = {
+    aisbench_cases = [{
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": 200,
+        "num_prompts": num_prompts,
         "batch_size": 1024,
         "temperature": 0.5,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": 0.28,
+        "request_rate": request_rate,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
         "threshold": 0.97
-    }
-    aisbench_cases = []
-    for i in range(len(request_rate)):
-        case_dict["request_rate"] = request_rate[i]
-        case_dict["num_prompts"] = num_prompts[i]
-        new_case_dict = copy.deepcopy(case_dict)
-        aisbench_cases.append(new_case_dict)
+    }]
 
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
@@ -206,12 +196,14 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                   index=aisbench_case["request_rate"] / 4)
 
 
+REQUEST_CONFIG = [(0.9, 600), (1.8, 800), (3, 900), (4.5, 900), (6, 900)]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
-                         teardown):
+                         request_rate: int, num_prompts: int, teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
@@ -230,7 +222,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
     pd_server_args = [
         "--model", model, "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "100", "--gpu-memory-utilization",
+        str(tp_size), "--max-num-seqs", "300", "--gpu-memory-utilization",
         "0.95", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -252,31 +244,23 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         "request_rate": 0,
         "seed": 77,
     }]
-    request_rate = [0.9, 1.8, 3, 4.5, 6]
-    num_prompts = [600, 800, 900, 900, 900]
-    case_dict = {
+    aisbench_cases = [{
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": 200,
+        "num_prompts": num_prompts,
         "batch_size": 1024,
         "temperature": 0.5,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": 0.28,
+        "request_rate": request_rate,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E2PD",
         "threshold": 0.97
-    }
-    aisbench_cases = []
-    for i in range(len(request_rate)):
-        case_dict["request_rate"] = request_rate[i]
-        case_dict["num_prompts"] = num_prompts[i]
-        new_case_dict = copy.deepcopy(case_dict)
-        aisbench_cases.append(new_case_dict)
+    }]
 
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
