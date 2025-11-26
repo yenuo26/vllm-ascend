@@ -593,10 +593,10 @@ class RemoteEPDServer:
         if self.proxy_args is not None and "--router" in self.proxy_args:
             self.proxy_config['router'] = self.proxy_args[
                 self.proxy_args.index("--router") + 1]
-            if self.proxy_args[self.proxy_args.index("router") +
+            if self.proxy_args[self.proxy_args.index("--router") +
                                1] == "RandomRouter":
                 self.proxy_config['router'] = RandomRouter
-            elif self.proxy_args[self.proxy_args.index("router") +
+            elif self.proxy_args[self.proxy_args.index("--router") +
                                  1] == "RoundRobinRouter":
                 self.proxy_config['router'] = RoundRobinRouter
             else:
