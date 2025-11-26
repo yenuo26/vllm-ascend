@@ -317,7 +317,13 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
-    e_server_args = [
+    e_num = 2
+    p_num = 3
+    d_num = 3
+    e_server_args = list()
+    pd_server_args = list()
+
+    e_arg = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
@@ -331,8 +337,7 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
 
-    pd_server_args = [
-        [
+    p_arg = [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
@@ -350,8 +355,8 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
             '"device_name": "", "master_server_address": "localhost:50051", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'
-        ],
-        [
+        ]
+    d_arg = [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
@@ -363,7 +368,15 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}'
         ]
-    ]
+    for _ in range(e_num):
+        e_server_args.append(e_arg)
+    for _ in range(p_num):
+        pd_server_args.append(p_arg)
+
+    for _ in range(d_num):
+        pd_server_args.append(d_arg)
+
+
 
     mooncake_args = [
         [
@@ -409,7 +422,7 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate * 8,
+        "request_rate": request_rate * (e_num+p_num+d_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_2E3P3D_mooncake",
@@ -421,8 +434,8 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
                                kv_store_type="mooncake",
                                proxy_type="api_server",
                                api_server_port=api_port,
-                               pd_num=6,
-                               e_num=2,
+                               pd_num=d_num+p_num,
+                               e_num=e_num,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
