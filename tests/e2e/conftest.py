@@ -330,7 +330,7 @@ class RemoteEPDServer:
             shm_path = json.loads(arg[index + 1]).get(
                 "ec_connector_extra_config").get("shared_storage_path")
             args = [
-                "rm", "-r", "-f", f"{shm_path}/*"
+                "rm", "-r", "-f", shm_path
             ]
             print(f"delete shm_path is: {shm_path}")
             self._run_server(args, None,"[DELETE] ")
