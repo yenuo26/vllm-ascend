@@ -7,6 +7,7 @@ from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -88,7 +89,7 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 50,
         "max_out_len": 256,
         "batch_size": 16,
@@ -105,7 +106,7 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "batch_size": 128,
         "temperature": 0.5,
@@ -241,7 +242,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 50,
         "max_out_len": 256,
         "batch_size": 16,
@@ -257,7 +258,7 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "batch_size": 128,
         "temperature": 0.5,
@@ -297,7 +298,162 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
                            aisbench_cases=aisbench_cases)
 
 
+REQUEST_RATE = [0.28, 0.78, 1.28, 1.78]
+DATASET_NAME = ["simulate_truth"]
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("router", ROUTER)
+async def test_1e1p1d_cross_ipc_mooncake_001(model: str, tp_size: int,
+                                       dataset_name: str, request_rate: float, router: str):
+    '''
+    数据集： simulate_truth
+    部署形态： 1E1P1D、E-P-D跨机
+    存储类型：EC mooncake , KV mooncake
+    调度策略：RandomRouter， RoundRobinRouter，LeastInFlightRouter
+    '''
+    env_dict = {}
+    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
+    env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
+    e_num = 1
+    p_num = 1
+    d_num = 1
+    cluster = ClusterManager()
+    for i in range(p_num):
+        cluster.add_node_info("p", 1, "epd_vllm_ascend_mooncake")
+    for i in range(d_num):
+        cluster.add_node_info("d", 2, "epd_vllm_ascend_mooncake")
 
+    node_ips = get_cluster_ips()
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[0]}",'
+        f'"metadata_server": "http://{node_ips[0]}:8085/metadata","global_segment_size": 32212254720, '
+        '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+        f'"master_server_address": "{node_ips[0]}:50055","replica_num": 1, "fast_transfer":true, '
+        '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
+        '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
+    ]
+
+    pd_server_args = [
+        [
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--ec-transfer-config",
+            f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[0]}",'
+            f'"metadata_server": "http://{node_ips[0]}:8085/metadata","global_segment_size": 0, '
+            '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+            f'"master_server_address": "{node_ips[0]}:50055","replica_num": 1, "fast_transfer":true, '
+            '"fast_transfer_buffer_size": 1},'
+            '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
+            "--kv-transfer-config",
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[0]}", '
+            f'"metadata_server": "http://{node_ips[0]}:8081/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "{node_ips[0]}:50051", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'
+        ],
+        [
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--kv-transfer-config",
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[0]}", '
+            f'"metadata_server": "http://{node_ips[0]}:8081/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "{node_ips[0]}:50051", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}'
+        ]
+    ]
+
+    mooncake_args = [
+        [
+            "--rpc_port", "50051", "--enable_http_metadata_server=true",
+            f"--http_metadata_server_host={node_ips[0]}",
+            "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
+            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9005"
+        ],
+        [
+            "--rpc_port", "50055", "--enable_http_metadata_server=true",
+            f"--http_metadata_server_host={node_ips[0]}",
+            "--http_metadata_server_port=8085", "--rpc_thread_num", "8",
+            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
+        ]
+    ]
+
+    proxy_args = ["--router", router]
+
+    warmup_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 50,
+        "max_out_len": 256,
+        "batch_size": 16,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0,
+        "seed": 77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate * (e_num+p_num+d_num),
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E1P1D_mooncake",
+        "threshold": 0.97
+    }]
+    api_port = 10001
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="mooncake",
+                               kv_store_type="mooncake",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=p_num+d_num,
+                               e_num=e_num,
+                               node_info=cluster,
+                               proxy_args=proxy_args,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args,
+                               mooncake_args=mooncake_args) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           card_num=e_num+p_num+d_num,
+                           aisbench_cases=aisbench_cases)
 
 REQUEST_RATE = [0.28, 0.78, 1.28, 1.78]
 DATASET_NAME = ["simulate_truth"]
@@ -317,6 +473,7 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
+    env_dict["TRANSFER_PROTOCOL"] = "tcp"
     e_num = 2
     p_num = 3
     d_num = 3
@@ -372,10 +529,8 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
         e_server_args.append(e_arg)
     for _ in range(p_num):
         pd_server_args.append(p_arg)
-
     for _ in range(d_num):
         pd_server_args.append(d_arg)
-
 
 
     mooncake_args = [
@@ -399,7 +554,7 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 50,
         "max_out_len": 256,
         "batch_size": 16,
@@ -415,7 +570,7 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "batch_size": 128,
         "temperature": 0.5,
@@ -450,5 +605,5 @@ async def test_2e3p3d_tcp_mooncake_001(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
-                           card_num=8,
+                           card_num=e_num+p_num+d_num,
                            aisbench_cases=aisbench_cases)
