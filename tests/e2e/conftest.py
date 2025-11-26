@@ -156,6 +156,17 @@ class RemoteEPDServer:
         write_to_execl(data, f"./{file_name}.csv")
         print(f"TTFT Analysis csv file is locate in ./{file_name}.csv")
 
+    def _delete_shm(self) -> None:
+        for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
+            index = arg.index("--ec-transfer-config")
+            shm_path = json.loads(arg[index + 1]).get(
+                "ec_connector_extra_config").get("shared_storage_path")
+            args = [
+                "rm", "-r", "-f", f"{shm_path}/*"
+            ]
+            print(f"delete shm_path is: {shm_path}")
+            self._run_server(args, None,"[DELETE] ")
+
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -234,6 +245,7 @@ class RemoteEPDServer:
         api_server_args = ["python", api_server_path, *api_server_args]
         self._run_server_new_session(api_server_args, self.env_dict,
                                      "[PROXY] ")
+
 
     def _start_mooncake(self) -> None:
         self._init_mooncake_config()
@@ -654,6 +666,8 @@ class RemoteEPDServer:
         max_wait_seconds = 1800
         if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
+        if self.store_type == "storage":
+            self._delete_shm()
         if self.run_mode == "worker":
             self._start_vllm_worker()
             self.p = self._start_zmq_proxy()
