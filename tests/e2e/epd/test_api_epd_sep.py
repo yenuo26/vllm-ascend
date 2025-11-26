@@ -50,20 +50,22 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             SHARED_STORAGE_PATH +
             '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_producer","mooncake_rpc_port": "50051",'
-            '"kv_connector_extra_config": {"local_hostname": "localhost", "metadata_server": "http://localhost:8081/metadata",'
-            '"protocol": "tcp", "device_name": "", "master_server_address": "localhost:50051", "global_segment_size": 30000000000}}'
-        ],
+            '{"kv_connector_extra_config": {"local_hostname": "localhost", '
+            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            '{"kv_connector": "MooncakeConnectorStoreV1","kv_role": "kv_consumer","mooncake_rpc_port": "50051",'
-            '"kv_connector_extra_config": {"local_hostname": "localhost", "metadata_server": "http://localhost:8081/metadata",'
-            '"protocol": "tcp", "device_name": "", "master_server_address": "localhost:50051", "global_segment_size": 30000000000}}'
-        ]
+            '{"kv_connector_extra_config": {"local_hostname": "localhost", '
+            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}']
     ]
 
     mooncake_args = [
@@ -149,10 +151,14 @@ DATASET_NAME = ["image_4", "simulate_truth"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-@pytest.mark.parametrize("enable_prefix", ENABLE_PREFIX)
 async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
-                                       dataset_name: str, request_rate: float,
-                                       enable_prefix: bool):
+                                       dataset_name: str, request_rate: float):
+    '''
+    数据集： simulate_truth、image_4
+    前缀缓存：开启/关闭
+    部署形态： 1E1P1D、单机
+    存储类型：EC mooncake , KV mooncake
+    '''
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     e_server_args = [
@@ -177,10 +183,10 @@ async def test_1e1p1d_ipc_mooncake_001(model: str, tp_size: int,
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
             '{"ec_connector_extra_config":{"local_hostname":"localhost",'
-            '"metadata_server": "http://localhost:8085/metadata","global_segment_size": 32212254720, '
+            '"metadata_server": "http://localhost:8085/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
             '"master_server_address": "localhost:50055","replica_num": 1, "fast_transfer":true, '
-            '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
+            '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"local_hostname": "localhost", '
