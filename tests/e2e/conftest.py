@@ -403,65 +403,17 @@ class RemoteEPDServer:
                                      "[PROXY] ")
 
     def _start_mooncake(self) -> None:
-        self._init_mooncake_config()
-        self.mooncake_args = ["mooncake_master", *self.mooncake_args]
-        self._run_server_new_session(self.mooncake_args, None, "[MOONCAKE] ")
-
-    def _init_mooncake_config(self) -> None:
-        mooncake_json = {
-            "local_hostname": "0.0.0.0",
-            "global_segment_size": 32212254720,
-            "local_buffer_size": 1073741824,
-            "protocol": "tcp",
-            "device_name": "",
-            "replica_num": 1,
-            "fast_transfer": True,
-            "fast_transfer_buffer_size": 1,
-            "metadata_server": "http://0.0.0.0:8081/metadata",
-            "master_server_address": "0.0.0.0:50051"
-        }
-        if self.node_info is not None:
-            host = self.cluster_ips[0]
+        mooncake_args_list = list()
+        if isinstance(self.mooncake_args, list):
+            if not all(isinstance(item, list) for item in self.mooncake_args):
+                mooncake_args_list.append(copy.deepcopy(self.mooncake_args))
+            else:
+                mooncake_args_list = self.mooncake_args
         else:
-            host = "0.0.0.0"
-
-        for i, arg in enumerate(self.mooncake_args):
-            if "--http_metadata_server_port" in arg:
-                metadata_server_port = self.mooncake_args[i].split("=")[-1]
-                mooncake_json[
-                        "metadata_server"] = f"http://{host}:{metadata_server_port}/metadata"
-
-            if "--rpc_port" in arg:
-                rpc_port = self.mooncake_args[i + 1]
-                mooncake_json["master_server_address"] = f"{host}:{rpc_port}"
-
-        config_paths = set()
-        if self.store_type == "mooncake":
-            for i, arg in enumerate(self.e_serve_args_list +
-                                    self.pd_serve_args_list):
-                index = arg.index("--ec-transfer-config")
-                config_paths.add(json.loads(
-                    arg[index + 1]).get("ec_connector_extra_config").get(
-                        "ec_mooncake_config_file_path"))
-
-        if self.kv_store_type == "mooncake":
-            config_paths.add(self.env_dict["MOONCAKE_CONFIG_PATH"])
-        if self.node_info is not None:
-            for host in self.cluster_ips[1:]:
-                mooncake_json["local_hostname"] = host
-                for config_path in config_paths:
-                    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                        json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
-                        local_config_path = f.name
-                    try:
-                        scp_cmd = ["scp", local_config_path, f"root@{host}:{config_path}"]
-                        subprocess.run(scp_cmd, check=True)
-                    finally:
-                        os.unlink(local_config_path)
-            mooncake_json["local_hostname"] = self.cluster_ips[0]
-        for config_path in config_paths:
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(mooncake_json, f, ensure_ascii=False, indent=4)
+            raise RuntimeError("mooncake_args must be a list")
+        for arg in mooncake_args_list:
+            mooncake_arg = ["mooncake_master", *arg]
+            self._run_server_new_session(mooncake_arg, None, "[MOONCAKE] ")
 
 
     def _get_addr_config(self, args, i, role):
@@ -808,12 +760,12 @@ class RemoteEPDServer:
                  store_type: Literal["mooncake", "storage"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
-                 e_serve_args: Union[list[str], str],
-                 pd_serve_args: Union[list[str], str],
+                 e_serve_args,
+                 pd_serve_args,
                  proxy_type: Literal["disagg_proxy", "proxy",
                                      "api_server"] = None,
                  kv_store_type: Literal["mooncake"] = "",
-                 mooncake_args: Union[list[str], str] = None,
+                 mooncake_args=None,
                  proxy_args: Union[list[str], str] = None,
                  node_info: ClusterManager = None,
                  api_server_port: Optional[int] = 10001,
