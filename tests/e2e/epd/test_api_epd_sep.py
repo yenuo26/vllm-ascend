@@ -659,6 +659,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--no-enable-prefix-caching",
             "--ec-transfer-config",
             f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
@@ -678,6 +679,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--tensor-parallel-size",
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--no-enable-prefix-caching",
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
