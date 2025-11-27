@@ -163,14 +163,14 @@ def create_ttft_plot(result_file_names,
     colors = prop_cycle.by_key()['color']
     metrics_names = [
         'pd_queue_mean', 'e_queue_mean', 'pd_prefill_mean', 'e_prefill_mean',
-        'transfer_to_encode', 'transfer_to_pd', 'pd_first_token', 'others'
+        'transfer_to_encode', 'transfer_to_pd', 'pd_first_token_mean', 'others'
     ]
     color_map = {
         name: colors[i % len(colors)]
         for i, name in enumerate(metrics_names)
     }
 
-    fig, ax = plt.subplots(figsize=(18, 18))
+    fig, ax = plt.subplots(figsize=(20, 23))
     try:
         bar_width = 0.2
         x_labels = []

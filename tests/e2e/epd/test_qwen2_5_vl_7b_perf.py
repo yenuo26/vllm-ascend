@@ -205,8 +205,6 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
 
 REQUEST_CONFIG = [(0.9, 600), (1.8, 1000), (2.7, 1600), (3.6, 1800),
                   (4.5, 2000)]
-
-
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
