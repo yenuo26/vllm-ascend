@@ -424,7 +424,7 @@ class RemoteEPDServer:
             raise RuntimeError("mooncake_args must be a list")
         for arg in mooncake_args_list:
             mooncake_arg = ["mooncake_master", *arg]
-            self._run_server_new_session(mooncake_arg, None, "[MOONCAKE] ")
+            self._run_server_new_session(mooncake_arg, self.env_dict, "[MOONCAKE] ")
 
 
     def _get_addr_config(self, args, i, role):
