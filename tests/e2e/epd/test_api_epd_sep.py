@@ -12,6 +12,7 @@ from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterMan
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
+CONTAINER_NAME = load_config().get("container_name")
 
 TENSOR_PARALLELS = [1]
 
@@ -307,37 +308,44 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("router", ROUTER)
-async def test_1e1p1d_cross_ipc_mooncake_001(model: str, tp_size: int,
+async def test_1e1p1d_cross_tcp_mooncake_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float, router: str):
     '''
     数据集： simulate_truth
-    部署形态： 1E1P1D、E-P-D跨机
+    部署形态： 1E1P1D、proxyE-P-D跨机
     存储类型：EC mooncake , KV mooncake
     调度策略：RandomRouter， RoundRobinRouter，LeastInFlightRouter
+    通信方式： TCP
     '''
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
+    env_dict["TRANSFER_PROTOCOL"] = "tcp"
     e_num = 1
     p_num = 1
     d_num = 1
     cluster = ClusterManager()
     for i in range(p_num):
-        cluster.add_node_info("p", 1, "epd_vllm_ascend_mooncake")
+        cluster.add_node_info("p", 1, CONTAINER_NAME)
     for i in range(d_num):
-        cluster.add_node_info("d", 2, "epd_vllm_ascend_mooncake")
+        cluster.add_node_info("d", 2, CONTAINER_NAME)
 
     node_ips = get_cluster_ips()
+    rpc_port = 50053
+    http_metadata_server_port = 8083
+    metrics_port = 9003
+
+    mooncake_ip = node_ips[0]
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[0]}",'
-        f'"metadata_server": "http://{node_ips[0]}:8085/metadata","global_segment_size": 32212254720, '
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+        f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-        f'"master_server_address": "{node_ips[0]}:50055","replica_num": 1, "fast_transfer":true, '
+        f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
@@ -349,18 +357,18 @@ async def test_1e1p1d_cross_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
-            f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[0]}",'
-            f'"metadata_server": "http://{node_ips[0]}:8085/metadata","global_segment_size": 0, '
+            f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-            f'"master_server_address": "{node_ips[0]}:50055","replica_num": 1, "fast_transfer":true, '
+            f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[0]}", '
-            f'"metadata_server": "http://{node_ips[0]}:8081/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "{node_ips[0]}:50051", '
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'
+            f'"kv_role": "kv_producer", "mooncake_rpc_port": "{rpc_port}"}}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -368,30 +376,22 @@ async def test_1e1p1d_cross_ipc_mooncake_001(model: str, tp_size: int,
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[0]}", '
-            f'"metadata_server": "http://{node_ips[0]}:8081/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "{node_ips[0]}:50051", '
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}'
+            f'"kv_role": "kv_consumer", "mooncake_rpc_port": "{rpc_port}"}}'
         ]
     ]
 
     mooncake_args = [
-        [
-            "--rpc_port", "50051", "--enable_http_metadata_server=true",
-            f"--http_metadata_server_host={node_ips[0]}",
-            "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
+            "--rpc_port", str(rpc_port), "--rpc_address", "::", "--enable_http_metadata_server=true",
+            "--http_metadata_server_host=::",
+            f"--http_metadata_server_port={http_metadata_server_port}", "--rpc_thread_num", "8",
             "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9005"
-        ],
-        [
-            "--rpc_port", "50055", "--enable_http_metadata_server=true",
-            f"--http_metadata_server_host={node_ips[0]}",
-            "--http_metadata_server_port=8085", "--rpc_thread_num", "8",
-            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
-        ]
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
     ]
+
 
     proxy_args = ["--router", router]
 
@@ -425,7 +425,7 @@ async def test_1e1p1d_cross_ipc_mooncake_001(model: str, tp_size: int,
         "request_rate": request_rate * (e_num+p_num+d_num),
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_1E1P1D_mooncake",
+        "result_file_name": f"{dataset_name}_1E1P1D_mooncake_ipv4",
         "threshold": 0.97
     }]
     api_port = 10001
@@ -726,7 +726,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
         "request_rate": request_rate * 3,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_1E1P1D_mooncake",
+        "result_file_name": f"{dataset_name}_1E1P1D_mooncake_ipv6",
         "threshold": 0.97
     }]
     api_port = 10001
