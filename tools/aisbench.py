@@ -457,7 +457,7 @@ class AisbenchRunner:
             if "max_tokens" not in content:
                 content = re.sub(
                     r"output_column.*",
-                    "output_column='answer',\n            max_tokens_column = 'max_tokens'",
+                    "output_column='answer',\n         max_tokens_column = 'max_tokens'",
                     content)
 
         conf_path_new = os.path.join(DATASET_CONF_DIR,
