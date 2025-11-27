@@ -8,6 +8,7 @@ import shlex
 import copy
 import subprocess
 import sys
+import socket
 import threading
 import traceback
 import time
@@ -444,10 +445,9 @@ class RemoteEPDServer:
                     host = self.cluster_ips[node_id]
                 else:
                     host = self.cluster_ips[0]
-                proxy_host = self.cluster_ips[0]
             else:
-                host = "127.0.0.1"
-                proxy_host = "127.0.0.1"
+                host = self.cluster_ips[0]
+            proxy_host = self.cluster_ips[0]
             if role.lower() == "e":
                 return {
                     "proxy_addr": f"{proxy_host}:37000",
@@ -841,7 +841,15 @@ class RemoteEPDServer:
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
         if node_info is not None:
-            self.cluster_ips = get_cluster_ips()
+            if self.env_dict.get("MC_USE_IPV6", "") == "1":
+                self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
+            else:
+                self.cluster_ips = get_cluster_ips()
+        else:
+            if self.env_dict.get("MC_USE_IPV6", "") == "1":
+                self.cluster_ips = ["::1"]
+            else:
+                self.cluster_ips = ["127.0.0.1"]
 
     async def __aenter__(self):
         # start with
