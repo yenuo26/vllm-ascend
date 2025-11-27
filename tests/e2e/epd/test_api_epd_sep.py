@@ -634,8 +634,8 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
     env_dict["MC_MS_AUTO_DISC"] = 0
     env_dict["MC_USE_IPV6"] = 1
 
-    rpc_port = 50051
-    http_metadata_server_port = 8081
+    rpc_port = 50055
+    http_metadata_server_port = 8085
     metrics_port = 9005
 
     mooncake_ip = "[::1]"
