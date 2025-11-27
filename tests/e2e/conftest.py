@@ -522,7 +522,9 @@ class RemoteEPDServer:
                 )
             else:
                 self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
-
+        
+        current_p_num = -1
+        current_d_num = -1
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
             if self.is_epd_same_card:
                 self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
@@ -552,24 +554,30 @@ class RemoteEPDServer:
             worker_index = pd_serve_arg.index("--worker-addr")
             log_prefix = ""
             role = ""
+            current_node_index = 0
             if "--kv-transfer-config" in pd_serve_arg:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
                     self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "d")
-                    log_prefix = f"[D_{i}] "
+                    current_d_num += 1
+                    log_prefix = f"[D_{current_d_num}] "
                     role = "d"
+                    current_node_index = current_d_num
                 elif "kv_producer" in pd_serve_arg[kv_index + 1]:
                     self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "p")
-                    log_prefix = f"[P_{i}] "
+                    current_p_num += 1
+                    log_prefix = f"[P_{current_p_num}] "
                     role = "p"
+                    current_node_index = current_p_num
             else:
                 self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "pd")
                 log_prefix = f"[PD_{i}] "
                 role = "pd"
+                current_node_index = i
 
             if self.node_info is not None and self.node_info.get_node_info(
                     role) is not None:
-                node_id = self.node_info.get_node_info(role, i).node_id
+                node_id = self.node_info.get_node_info(role, current_node_index).node_id
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(

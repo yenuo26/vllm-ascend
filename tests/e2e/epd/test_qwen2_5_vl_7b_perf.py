@@ -35,7 +35,7 @@ async def teardown():
                          result_figure_prefix=f"{dataset}_ttft")
 
 
-REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (1, 480), (1.5, 480), (2, 500)]
+REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (0.9, 450), (1.2, 470), (1.5, 480)]
 
 
 @pytest.mark.asyncio
@@ -46,6 +46,7 @@ REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (1, 480), (1.5, 480), (2, 500)]
 @pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                           request_rate: int, num_prompts: int, teardown):
+
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -106,7 +107,9 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [(1.2, 900), (2.4, 1000), (4, 1100), (6, 1200), (8, 1300)]
+REQUEST_CONFIG = [(1.2, 800), (2.4, 1200), (3.6, 1500), (4.8, 1900), (6, 2500)]
+
+
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
@@ -117,7 +120,8 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
-        "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
+        "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"
     }
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
@@ -198,7 +202,10 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                   index=aisbench_case["request_rate"] / 4)
 
 
-REQUEST_CONFIG = [(0.9, 600), (1.8, 800), (3, 900), (4.5, 900), (6, 900)]
+REQUEST_CONFIG = [(0.9, 600), (1.8, 1000), (2.7, 1600), (3.6, 1800),
+                  (4.5, 2000)]
+
+
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
@@ -209,7 +216,8 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
-        "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120"
+        "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"
     }
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
