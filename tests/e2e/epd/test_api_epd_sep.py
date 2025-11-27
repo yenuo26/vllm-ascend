@@ -648,7 +648,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
         f'{{"ec_connector_extra_config":{{"local_hostname":{mooncake_ip},'
         f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-        f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
+        f'"master_server_address": "{mooncake_ip}:{str(rpc_port)}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
@@ -671,7 +671,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            f'"kv_role": "kv_producer", "mooncake_rpc_port": "{rpc_port}"}}'
+            f'"kv_role": "kv_producer", "mooncake_rpc_port": "{str(rpc_port)}"}}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -683,7 +683,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            f'"kv_role": "kv_consumer", "mooncake_rpc_port": {rpc_port}}}'
+            f'"kv_role": "kv_consumer", "mooncake_rpc_port": {str(rpc_port)}}}'
         ]
     ]
 
