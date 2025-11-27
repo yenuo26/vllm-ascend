@@ -121,7 +121,8 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
-        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
@@ -217,7 +218,8 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
     env_dict = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
-        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
