@@ -540,7 +540,27 @@ class RemoteEPDServer:
                                                            1] != self.model:
                     raise ValueError("model must be same between workers")
 
-            config = self._get_addr_config(pd_serve_arg, i, "PD")
+            log_prefix = ""
+            role = ""
+            current_node_index = 0
+            if "--kv-transfer-config" in pd_serve_arg:
+                kv_index = pd_serve_arg.index("--kv-transfer-config")
+                if "kv_consumer" in pd_serve_arg[kv_index + 1]:
+                    current_d_num += 1
+                    log_prefix = f"[D_{current_d_num}] "
+                    role = "d"
+                    current_node_index = current_d_num
+                elif "kv_producer" in pd_serve_arg[kv_index + 1]:
+                    current_p_num += 1
+                    log_prefix = f"[P_{current_p_num}] "
+                    role = "p"
+                    current_node_index = current_p_num
+            else:
+                log_prefix = f"[PD_{i}] "
+                role = "pd"
+                current_node_index = i
+
+            config = self._get_addr_config(pd_serve_arg, i, role)
             if "--proxy-addr" not in pd_serve_arg:
                 pd_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
             if "--worker-addr" not in pd_serve_arg:
@@ -552,28 +572,7 @@ class RemoteEPDServer:
                 raise ValueError("proxy addr must be same between workers")
 
             worker_index = pd_serve_arg.index("--worker-addr")
-            log_prefix = ""
-            role = ""
-            current_node_index = 0
-            if "--kv-transfer-config" in pd_serve_arg:
-                kv_index = pd_serve_arg.index("--kv-transfer-config")
-                if "kv_consumer" in pd_serve_arg[kv_index + 1]:
-                    self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "d")
-                    current_d_num += 1
-                    log_prefix = f"[D_{current_d_num}] "
-                    role = "d"
-                    current_node_index = current_d_num
-                elif "kv_producer" in pd_serve_arg[kv_index + 1]:
-                    self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "p")
-                    current_p_num += 1
-                    log_prefix = f"[P_{current_p_num}] "
-                    role = "p"
-                    current_node_index = current_p_num
-            else:
-                self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], "pd")
-                log_prefix = f"[PD_{i}] "
-                role = "pd"
-                current_node_index = i
+            self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], role)
 
             if self.node_info is not None and self.node_info.get_node_info(
                     role) is not None:
