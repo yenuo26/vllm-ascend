@@ -638,7 +638,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
     http_metadata_server_port = 8085
     metrics_port = 9005
 
-    mooncake_ip = "[::1]"
+    mooncake_ip = "::1"
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
@@ -646,9 +646,9 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
         f'{{"ec_connector_extra_config":{{"local_hostname":{mooncake_ip},'
-        f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
+        f'"metadata_server": "http://[{mooncake_ip}]:{str(http_metadata_server_port)}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-        f'"master_server_address": "{mooncake_ip}:{str(rpc_port)}","replica_num": 1, "fast_transfer":true, '
+        f'"master_server_address": "[{mooncake_ip}]:{str(rpc_port)}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
@@ -661,15 +661,15 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
             f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
-            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 0, '
+            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-            f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
+            f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
-            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
+            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_producer", "mooncake_rpc_port": "{str(rpc_port)}"}}'
         ],
@@ -680,21 +680,19 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
-            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
+            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": {str(rpc_port)}}}'
         ]
     ]
 
     mooncake_args = [
-
             "--rpc_port", str(rpc_port), "--rpc_address", "::", "--enable_http_metadata_server=true",
             "--http_metadata_server_host=::",
             f"--http_metadata_server_port={http_metadata_server_port}", "--rpc_thread_num", "8",
             "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
             "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
-
     ]
 
     warmup_cases = [{
