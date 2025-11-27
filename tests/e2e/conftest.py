@@ -560,7 +560,7 @@ class RemoteEPDServer:
                 role = "pd"
                 current_node_index = i
 
-            config = self._get_addr_config(pd_serve_arg, i, role)
+            config = self._get_addr_config(pd_serve_arg, current_node_index, role)
             if "--proxy-addr" not in pd_serve_arg:
                 pd_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
             if "--worker-addr" not in pd_serve_arg:
