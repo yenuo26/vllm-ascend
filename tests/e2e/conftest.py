@@ -847,7 +847,7 @@ class RemoteEPDServer:
                 self.cluster_ips = get_cluster_ips()
         else:
             if self.env_dict.get("MC_USE_IPV6", "") == "1":
-                self.cluster_ips = ["::1"]
+                self.cluster_ips = ["[::1]"]
             else:
                 self.cluster_ips = ["127.0.0.1"]
 
