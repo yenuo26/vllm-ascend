@@ -689,11 +689,11 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
 
     mooncake_args = [
 
-            "--rpc_port", rpc_port, "--rpc_address", "::", "--enable_http_metadata_server=true",
+            "--rpc_port", str(rpc_port), "--rpc_address", "::", "--enable_http_metadata_server=true",
             "--http_metadata_server_host=::",
             f"--http_metadata_server_port={http_metadata_server_port}", "--rpc_thread_num", "8",
             "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", metrics_port
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
 
     ]
 
