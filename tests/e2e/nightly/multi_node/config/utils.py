@@ -43,7 +43,7 @@ def get_cluster_ips(family=socket.AF_INET) -> list[str]:
         result_ips = list()
         for dns in cluster_dns:
             result = socket.getaddrinfo(dns, None, family)
-            result_ips.append([addr[4][0] for addr in result])
+            result_ips.append(result[0][4][0])
         return result_ips
     except socket.gaierror as e:
         print(f"Error: {e}")
