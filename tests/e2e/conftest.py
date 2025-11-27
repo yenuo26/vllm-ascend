@@ -522,7 +522,7 @@ class RemoteEPDServer:
                 )
             else:
                 self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
-        
+
         current_p_num = -1
         current_d_num = -1
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
@@ -581,7 +581,7 @@ class RemoteEPDServer:
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
-                        role, i).container_name,
+                        role, current_node_index).container_name,
                     server_cmd=pd_serve_arg,
                     env_dict=self.env_dict,
                     log_prefix=log_prefix)
