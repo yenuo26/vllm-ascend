@@ -612,6 +612,7 @@ class RemoteEPDServer:
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
+        print(f"proxy params is: {self.proxy_config}")
         p = Proxy(**self.proxy_config)
         if self.proxy_args is not None and "--router" in self.proxy_args:
             self.proxy_config['router'] = self.proxy_args[
