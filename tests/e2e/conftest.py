@@ -859,7 +859,7 @@ class RemoteEPDServer:
                 proxy_config['router'] = RoundRobinRouter
             else:
                 proxy_config['router'] = LeastInFlightRouter
-        print(f"proxy params is: {self.proxy_config}")
+        print(f"proxy params is: {proxy_config}")
         self._share_info.init_proxy(proxy_config)
 
     def _start_disagg_proxy(self):
@@ -902,11 +902,11 @@ class RemoteEPDServer:
         sleep_times = 10
         timeout_times = 3
         start_time = time.time()
-
+        proxy = self._share_info.get_proxy()
         while time.time() - start_time < max_wait_seconds:
             tasks_0 = [
                 asyncio.create_task(
-                    asyncio.wait_for(self.p.check_health(
+                    asyncio.wait_for(proxy.check_health(
                         ServerType.E_INSTANCE, f"{self.protocol}://{addr}"),
                                      timeout=timeout_times))
                 for addr in self._share_info.get_addr_list("e")
@@ -914,7 +914,7 @@ class RemoteEPDServer:
             if self._share_info.get_addr_list("pd"):
                 tasks_1 = [
                     asyncio.create_task(
-                        asyncio.wait_for(self.p.check_health(
+                        asyncio.wait_for(proxy.check_health(
                             ServerType.PD_INSTANCE, f"{self.protocol}://{addr}"),
                                          timeout=timeout_times))
                     for addr in self._share_info.get_addr_list("pd")
@@ -923,14 +923,14 @@ class RemoteEPDServer:
             else:
                 tasks_1 = [
                     asyncio.create_task(
-                        asyncio.wait_for(self.p.check_health(
+                        asyncio.wait_for(proxy.check_health(
                             ServerType.P_INSTANCE, f"{self.protocol}://{addr}"),
                             timeout=timeout_times))
                     for addr in self._share_info.get_addr_list("p")
                 ]
                 tasks_2 = [
                     asyncio.create_task(
-                        asyncio.wait_for(self.p.check_health(
+                        asyncio.wait_for(proxy.check_health(
                             ServerType.D_INSTANCE, f"{self.protocol}://{addr}"),
                             timeout=timeout_times))
                     for addr in self._share_info.get_addr_list("d")
@@ -1113,7 +1113,6 @@ class RemoteEPDServer:
             self._start_disagg_proxy()
             await self._wait_for_server()
         elif self.proxy_type == "api_server":
-            self._share_info.get_proxy().shutdown()
             await self._start_api_server()
             await self._wait_for_server()
 
