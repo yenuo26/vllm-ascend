@@ -15,6 +15,10 @@ import threading
 import time
 import traceback
 import uuid
+import aiohttp
+from io import BytesIO
+from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
+
 import httpx
 import lm_service.envs as lm_service_envs
 import msgspec
@@ -27,10 +31,6 @@ import requests
 import torch
 import uvicorn
 import vllm.envs as envs
-from io import BytesIO
-from pathlib import Path
-from torch import nn
-from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
 from PIL import Image
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -38,10 +38,10 @@ from lm_service.apis.vllm.proxy import Proxy
 from lm_service.protocol.protocol import ServerType
 from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
 from modelscope import snapshot_download  # type: ignore[import-untyped]
+from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
                           BatchEncoding, BatchFeature)
 from transformers.models.auto.auto_factory import _BaseAutoModelClass
-
 from vllm import LLM
 from vllm.config.model import TaskOption, _get_and_verify_dtype
 from vllm.inputs import TextPrompt
@@ -1039,23 +1039,23 @@ class RemoteEPDServer:
 
         while time.time() - start_time < timeout:
             try:
-                response = requests.get(health_url, timeout=3)
-                if response.status_code == 200:
-                    data = response.json()
-                    print(
-                        f"✅ api server is ready: {data.get('status', 'unknown')}"
-                    )
-                    return True
-                else:
-                    print(
-                        f"❌ api server start error, http error code: {response.status_code}"
-                    )
-            except requests.exceptions.ConnectionError:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(health_url, timeout=3) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            print(f"✅ api server is ready: {data.get('status', 'unknown')}")
+                            return True
+                        else:
+                            print(f"❌ api server start error, http error code: {response.status}")
+            except aiohttp.ClientConnectorError:
                 print("⏳ waiting for ready ...")
-            except requests.exceptions.RequestException as e:
-                print(f"api server start error: {e}")
+            except asyncio.TimeoutError:
+                print("⏳ health check timeout, retrying...")
+            except Exception as e:
+                print(f"api server health check error: {e}")
 
             await asyncio.sleep(check_interval)
+
         print("api server start timeout")
         raise RuntimeError("api server start failed, health check failed")
 
