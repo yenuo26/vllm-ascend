@@ -163,7 +163,7 @@ def create_ttft_plot(result_file_names,
     colors = prop_cycle.by_key()['color']
     metrics_names = [
         'pd_queue_mean', 'e_queue_mean', 'pd_prefill_mean', 'e_prefill_mean',
-        'transfer_to_encode', 'transfer_to_pd', 'pd_first_token_mean', 'others'
+        'transfer_to_encode', 'transfer_to_pd', 'pd_decode_mean', 'others'
     ]
     color_map = {
         name: colors[i % len(colors)]
@@ -203,6 +203,7 @@ def create_ttft_plot(result_file_names,
             ]
             file_data['pd_first_token_mean'] = file_data[pd_first_token_columns].mean(
                 axis=1)
+            file_data['pd_decode_mean'] = file_data['pd_first_token_mean'] - file_data['pd_prefill_mean'] - file_data['pd_queue_mean']
             e_prefill_columns = [
                 col for col in file_data.columns
                 if 'E' in col and 'prefill' in col
@@ -217,8 +218,8 @@ def create_ttft_plot(result_file_names,
                 axis=1)
 
             file_data['others'] = file_data['ttft_mean'] - file_data[
-                'e_prefill_mean'] - file_data['pd_prefill_mean'] - file_data[
-                    'e_queue_mean'] - file_data['pd_queue_mean'] - file_data[
+                'e_prefill_mean'] - file_data[
+                    'e_queue_mean'] - file_data[
                 'transfer_to_encode'] - file_data['transfer_to_pd'] - file_data['pd_first_token_mean']
 
             bottom = np.zeros(len(file_data['index']))
