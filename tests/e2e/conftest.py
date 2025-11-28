@@ -555,15 +555,15 @@ class ApiServer:
                     "loggers": {
                         "uvicorn": {
                             "handlers": ["default"],
-                            "level": "INFO",
+                            "level": "DEBUG",
                             "propagate": False
                         },
                         "uvicorn.error": {
-                            "level": "INFO"
+                            "level": "DEBUG"
                         },
                         "uvicorn.access": {
                             "handlers": ["access"],
-                            "level": "INFO",
+                            "level": "DEBUG",
                             "propagate": False
                         },
                     },
