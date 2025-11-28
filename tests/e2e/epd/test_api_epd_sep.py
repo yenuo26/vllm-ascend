@@ -871,7 +871,7 @@ async def test_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
         "request_rate": request_rate * 3,
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_1E1P1D_mooncake_ipv6",
+        "result_file_name": f"{dataset_name}_1E1P1D_mooncake_ipv4",
         "threshold": 0.97
     }]
     api_port = 10001
