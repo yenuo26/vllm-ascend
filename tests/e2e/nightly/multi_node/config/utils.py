@@ -37,15 +37,17 @@ def temp_env(env_dict):
 #     finally:
 #         dist.destroy_process_group()
 
-
-def get_cluster_ips() -> list[str]:
-    """
-    Returns the IP addresses of all nodes in the cluster.
-    0: leader
-    1~N-1: workers
-    """
-    cluster_dns = os.getenv("CLUSTER_ADDRESS").split(";")
-    return [socket.gethostbyname(dns) for dns in cluster_dns]
+def get_cluster_ips(family=socket.AF_INET) -> list[str]:
+    try:
+        cluster_dns = os.getenv("CLUSTER_ADDRESS").split(";")
+        result_ips = list()
+        for dns in cluster_dns:
+            result = socket.getaddrinfo(dns, None, family)
+            result_ips.append(result[0][4][0])
+        return result_ips
+    except socket.gaierror as e:
+        print(f"Error: {e}")
+        return []
 
 
 def get_avaliable_port(start_port: int = 6000, end_port: int = 7000) -> int:

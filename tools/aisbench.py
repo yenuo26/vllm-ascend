@@ -163,14 +163,14 @@ def create_ttft_plot(result_file_names,
     colors = prop_cycle.by_key()['color']
     metrics_names = [
         'pd_queue_mean', 'e_queue_mean', 'pd_prefill_mean', 'e_prefill_mean',
-        'transfer_to_encode', 'transfer_to_pd', 'others'
+        'transfer_to_encode', 'transfer_to_pd', 'pd_first_token_mean', 'others'
     ]
     color_map = {
         name: colors[i % len(colors)]
         for i, name in enumerate(metrics_names)
     }
 
-    fig, ax = plt.subplots(figsize=(18, 18))
+    fig, ax = plt.subplots(figsize=(20, 23))
     try:
         bar_width = 0.2
         x_labels = []
@@ -194,7 +194,14 @@ def create_ttft_plot(result_file_names,
                 col for col in file_data.columns
                 if 'PD' in col and 'prefill' in col
             ]
+
             file_data['pd_prefill_mean'] = file_data[pd_prefill_columns].mean(
+                axis=1)
+            pd_first_token_columns = [
+                col for col in file_data.columns
+                if 'PD' in col and 'first' in col
+            ]
+            file_data['pd_first_token_mean'] = file_data[pd_first_token_columns].mean(
                 axis=1)
             e_prefill_columns = [
                 col for col in file_data.columns
@@ -212,7 +219,7 @@ def create_ttft_plot(result_file_names,
             file_data['others'] = file_data['ttft_mean'] - file_data[
                 'e_prefill_mean'] - file_data['pd_prefill_mean'] - file_data[
                     'e_queue_mean'] - file_data['pd_queue_mean'] - file_data[
-                'transfer_to_encode'] - file_data['transfer_to_pd']
+                'transfer_to_encode'] - file_data['transfer_to_pd'] - file_data['pd_first_token_mean']
 
             bottom = np.zeros(len(file_data['index']))
 
@@ -457,7 +464,7 @@ class AisbenchRunner:
             if "max_tokens" not in content:
                 content = re.sub(
                     r"output_column.*",
-                    "output_column='answer',\n            max_tokens_column = 'max_tokens'",
+                    "output_column='answer',\n         max_tokens_column = 'max_tokens'",
                     content)
 
         conf_path_new = os.path.join(DATASET_CONF_DIR,
