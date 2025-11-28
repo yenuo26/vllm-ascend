@@ -1,44 +1,53 @@
 import asyncio
+import base64
 import contextlib
+import copy
 import gc
+import importlib
 import json
 import os
 import re
 import shlex
-import copy
+import socket
 import subprocess
 import sys
-import socket
 import threading
-import traceback
 import time
-from pathlib import Path
-from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
-
+import traceback
+import uuid
 import httpx
+import lm_service.envs as lm_service_envs
+import msgspec
 import numpy as np
-import pandas as pd
 import openai
+import pandas as pd
 import psutil
 import pytest
 import requests
 import torch
-import importlib
+import uvicorn
+import vllm.envs as envs
+from io import BytesIO
+from pathlib import Path
+from torch import nn
+from typing import Any, List, Optional, Tuple, TypeVar, Union, Literal
 from PIL import Image
-from datetime import datetime
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from lm_service.apis.vllm.proxy import Proxy
 from lm_service.protocol.protocol import ServerType
 from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
 from modelscope import snapshot_download  # type: ignore[import-untyped]
-from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
                           BatchEncoding, BatchFeature)
 from transformers.models.auto.auto_factory import _BaseAutoModelClass
-from vllm import LLM, SamplingParams
+
+from vllm import LLM
 from vllm.config.model import TaskOption, _get_and_verify_dtype
 from vllm.inputs import TextPrompt
 from vllm.outputs import RequestOutput
 from vllm.platforms import current_platform
+from vllm.sampling_params import SamplingParams
 from vllm.transformers_utils.utils import maybe_model_redirect
 
 from tests.e2e.model_utils import (TokensTextLogprobs,
@@ -46,8 +55,9 @@ from tests.e2e.model_utils import (TokensTextLogprobs,
 from tests.e2e.nightly.multi_node.config.multi_node_config import NodeInfo
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
 from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
-
 from vllm_ascend.ascend_config import clear_ascend_config
+
+IMAGE_ARRAY = np.zeros((224, 224, 3), dtype=np.uint8)
 # TODO: remove this part after the patch merged into vllm, if
 # we not explicitly patch here, some of them might be effectiveless
 # in pytest scenario
@@ -115,6 +125,7 @@ def write_to_execl(data, path):
             combined_df.to_csv(path, index=False)
 
 
+
 class SharedInfoManager:
     def __init__(self):
         self._metrics = {}
@@ -125,10 +136,24 @@ class SharedInfoManager:
         self._enable_ttft_breakdown = False
         self._check_info = ""
         self._lock = threading.Lock()
+        self.proxy = None
 
     def update_metrics(self, metrics):
         with self._lock:
             self._metrics = metrics
+
+    def get_metrics(self):
+        with self._lock:
+            return self._metrics.copy()
+
+
+    def init_proxy(self, proxy_config):
+        with self._lock:
+            self.proxy = Proxy(**proxy_config)
+
+    def get_proxy(self):
+        with self._lock:
+            return self.proxy
 
     def get_metrics(self):
         with self._lock:
@@ -312,9 +337,222 @@ class ContainerManager:
                 ssh_proc.kill()
 
 
+class ApiServer:
+
+    def __init__(self, share_info: SharedInfoManager, is_load_image, host="127.0.0.1", port=8000):
+        self.host = host
+        self.port = port
+        self._share_info = share_info
+        self.is_load_image = is_load_image
+        self.app = FastAPI(title="VLLM Proxy API")
+        self.proxy = share_info.get_proxy()
+        self._setup_routes()
+
+
+    def _setup_routes(self):
+        @self.app.post("/v1/chat/completions")
+        async def chat_completions(request: Request):
+            return await self._handle_chat_completions(request)
+
+        @self.app.get("/health")
+        async def health_check():
+            return await self._handle_health_check()
+
+
+    async def _handle_chat_completions(self, request: Request):
+        """处理聊天补全请求"""
+        try:
+            request_data = await request.json()
+            request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
+            is_streaming = request_data.get("stream", False)
+
+            # Extract parameters from request
+            prompt = request_data.get("messages", [])[-1].get("content", [])
+            # For simplicity, we'll use the last message content as the prompt
+            if prompt and isinstance(prompt, list):
+                prompt_text = prompt[-1].get("text", "")
+            else:
+                prompt_text = ""
+
+            binary_list = []
+            image_num = len(prompt) - 1
+            # load image and base64 decode
+            if self.is_load_image:
+                for i in range(image_num):
+                    image_base64 = prompt[i].get("image_url", "").get("url", "").split(",")[-1]
+                    image_data = base64.b64decode(image_base64.encode("utf-8"))
+                    image_buffer = BytesIO(image_data)
+                    image = self._convert_image_mode(Image.open(image_buffer), "RGB")
+                    binary_data = np.array(image)
+                    binary_list.append(binary_data)
+
+            ## the np of image
+            else:
+                for _ in range(image_num):
+                    binary_list.append(IMAGE_ARRAY)
+
+            if "qwen" in self.proxy.model_config.model.lower():
+                image_pad = "<|image_pad|>"
+            else:
+                image_pad = "<image>"
+
+            image_str = ""
+            for i in range(image_num):
+                image_str += image_pad
+
+            prompt_text = ("<|im_start|>system\n"
+                           "You are a helpful assistant.<|im_end|>\n"
+                           "<|im_start|>user\n"
+                           f"<|vision_start|>{image_str}<|vision_end|>"
+                           f"{prompt_text}<|im_end|>\n"
+                           "<|im_start|>assistant\n")
+
+            prompt = {
+                "prompt": prompt_text,
+                "multi_modal_data": {
+                    "image": binary_list
+                },
+            }
+
+            # Create sampling params
+            sampling_params = SamplingParams(
+                temperature=request_data.get("temperature", 0.7),
+                top_p=request_data.get("top_p", 1.0),
+                top_k=request_data.get("top_k", 10),
+                max_tokens=request_data.get("max_tokens", 100),
+                ignore_eos=request_data.get("ignore_eos", True),
+                stop=request_data.get("stop", None),
+                seed=request_data.get("seed", 77),
+                repetition_penalty=request_data.get("repetition_penalty", 1.0),
+                stop_token_ids=request_data.get("stop_token_ids", None),
+            )
+
+            if is_streaming:
+                async def stream_generator():
+                    async for output in self.proxy.generate(
+                            prompt=prompt,
+                            sampling_params=sampling_params,
+                            request_id=request_id,
+                    ):
+                        prompt_tokens = len(output.prompt_token_ids)
+                        completion_tokens = len(output.outputs[0].token_ids)
+                        total_tokens = prompt_tokens + completion_tokens
+                        # Format according to OpenAI's streaming format
+                        chunk = {
+                            "id": request_id,
+                            "object": "chat.completion.chunk",
+                            "created": int(asyncio.get_event_loop().time()),
+                            "model": self.proxy.model_config.model,
+                            "choices": [{
+                                "index": 0,
+                                "delta": {
+                                    "content": output.outputs[0].text
+                                },
+                                "finish_reason": output.outputs[0].finish_reason
+                            }],
+                            "usage": {
+                                "prompt_tokens": prompt_tokens,
+                                "completion_tokens": completion_tokens,
+                                "total_tokens": total_tokens
+                            }
+                        }
+                        yield f"data: {msgspec.json.encode(chunk).decode()}\n\n"
+                    # End of stream
+                    yield "data: [DONE]\n\n"
+                    if lm_service_envs.TIMECOUNT_ENABLED:
+                        asyncio.create_task(self.proxy.log_metrics())
+
+                return StreamingResponse(stream_generator(), media_type="text/event-stream")
+            else:
+                # For non-streaming, collect all outputs
+                final_output = None
+                async for output in self.proxy.generate(
+                        prompt=prompt,
+                        sampling_params=sampling_params,
+                        request_id=request_id,
+                ):
+                    final_output = output
+
+                if final_output:
+                    prompt_tokens = len(final_output.prompt_token_ids)
+                    completion_tokens = len(final_output.outputs[0].token_ids)
+                    total_tokens = prompt_tokens + completion_tokens
+                    response = {
+                        "id": request_id,
+                        "object": "chat.completion",
+                        "created": int(asyncio.get_event_loop().time()),
+                        "model": self.proxy.model_config.model,
+                        "choices": [{
+                            "index": 0,
+                            "message": {
+                                "role": "assistant",
+                                "content": final_output.outputs[0].text
+                            },
+                            "finish_reason": final_output.outputs[0].finish_reason
+                        }],
+                        "usage": {
+                            "prompt_tokens": prompt_tokens,
+                            "completion_tokens": completion_tokens,
+                            "total_tokens": total_tokens
+                        }
+                    }
+                    if lm_service_envs.TIMECOUNT_ENABLED:
+                        await asyncio.sleep(envs.VLLM_LOG_STATS_INTERVAL)
+                        await self.proxy.log_metrics()
+                    return JSONResponse(content=response)
+                else:
+                    raise HTTPException(status_code=500, detail="No response from proxy")
+
+        except Exception as e:
+            print(f"Error processing chat completion request: {e}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    def _convert_image_mode(self, image, mode):
+        return image.convert(mode)
+
+    async def _handle_health_check(self):
+        return {
+            "status": "healthy",
+            "timestamp": asyncio.get_event_loop().time(),
+            "model": self.proxy.model_config.model if self.proxy else "unknown"
+        }
+
+    def start(self):
+        """启动服务器"""
+        # 初始化代理
+        print(f"Starting API server on {self.host}:{self.port}")
+        uvicorn.run(
+            app=self.app,
+            host=self.host,
+            port=self.port,
+            log_level="info",
+            access_log=True,
+            loop="asyncio"
+        )
+
+    async def start_async(self):
+        """异步启动服务器（用于在其他异步环境中使用）"""
+        # 初始化代理
+        config = uvicorn.Config(
+            app=self.app,
+            host=self.host,
+            port=self.port,
+            log_level="info",
+            access_log=True,
+            loop="asyncio",
+            log_config={
+                "formatters": {
+                    "default": {"fmt": "[PROXY ] %(message)s"},
+                    "access": {"fmt": '[PROXY ] %(client_addr)s - "%(request_line)s" %(status_code)s'},
+                }
+            }
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
+
 class RemoteEPDServer:
     def get_proxy(self) -> Proxy:
-        return self.p
+        return self._share_info.get_proxy()
 
     def check_log(self, check_info, timeout) -> bool:
         self._share_info.update_check_info(check_info)
@@ -405,21 +643,15 @@ class RemoteEPDServer:
         stderr_thread.start()
         self._proc_list.append(proc)
 
-    def _start_api_server(self) -> None:
-        api_server_args = [
-            "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--proxy-config",
-            json.dumps(self.proxy_config)
-        ]
-        if self.is_image_load:
-            api_server_args.append("--is-load-image")
-
-        print(f"proxy params is: {api_server_args}")
-        api_server_path = Path(
-            __file__).parent.parent.parent / "tools" / "api_server.py"
-        api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, self.env_dict,
-                                     "[PROXY] ")
+    async def _start_api_server(self) -> None:
+        server = ApiServer(
+            host="0.0.0.0",
+            port=8080,
+            is_load_image=self.is_image_load,
+            share_info=self._share_info
+        )
+        asyncio.create_task(server.start_async())
+        print("API server started as background task")
 
     def _start_mooncake(self) -> None:
         mooncake_args_list = list()
@@ -597,41 +829,37 @@ class RemoteEPDServer:
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
             os.environ[key] = value
-        self.proxy_config = {
+        proxy_config = {
             'proxy_addr': self.proxy_addr,
             'encode_addr_list': self._share_info.get_addr_list("e"),
             'model_name': self.model
         }
         if self._share_info.get_addr_list("pd"):
-            self.proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
+            proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
         else:
-            self.proxy_config.update({
+            proxy_config.update({
                 'p_addr_list': self._share_info.get_addr_list("p"),
                 'd_addr_list': self._share_info.get_addr_list("d")
             })
         if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
-            self.proxy_config['transfer_protocol'] = self.proxy_args[
+            proxy_config['transfer_protocol'] = self.proxy_args[
                 self.proxy_args.index("--transfer_protocol") + 1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
-            self.proxy_config['enable_health_monitor'] = self.proxy_args[
+            proxy_config['enable_health_monitor'] = self.proxy_args[
                 self.proxy_args.index("--enable-health-monitor") + 1]
         if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[
+            proxy_config['router'] = self.proxy_args[
                 self.proxy_args.index("--router") + 1]
             if self.proxy_args[self.proxy_args.index("--router") +
                                1] == "RandomRouter":
-                self.proxy_config['router'] = RandomRouter
+                proxy_config['router'] = RandomRouter
             elif self.proxy_args[self.proxy_args.index("--router") +
                                  1] == "RoundRobinRouter":
-                self.proxy_config['router'] = RoundRobinRouter
+                proxy_config['router'] = RoundRobinRouter
             else:
-                self.proxy_config['router'] = LeastInFlightRouter
+                proxy_config['router'] = LeastInFlightRouter
         print(f"proxy params is: {self.proxy_config}")
-        p = Proxy(**self.proxy_config)
-        if self.proxy_args is not None and "--router" in self.proxy_args:
-            self.proxy_config['router'] = self.proxy_args[
-                self.proxy_args.index("--router") + 1]
-        return p
+        self._share_info.init_proxy(proxy_config)
 
     def _start_disagg_proxy(self):
         proxy_args = [
@@ -874,18 +1102,18 @@ class RemoteEPDServer:
             self._delete_shm()
         if self.run_mode == "worker":
             self._start_vllm_worker()
-            self.p = self._start_zmq_proxy()
+            self._start_zmq_proxy()
             await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
         elif self.run_mode == "serve":
             self._start_vllm_serve()
         if self.proxy_type is None:
-            self.p.shutdown()
+            self._share_info.get_proxy().shutdown()
         elif self.proxy_type == "disagg_proxy":
             self._start_disagg_proxy()
             await self._wait_for_server()
         elif self.proxy_type == "api_server":
-            self.p.shutdown()
-            self._start_api_server()
+            self._share_info.get_proxy().shutdown()
+            await self._start_api_server()
             await self._wait_for_server()
 
         return self
@@ -896,8 +1124,8 @@ class RemoteEPDServer:
             self._kill_process_tree(proc.pid)
         self._container.kill_container_process_only()
         print("vllm instance and api server is stoping")
-        if self.p is not None:
-            self.p.shutdown()
+        if self._share_info.get_proxy() is not None:
+            self._share_info.get_proxy().shutdown()
         print("proxy is stoping")
 
 
