@@ -36,8 +36,6 @@ async def teardown():
 
 
 REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (0.9, 450), (1.2, 470), (1.5, 480)]
-
-
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
