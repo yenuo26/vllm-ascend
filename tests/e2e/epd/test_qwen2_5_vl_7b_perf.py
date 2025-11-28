@@ -46,7 +46,9 @@ REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (0.9, 450), (1.2, 470), (1.5, 480)]
 @pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                           request_rate: int, num_prompts: int, teardown):
-
+    env_dict = {
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+    }
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -93,6 +95,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                             vllm_server_args,
                             server_host="127.0.0.1",
                             server_port=api_port,
+                            env_dict=env_dict,
                             auto_port=False) as server:
 
         # warm up
