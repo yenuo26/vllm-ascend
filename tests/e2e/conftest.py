@@ -518,8 +518,6 @@ class ApiServer:
         }
 
     def start(self):
-        """启动服务器"""
-        # 初始化代理
         print(f"Starting API server on {self.host}:{self.port}")
         uvicorn.run(
             app=self.app,
@@ -695,6 +693,11 @@ class RemoteEPDServer:
                     "proxy_addr": f"{proxy_host}:37000",
                     "worker_addr": f"{host}:3800{i}"
                 }
+            elif role.lower() == "p":
+                return {
+                    "proxy_addr": f"{proxy_host}:37000",
+                    "worker_addr": f"{host}:3600{i}"
+                }
             else:
                 return {
                     "proxy_addr": f"{proxy_host}:37000",
@@ -705,6 +708,11 @@ class RemoteEPDServer:
                 return {
                     "proxy_addr": f"{self._default_addr_prefix}proxy",
                     "worker_addr": f"{self._default_addr_prefix}encoder_{i}"
+                }
+            elif role.lower() == "p":
+                return {
+                    "proxy_addr": f"{self._default_addr_prefix}proxy",
+                    "worker_addr": f"{self._default_addr_prefix}p_{i}"
                 }
             else:
                 return {
