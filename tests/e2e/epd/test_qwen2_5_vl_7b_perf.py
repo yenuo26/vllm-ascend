@@ -107,9 +107,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [(1.2, 800), (2.4, 1200), (3.6, 1500), (4.8, 1900), (6, 2500)]
-
-
+REQUEST_CONFIG = [(1.2, 700), (2.4, 1200), (3.6, 1500), (4.8, 1700), (6, 2000)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
@@ -203,7 +201,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                   index=aisbench_case["request_rate"] / 4)
 
 
-REQUEST_CONFIG = [(0.9, 600), (1.8, 1000), (2.7, 1600), (3.6, 1800),
+REQUEST_CONFIG = [(0.9, 500), (1.8, 1000), (2.7, 1400), (3.6, 1800),
                   (4.5, 2000)]
 @pytest.mark.asyncio
 @pytest.mark.perf

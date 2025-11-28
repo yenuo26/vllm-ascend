@@ -286,11 +286,17 @@ class ContainerManager:
                     "pkill", "-f", "-TERM", "python"  # 先发送TERM信号
                 ]
                 subprocess.run(kill_cmd, timeout=10, capture_output=True)
-                time.sleep(2)
+                time.sleep(10)
                 kill_cmd_force = [
                     "ssh", f"root@{host}",
                     "docker", "exec", container_name,
                     "pkill", "-f", "-KILL", "python"  # 强制杀死
+                ]
+                subprocess.run(kill_cmd_force, timeout=10, capture_output=True)
+                kill_cmd_force = [
+                    "ssh", f"root@{host}",
+                    "docker", "exec", container_name,
+                    "pkill", "-f", "-KILL", "VLLM"  # 强制杀死
                 ]
                 subprocess.run(kill_cmd_force, timeout=10, capture_output=True)
 
