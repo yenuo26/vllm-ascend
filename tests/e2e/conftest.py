@@ -526,7 +526,7 @@ class ApiServer:
                 app=self.app,
                 host=self.host,
                 port=self.port,
-                log_level="info",
+                log_level="debug",
                 access_log=True,
                 loop="asyncio",
                 log_config={
@@ -1057,7 +1057,7 @@ class RemoteEPDServer:
 
             await asyncio.sleep(check_interval)
         print("api server start timeout")
-        return False
+        raise RuntimeError("api server start failed, health check failed")
 
     def __init__(self,
                  run_mode: Literal["serve", "worker"],
