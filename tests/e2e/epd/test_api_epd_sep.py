@@ -1057,7 +1057,7 @@ DATASET_NAME = ["simulate_truth_samereq", "simulate_truth_diffreq"]
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("enable_prefix", ENABLE_PREFIX)
 async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
-                                       dataset_name: str, request_rate: float, router: str,enable_prefix: bool):
+                                       dataset_name: str, request_rate: float, enable_prefix: bool):
     '''
     数据集： simulate_truth_samereq、simulate_truth_diffreq
     部署形态： 1E1P1D、单机
@@ -1124,7 +1124,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": "{rpc_port}"}}'
         ]
     ]
-    if not prefix_cache:
+    if not enable_prefix:
         for args in pd_server_args:
             args.append("--no-enable-prefix-caching")
     mooncake_args = [
