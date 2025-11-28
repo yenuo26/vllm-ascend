@@ -339,13 +339,12 @@ class ContainerManager:
 
 class ApiServer:
 
-    def __init__(self, share_info: SharedInfoManager, is_load_image, host="127.0.0.1", port=8000):
+    def __init__(self, proxy: Proxy, is_load_image, host="127.0.0.1", port=8000):
         self.host = host
         self.port = port
-        self._share_info = share_info
         self.is_load_image = is_load_image
         self.app = FastAPI(title="VLLM Proxy API")
-        self.proxy = share_info.get_proxy()
+        self.proxy = proxy
         self._setup_routes()
 
 
@@ -645,14 +644,29 @@ class RemoteEPDServer:
         self._proc_list.append(proc)
 
     async def _start_api_server(self) -> None:
-        server = ApiServer(
-            host="127.0.0.1",
-            port=self.api_server_port,
-            is_load_image=self.is_image_load,
-            share_info=self._share_info
-        )
-        asyncio.create_task(server.start_async())
-        print("API server started as background task")
+        try:
+            server = ApiServer(
+                host="127.0.0.1",
+                port=self.api_server_port,
+                is_load_image=self.is_image_load,
+                proxy=self._share_info.get_proxy()
+            )
+            self._server_task = asyncio.create_task(server.start_async())
+
+            await asyncio.sleep(2)
+
+            if self._server_task.done():
+                try:
+                    await self._server_task
+                except Exception as e:
+                    print(f"服务器启动失败: {e}")
+                    raise
+            else:
+                print(f"API 服务器启动中，监听 {server.host}:{server.port}")
+
+        except Exception as e:
+            print(f"_start_api_server 错误: {e}")
+            raise
 
     def _start_mooncake(self) -> None:
         mooncake_args_list = list()
