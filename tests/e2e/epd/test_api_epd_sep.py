@@ -753,3 +753,150 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
                            port=api_port,
                            card_num=3,
                            aisbench_cases=aisbench_cases)
+
+REQUEST_RATE = [0.28, 0.78, 1.28, 1.78]
+DATASET_NAME = ["image_4", "simulate_truth"]
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("router", ROUTER)
+async def test_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
+                                       dataset_name: str, request_rate: float, router: str):
+    '''
+    数据集： simulate_truth、image_4
+    部署形态： 1E1P1D、单机
+    存储类型：EC mooncake , KV mooncake
+    ipv4
+    调度策略：RandomRouter， RoundRobinRouter，LeastInFlightRouter
+    '''
+    env_dict = {}
+    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
+    env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
+    env_dict["MC_MS_AUTO_DISC"] = "0"
+    env_dict["MC_USE_IPV6"] = "0"
+    env_dict["TRANSFER_PROTOCOL"] = "tcp"
+
+    rpc_port = 50053
+    http_metadata_server_port = 8083
+    metrics_port = 9003
+
+    mooncake_ip = ""
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+        f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
+        '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+        f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
+        '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
+        '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
+    ]
+
+    pd_server_args = [
+        [
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--ec-transfer-config",
+            f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 0, '
+            '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+            f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
+            '"fast_transfer_buffer_size": 1},'
+            '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
+            "--kv-transfer-config",
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            f'"kv_role": "kv_producer", "mooncake_rpc_port": "{rpc_port}"}}'
+        ],
+        [
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--kv-transfer-config",
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
+            '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
+            f'"kv_role": "kv_consumer", "mooncake_rpc_port": "{rpc_port}"}}'
+        ]
+    ]
+
+    mooncake_args = [
+            "--rpc_port", str(rpc_port), "--rpc_address", "0.0.0.0", "--enable_http_metadata_server=true",
+            "--http_metadata_server_host=0.0.0.0",
+            f"--http_metadata_server_port={http_metadata_server_port}", "--rpc_thread_num", "8",
+            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
+            "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
+    ]
+    proxy_args = ["--router", router]
+
+    warmup_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 50,
+        "max_out_len": 256,
+        "batch_size": 16,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0,
+        "seed": 77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate * 3,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E1P1D_mooncake_ipv6",
+        "threshold": 0.97
+    }]
+    api_port = 10001
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="mooncake",
+                               kv_store_type="mooncake",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=2,
+                               e_num=1,
+                               env_dict=env_dict,
+                               proxy_args=proxy_args,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args,
+                               mooncake_args=mooncake_args) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           card_num=3,
+                           aisbench_cases=aisbench_cases)
+
