@@ -321,6 +321,7 @@ async def test_1e1p1d_cross_tcp_mooncake_001(model: str, tp_size: int,
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
     env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
     env_dict["TRANSFER_PROTOCOL"] = "tcp"
+    env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
     e_num = 1
     p_num = 1
     d_num = 1
