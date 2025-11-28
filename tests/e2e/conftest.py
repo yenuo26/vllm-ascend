@@ -531,24 +531,26 @@ class ApiServer:
         )
 
     async def start_async(self):
-        """异步启动服务器（用于在其他异步环境中使用）"""
-        # 初始化代理
-        config = uvicorn.Config(
-            app=self.app,
-            host=self.host,
-            port=self.port,
-            log_level="info",
-            access_log=True,
-            loop="asyncio",
-            log_config={
-                "formatters": {
-                    "default": {"fmt": "[PROXY ] %(message)s"},
-                    "access": {"fmt": '[PROXY ] %(client_addr)s - "%(request_line)s" %(status_code)s'},
+        try:
+            config = uvicorn.Config(
+                app=self.app,
+                host=self.host,
+                port=self.port,
+                log_level="info",
+                access_log=True,
+                loop="asyncio",
+                log_config={
+                    "version": 1,
+                    "formatters": {
+                        "default": {"fmt": "[PROXY ] %(message)s"},
+                        "access": {"fmt": '[PROXY ] %(client_addr)s - "%(request_line)s" %(status_code)s'},
+                    }
                 }
-            }
-        )
-        server = uvicorn.Server(config)
-        await server.serve()
+            )
+            server = uvicorn.Server(config)
+            await server.serve()
+        except Exception as e:
+            print(f"api server start failed: {e}")
 
 class RemoteEPDServer:
     def get_proxy(self) -> Proxy:
@@ -646,8 +648,8 @@ class RemoteEPDServer:
 
     async def _start_api_server(self) -> None:
         server = ApiServer(
-            host="0.0.0.0",
-            port=8080,
+            host="127.0.0.1",
+            port=self.api_server_port,
             is_load_image=self.is_image_load,
             share_info=self._share_info
         )
