@@ -355,7 +355,7 @@ class ApiServer:
 
         @self.app.get("/health")
         async def health_check():
-            return await self._handle_health_check()
+            return {"status": "healthy", "timestamp": asyncio.get_event_loop().time()}
 
 
     async def _handle_chat_completions(self, request: Request):
@@ -508,13 +508,6 @@ class ApiServer:
 
     def _convert_image_mode(self, image, mode):
         return image.convert(mode)
-
-    async def _handle_health_check(self):
-        return {
-            "status": "healthy",
-            "timestamp": asyncio.get_event_loop().time(),
-            "model": self.proxy.model_config.model if self.proxy else "unknown"
-        }
 
     def start(self):
         print(f"Starting API server on {self.host}:{self.port}")
