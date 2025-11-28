@@ -279,35 +279,33 @@ def create_ttft_plot(result_file_names,
             ax.set_xticklabels(file_labels, rotation=45)
 
             ax.set_ylabel('ms', fontsize=12)
-            ax.set_title(f'TTFT Breakdown - Index: {index_val}', fontsize=14, fontweight='bold')
+            ax.set_title(f'TTFT Breakdown - Req Rate/Card: {index_val}', fontsize=14, fontweight='bold')
             ax.grid(axis='y', alpha=0.3)
 
-            # 添加图例（只在第一个子图添加）
-            if idx_idx == 0:
-                legend_elements = [
-                    Patch(facecolor=color_map[metrics_name], label=metrics_name)
-                    for metrics_name in metrics_names
-                ]
-                ax.legend(handles=legend_elements, loc='upper right')
+            legend_elements = [
+                Patch(facecolor=color_map[metrics_name], label=metrics_name)
+                for metrics_name in metrics_names
+            ]
+            ax.legend(handles=legend_elements, loc='upper right')
 
         # 设置整个图的标题和布局
-        plt.suptitle('TTFT Breakdown Analysis by Index', fontsize=16, fontweight='bold')
+        plt.suptitle('TTFT Breakdown Analysis', fontsize=16, fontweight='bold')
         plt.tight_layout(rect=[0, 0, 1, 0.96])  # 为总标题留出空间
 
         # 保存图片
         if len(result_file_names) == 1:
-            plt.savefig(f'./{result_file_names[0]}_by_index.png',
+            plt.savefig(f'./{result_file_names[0]}.png',
                         dpi=200,
                         pad_inches=0.1,
                         bbox_inches='tight')
-            print(f"Result figure is located in {result_file_names[0]}_by_index.png")
+            print(f"Result figure is located in {result_file_names[0]}.png")
         else:
             today = date.today()
-            plt.savefig(f'./{result_figure_prefix}_{today}_by_index.png',
+            plt.savefig(f'./{result_figure_prefix}_{today}.png',
                         dpi=200,
                         pad_inches=0.1,
                         bbox_inches='tight')
-            print(f"Result figure is located in {result_figure_prefix}_{today}_by_index.png")
+            print(f"Result figure is located in {result_figure_prefix}_{today}.png")
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
