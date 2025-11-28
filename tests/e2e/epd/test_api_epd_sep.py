@@ -978,7 +978,7 @@ async def test_1e1p1d_ipc_mooncake_ipv4_001(model: str, tp_size: int,
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": "{rpc_port}"}}'
         ]
     ]
-    if not prefix_cache:
+    if not enable_prefix:
         for args in pd_server_args:
             args.append("--no-enable-prefix-caching")
     mooncake_args = [
