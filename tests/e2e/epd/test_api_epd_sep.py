@@ -783,7 +783,7 @@ async def test_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
     http_metadata_server_port = 8083
     metrics_port = 9003
 
-    mooncake_ip = ""
+    mooncake_ip = "0.0.0.0"
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
