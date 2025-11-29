@@ -35,7 +35,7 @@ async def teardown():
                          result_figure_prefix=f"{dataset}_ttft")
 
 
-REQUEST_CONFIG = [(0.3, 180), (0.6, 400), (0.9, 450), (1.2, 470), (1.5, 480)]
+REQUEST_CONFIG = [(0.2, 170), (0.4, 250), (0.6, 300), (0.8, 420), (1.0, 450)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
@@ -108,7 +108,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [(1.2, 700), (2.4, 1200), (3.6, 1500), (4.8, 1700), (6, 2000)]
+REQUEST_CONFIG = [(0.2, 600), (0.4, 800), (0.6, 1100), (0.8, 1200), (1.0, 1300)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
@@ -143,6 +143,8 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
 
+    proxy_args = ["--router", "LeastInFlightRouter"]
+
     warmup_cases = [{
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
@@ -170,7 +172,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate,
+        "request_rate": request_rate*4,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
@@ -185,6 +187,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                pd_num=3,
                                e_num=1,
                                env_dict=env_dict,
+                               proxy_args=proxy_args,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # warm up
@@ -202,8 +205,8 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                   index=aisbench_case["request_rate"] / 4)
 
 
-REQUEST_CONFIG = [(0.9, 500), (1.8, 1000), (2.7, 1400), (3.6, 1800),
-                  (4.5, 2000)]
+REQUEST_CONFIG = [(0.2, 300), (0.4, 600), (0.6, 900), (0.8, 1200),
+                  (1.0, 1300)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
@@ -239,6 +242,8 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
 
+    proxy_args = ["--router", "LeastInFlightRouter"]
+
     warmup_cases = [{
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
@@ -265,7 +270,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate,
+        "request_rate": request_rate*3,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E2PD",
@@ -280,6 +285,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                                pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
+                               proxy_args=proxy_args,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
         # warm up
