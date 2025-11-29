@@ -22,12 +22,12 @@ import subprocess
 import traceback
 from collections import defaultdict
 from datetime import date
-from matplotlib.patches import Patch
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import pandas as pd
 import numpy as np
+import pandas as pd
+from matplotlib.patches import Patch
 
 
 def get_package_location(package_name):
@@ -156,9 +156,10 @@ def create_result_plot(result_file_names,
         print(f"ERROR: {str(e)}")
 
 
+
 def create_ttft_plot(result_file_names,
                      result_figure_prefix="test_perf_result"):
-    plt.rcParams['axes.unicode_minus'] = False  #display a minus sign
+    plt.rcParams['axes.unicode_minus'] = False  # display a minus sign
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
     metrics_names = [
@@ -170,63 +171,86 @@ def create_ttft_plot(result_file_names,
         for i, name in enumerate(metrics_names)
     }
 
-    fig, ax = plt.subplots(figsize=(20, 23))
     try:
-        bar_width = 0.2
-        x_labels = []
-        x_poss = []
-        for i, file_name in enumerate(result_file_names):
+        # 读取所有数据并合并
+        all_data = []
+        for file_name in result_file_names:
             file_data = pd.read_csv(f"./{file_name}.csv")
-            x_pos = np.arange(len(file_data)) + i * bar_width
-            x_poss.extend(x_pos)
+            file_data['source_file'] = file_name
+
+            # 计算各项指标
             pd_queue_columns = [
                 col for col in file_data.columns
                 if 'PD' in col and 'queue' in col
             ]
-            file_data['pd_queue_mean'] = file_data[pd_queue_columns].mean(
-                axis=1)
+            file_data['pd_queue_mean'] = file_data[pd_queue_columns].mean(axis=1)
+
             e_queue_columns = [
                 col for col in file_data.columns
                 if 'E' in col and 'queue' in col
             ]
             file_data['e_queue_mean'] = file_data[e_queue_columns].mean(axis=1)
+
             pd_prefill_columns = [
                 col for col in file_data.columns
                 if 'PD' in col and 'prefill' in col
             ]
+            file_data['pd_prefill_mean'] = file_data[pd_prefill_columns].mean(axis=1)
 
-            file_data['pd_prefill_mean'] = file_data[pd_prefill_columns].mean(
-                axis=1)
             pd_first_token_columns = [
                 col for col in file_data.columns
                 if 'PD' in col and 'first' in col
             ]
-            file_data['pd_first_token_mean'] = file_data[pd_first_token_columns].mean(
-                axis=1)
-            file_data['pd_decode_mean'] = file_data['pd_first_token_mean'] - file_data['pd_prefill_mean'] - file_data['pd_queue_mean']
+            file_data['pd_first_token_mean'] = file_data[pd_first_token_columns].mean(axis=1)
+
+            file_data['pd_decode_mean'] = file_data['pd_first_token_mean'] - file_data['pd_prefill_mean'] - file_data[
+                'pd_queue_mean']
+
             e_prefill_columns = [
                 col for col in file_data.columns
                 if 'E' in col and 'prefill' in col
             ]
-            file_data['e_prefill_mean'] = file_data[e_prefill_columns].mean(
-                axis=1)
+            file_data['e_prefill_mean'] = file_data[e_prefill_columns].mean(axis=1)
+
             ttft_columns = [
                 col for col in file_data.columns
                 if 'PD' in col and 'ttft' in col
             ]
-            file_data['ttft_mean'] = file_data[ttft_columns].mean(
-                axis=1)
+            file_data['ttft_mean'] = file_data[ttft_columns].mean(axis=1)
 
-            file_data['others'] = file_data['ttft_mean'] - file_data[
-                'e_prefill_mean'] - file_data[
-                    'e_queue_mean'] - file_data[
-                'transfer_to_encode'] - file_data['transfer_to_pd'] - file_data['pd_first_token_mean']
+            file_data['others'] = file_data['ttft_mean'] - file_data['e_prefill_mean'] - file_data['e_queue_mean'] - \
+                                  file_data['transfer_to_encode'] - file_data['transfer_to_pd'] - file_data[
+                                      'pd_first_token_mean']
 
-            bottom = np.zeros(len(file_data['index']))
+            all_data.append(file_data)
 
+        # 合并所有数据
+        combined_data = pd.concat(all_data, ignore_index=True)
+
+        # 获取所有唯一的 index 值
+        unique_indices = combined_data['index'].unique()
+
+        # 创建子图布局
+        n_indices = len(unique_indices)
+        fig, axes = plt.subplots(n_indices, 1, figsize=(20, 6 * n_indices))
+        if n_indices == 1:
+            axes = [axes]  # 确保 axes 是列表形式
+
+        bar_width = 0.15  # 调整宽度以适应多个文件
+
+        for idx_idx, index_val in enumerate(unique_indices):
+            ax = axes[idx_idx]
+
+            # 筛选当前 index 的数据
+            index_data = combined_data[combined_data['index'] == index_val]
+
+            x_pos = np.arange(len(index_data))
+            bottom = np.zeros(len(index_data))
+
+            # 为每个文件绘制堆叠柱状图
             for metrics_name in metrics_names:
                 bars = ax.bar(x_pos,
-                              file_data[metrics_name],
+                              index_data[metrics_name],
                               bottom=bottom,
                               width=bar_width,
                               linestyle='-',
@@ -235,49 +259,53 @@ def create_ttft_plot(result_file_names,
                               alpha=0.7,
                               linewidth=0.8)
 
-                for value, bar, single_bottom in zip(file_data[metrics_name],
+                # 添加数值标签
+                for value, bar, single_bottom in zip(index_data[metrics_name],
                                                      bars, bottom):
-                    ax.text(bar.get_x() + bar.get_width() / 2,
-                            single_bottom,
-                            value,
-                            ha='center',
-                            va='center',
-                            fontsize=8,
-                            fontweight='bold',
-                            color='black')
-                bottom += np.array(file_data[metrics_name])
+                    if value > 0:  # 只显示大于0的值
+                        ax.text(bar.get_x() + bar.get_width() / 2,
+                                single_bottom + value / 2,  # 在柱状图中间显示
+                                f'{value:.1f}',
+                                ha='center',
+                                va='center',
+                                fontsize=8,
+                                fontweight='bold',
+                                color='black')
+                bottom += np.array(index_data[metrics_name])
 
-            for value in file_data['index']:
-                x_labels.append(f"{value}_{file_name}")
+            # 设置 x 轴标签
+            file_labels = [f"{row['source_file']}" for _, row in index_data.iterrows()]
+            ax.set_xticks(x_pos)
+            ax.set_xticklabels(file_labels, rotation=45)
 
-        legend_elements = [
-            Patch(facecolor=color_map[metrics_name], label=metrics_name)
-            for metrics_name in metrics_names
-        ]
-        ax.legend(handles=legend_elements, loc='upper left')
+            ax.set_ylabel('ms', fontsize=12)
+            ax.set_title(f'TTFT Breakdown - Req Rate/Card: {index_val}', fontsize=14, fontweight='bold')
+            ax.grid(axis='y', alpha=0.3)
 
-        ax.set_xlabel('Request Rate/Card(req/s)', fontsize=12)
-        ax.set_xticks(x_poss)
-        ax.set_xticklabels(x_labels)
-        ax.set_ylabel('ms', fontsize=12)
-        ax.set_title('TTFT Breakdown', fontsize=14, fontweight='bold')
-        ax.grid(axis='y', alpha=0.3)
+            legend_elements = [
+                Patch(facecolor=color_map[metrics_name], label=metrics_name)
+                for metrics_name in metrics_names
+            ]
+            ax.legend(handles=legend_elements, loc='upper right')
 
+        # 设置整个图的标题和布局
+        plt.suptitle('TTFT Breakdown Analysis', fontsize=16, fontweight='bold')
+        plt.tight_layout(rect=[0, 0, 1, 0.96])  # 为总标题留出空间
+
+        # 保存图片
         if len(result_file_names) == 1:
             plt.savefig(f'./{result_file_names[0]}.png',
                         dpi=200,
                         pad_inches=0.1,
                         bbox_inches='tight')
-            print(f"Result figure is locate in {result_file_names[0]}.png")
+            print(f"Result figure is located in {result_file_names[0]}.png")
         else:
             today = date.today()
             plt.savefig(f'./{result_figure_prefix}_{today}.png',
                         dpi=200,
                         pad_inches=0.1,
                         bbox_inches='tight')
-            print(
-                f"Result figure is locate in {result_figure_prefix}_{today}.png"
-            )
+            print(f"Result figure is located in {result_figure_prefix}_{today}.png")
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
