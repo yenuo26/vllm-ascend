@@ -840,7 +840,6 @@ async def test_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
             "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
             "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
     ]
-    proxy_args = ["--router", router]
 
     warmup_cases = [{
         "case_type": "performance",
@@ -884,7 +883,6 @@ async def test_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
                                pd_num=2,
                                e_num=1,
                                env_dict=env_dict,
-                               proxy_args=proxy_args,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
                                mooncake_args=mooncake_args) as server:
