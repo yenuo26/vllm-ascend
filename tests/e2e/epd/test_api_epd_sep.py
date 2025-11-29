@@ -1969,12 +1969,12 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
 REQUEST_RATE = [1.78]
 DATASET_NAME = ["simulate_truth"]
 @pytest.mark.asyncio
-@pytest.mark.perf
+@pytest.mark.stability
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int,
+async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_stability_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float):
     '''
     数据集： simulate_truth
@@ -1983,6 +1983,7 @@ async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: in
     通信方式： TCP
     开启前缀缓存
     ipv4
+    stability
     '''
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
@@ -1997,9 +1998,9 @@ async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: in
     cluster = ClusterManager()
     for i in range(p_num):
         cluster.add_node_info("e", 0, CONTAINER_NAME)
-    for i in range(pd_num):
+    for i in range(p_num):
         cluster.add_node_info("p", 1, CONTAINER_NAME)
-    for i in range(pd_num):
+    for i in range(d_num):
         cluster.add_node_info("d", 2, CONTAINER_NAME)
 
 
