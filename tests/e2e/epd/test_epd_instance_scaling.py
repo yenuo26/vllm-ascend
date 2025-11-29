@@ -66,9 +66,9 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
         f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}',
-        "--metastore-client-config"
+        "--metastore-client-config",
         '{"metastore_client": "RedisMetastoreClient",'
-        '"metastore_address": "\"redis://redis.example.com:6380/0\""}'
+        '"metastore_address": "redis://redis.example.com:6380/0"}'
     ]
 
     pd_server_args = [
@@ -90,9 +90,9 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_producer", "mooncake_rpc_port": "0"}}',
-            "--metastore-client-config"
+            "--metastore-client-config",
             '{"metastore_client": "RedisMetastoreClient",'
-            '"metastore_address": "\"redis://redis.example.com:6380/0\""}'
+            '"metastore_address": "redis://redis.example.com:6380/0"}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -105,9 +105,9 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": "0"}}',
-            "--metastore-client-config"
+            "--metastore-client-config",
             '{"metastore_client": "RedisMetastoreClient",'
-            '"metastore_address": "\"redis://redis.example.com:6380/0\""}'
+            '"metastore_address": "redis://redis.example.com:6380/0"}'
         ]
     ]
 
@@ -120,7 +120,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
     ]
 
     proxy_args = [
-            "--metastore-client-config"
+            "--metastore-client-config",
             '{"metastore_client": "RedisMetastoreClient",'
             '"metastore_address": "redis://redis.example.com:6380/0"}'
     ]

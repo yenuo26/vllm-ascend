@@ -624,6 +624,9 @@ class RemoteEPDServer:
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
+        if self.proxy_args is not None and "--metastore-client-config" in self.proxy_args:
+            self.proxy_config['metastore_client_config'] = json.dumps(self.proxy_args[self.proxy_args.index("--metastore-client-config") + 1])
+
         print(f"proxy params is: {self.proxy_config}")
         p = Proxy(**self.proxy_config)
         if self.proxy_args is not None and "--router" in self.proxy_args:
