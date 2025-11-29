@@ -455,7 +455,7 @@ class RemoteEPDServer:
             else:
                 host = self.cluster_ips[0]
             return {
-                "proxy_addr": f"{self.cluster_ips[0]}:get_open_port()",
+                "proxy_addr": f"{self.cluster_ips[0]}:{get_open_port()}",
                 "worker_addr": f"{host}:{get_open_port()}"
             }
         else:
