@@ -455,7 +455,7 @@ class RemoteEPDServer:
             else:
                 host = self.cluster_ips[0]
             return {
-                "proxy_addr": f"{self.cluster_ips[0]}:{get_open_port()}",
+                "proxy_addr": f"{self.cluster_ips[0]}:{self.proxy_port}",
                 "worker_addr": f"{host}:{get_open_port()}"
             }
         else:
@@ -825,6 +825,7 @@ class RemoteEPDServer:
         self.e_serve_args_list = list()
         self.pd_serve_args_list = list()
         self.node_info = node_info
+        self.proxy_port = get_open_port()
         self.model = None
         if isinstance(e_serve_args, list):
             if not all(isinstance(item, list) for item in e_serve_args):
