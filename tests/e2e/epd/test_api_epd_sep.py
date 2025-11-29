@@ -907,9 +907,9 @@ DATASET_NAME = ["simulate_truth_samereq", "simulate_truth_diffreq"]
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("enable_prefix", ENABLE_PREFIX)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1p1d_ipc_mooncake_ipv4_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float, enable_prefix: bool):
     '''
@@ -1216,6 +1216,7 @@ async def test_2e3p3d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
     开启前缀缓存
     调度策略：RandomRouter， RoundRobinRouter，LeastInFlightRouter
     通信方式： TCP
+
     '''
     env_dict = {}
     env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
@@ -1560,7 +1561,7 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
         f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
         f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
@@ -1575,14 +1576,14 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
-            f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+            f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
             f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
@@ -1594,7 +1595,7 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
@@ -1719,7 +1720,7 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
         f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
         f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
@@ -1734,14 +1735,14 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
-            f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+            f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
             f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
-            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
@@ -1753,7 +1754,7 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
-            f'{{"kv_connector_extra_config": {{"local_hostname": "{mooncake_ip}", '
+            f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
@@ -1876,7 +1877,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
         f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
         f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
@@ -1889,7 +1890,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[2]}",'
         f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 0, '
         '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
         f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
