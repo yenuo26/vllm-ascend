@@ -118,7 +118,6 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
             "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
     ]
-
     proxy_args = [
             "--metastore-client-config",
             '{"metastore_client": "RedisMetastoreClient",'
