@@ -780,9 +780,9 @@ async def test_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
     env_dict["TRANSFER_PROTOCOL"] = "tcp"
     env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
 
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = "0.0.0.0"
     e_server_args = [
@@ -926,9 +926,9 @@ async def test_1e1p1d_ipc_mooncake_ipv4_001(model: str, tp_size: int,
     env_dict["TRANSFER_PROTOCOL"] = "ipc"
     env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
 
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = "0.0.0.0"
     e_server_args = [
@@ -1074,9 +1074,9 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
     env_dict["TRANSFER_PROTOCOL"] = "ipc"
     env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
 
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = "::1"
     e_server_args = [
@@ -1224,9 +1224,9 @@ async def test_2e3p3d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
     env_dict["TRANSFER_PROTOCOL"] = "tcp"
     env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
 
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = "0.0.0.0"
     e_num = 2
@@ -1382,9 +1382,9 @@ async def test_2e3p3d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
     env_dict["TRANSFER_PROTOCOL"] = "tcp"
     env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
 
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     e_num = 2
     p_num = 3
@@ -1548,9 +1548,9 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         cluster.add_node_info("d", 1, CONTAINER_NAME)
 
     node_ips = get_cluster_ips()
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = node_ips[0]
     e_server_args = [
@@ -1707,9 +1707,9 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int
         cluster.add_node_info("d", 1, CONTAINER_NAME)
 
     node_ips = get_cluster_ips(family=socket.AF_INET6)
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = node_ips[0]
     e_server_args = [
@@ -1864,9 +1864,9 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
 
 
     node_ips = get_cluster_ips()
-    rpc_port = 50053
-    http_metadata_server_port = 8083
-    metrics_port = 9003
+    rpc_port = get_open_port()
+    http_metadata_server_port = get_open_port()
+    metrics_port = get_open_port()
 
     mooncake_ip = node_ips[0]
     e_server_args = [
