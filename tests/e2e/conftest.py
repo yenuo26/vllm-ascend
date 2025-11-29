@@ -454,22 +454,10 @@ class RemoteEPDServer:
                     host = self.cluster_ips[0]
             else:
                 host = self.cluster_ips[0]
-            proxy_host = self.cluster_ips[0]
-            if role.lower() == "e":
-                return {
-                    "proxy_addr": f"{proxy_host}:37000",
-                    "worker_addr": f"{host}:3800{i}"
-                }
-            elif role.lower() == "p":
-                return {
-                    "proxy_addr": f"{proxy_host}:37000",
-                    "worker_addr": f"{host}:3600{i}"
-                }
-            else:
-                return {
-                    "proxy_addr": f"{proxy_host}:37000",
-                    "worker_addr": f"{host}:3900{i}"
-                }
+            return {
+                "proxy_addr": f"{self.cluster_ips[0]}:{self.proxy_port}",
+                "worker_addr": f"{host}:{get_open_port()}"
+            }
         else:
             if role.lower() == "e":
                 return {
@@ -636,6 +624,9 @@ class RemoteEPDServer:
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
+        if self.proxy_args is not None and "--metastore-client-config" in self.proxy_args:
+            self.proxy_config['metastore_client_config'] = json.loads(self.proxy_args[self.proxy_args.index("--metastore-client-config") + 1])
+
         print(f"proxy params is: {self.proxy_config}")
         p = Proxy(**self.proxy_config)
         if self.proxy_args is not None and "--router" in self.proxy_args:
@@ -837,6 +828,7 @@ class RemoteEPDServer:
         self.e_serve_args_list = list()
         self.pd_serve_args_list = list()
         self.node_info = node_info
+        self.proxy_port = get_open_port()
         self.model = None
         if isinstance(e_serve_args, list):
             if not all(isinstance(item, list) for item in e_serve_args):
@@ -864,6 +856,8 @@ class RemoteEPDServer:
             self._share_info.open_breakdown()
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
+        if self.env_dict.get("MC_USE_IPV6", "") == "1":
+            self.enable_ipv6 = True
         if node_info is not None:
             if self.env_dict.get("MC_USE_IPV6", "") == "1":
                 self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
