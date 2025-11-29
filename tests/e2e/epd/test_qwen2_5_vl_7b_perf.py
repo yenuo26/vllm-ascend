@@ -110,7 +110,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [("image4", 0.2, 500), ("image4", 0.4, 800), ("image4", 0.6, 1200), ("image4", 0.8, 1300), ("image4", 1.0, 1400),
+REQUEST_CONFIG = [("image_4", 0.2, 500), ("image_4", 0.4, 800), ("image_4", 0.6, 1200), ("image_4", 0.8, 1300), ("image_4", 1.0, 1400),
                   ("simulate_truth", 0.2, 500), ("simulate_truth", 0.3, 700), ("simulate_truth", 0.4, 800), ("simulate_truth", 0.5, 1000),
                   ("simulate_truth", 0.6, 1100)]
 @pytest.mark.asyncio
