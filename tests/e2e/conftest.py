@@ -454,22 +454,10 @@ class RemoteEPDServer:
                     host = self.cluster_ips[0]
             else:
                 host = self.cluster_ips[0]
-            proxy_host = self.cluster_ips[0]
-            if role.lower() == "e":
-                return {
-                    "proxy_addr": f"{proxy_host}:37000",
-                    "worker_addr": f"{host}:3800{i}"
-                }
-            elif role.lower() == "p":
-                return {
-                    "proxy_addr": f"{proxy_host}:37000",
-                    "worker_addr": f"{host}:3600{i}"
-                }
-            else:
-                return {
-                    "proxy_addr": f"{proxy_host}:37000",
-                    "worker_addr": f"{host}:3900{i}"
-                }
+            return {
+                "proxy_addr": f"{self.cluster_ips[0]}:get_open_port()",
+                "worker_addr": f"{host}:{get_open_port()}"
+            }
         else:
             if role.lower() == "e":
                 return {
@@ -864,6 +852,8 @@ class RemoteEPDServer:
             self._share_info.open_breakdown()
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
+        if self.env_dict.get("MC_USE_IPV6", "") == "1":
+            self.enable_ipv6 = True
         if node_info is not None:
             if self.env_dict.get("MC_USE_IPV6", "") == "1":
                 self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
