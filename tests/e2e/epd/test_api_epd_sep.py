@@ -1204,15 +1204,17 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("router", ROUTER)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_2e3p3d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
-                                       dataset_name: str, request_rate: float):
+                                       dataset_name: str, request_rate: float, router: str):
     '''
     数据集： simulate_truth
     部署形态： 2E3P3D、单机
     存储类型：EC mooncake , KV mooncake
     ipv4
     开启前缀缓存
+    调度策略：RandomRouter， RoundRobinRouter，LeastInFlightRouter
     通信方式： TCP
     '''
     env_dict = {}
@@ -1294,6 +1296,7 @@ async def test_2e3p3d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
             "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
             "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
     ]
+    proxy_args = ["--router", router]
 
     warmup_cases = [{
         "case_type": "performance",
@@ -1337,6 +1340,7 @@ async def test_2e3p3d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
                                pd_num=6,
                                e_num=2,
                                env_dict=env_dict,
+                               proxy_args=proxy_args,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
                                mooncake_args=mooncake_args) as server:
