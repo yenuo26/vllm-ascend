@@ -89,7 +89,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            f'"kv_role": "kv_producer", "mooncake_rpc_port": "0"}}'
+            f'"kv_role": "kv_producer", "mooncake_rpc_port": "0"}}',
             "--metastore-client-config"
             '{"metastore_client": "RedisMetastoreClient",'
             '"metastore_address": "redis://redis.example.com:6380/0"}'
@@ -104,7 +104,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
             f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            f'"kv_role": "kv_consumer", "mooncake_rpc_port": "0"}}'
+            f'"kv_role": "kv_consumer", "mooncake_rpc_port": "0"}}',
             "--metastore-client-config"
             '{"metastore_client": "RedisMetastoreClient",'
             '"metastore_address": "redis://redis.example.com:6380/0"}'
