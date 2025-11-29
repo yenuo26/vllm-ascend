@@ -68,7 +68,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}',
         "--metastore-client-config"
         '{"metastore_client": "RedisMetastoreClient",'
-        '"metastore_address": "redis://redis.example.com:6380/0"}'
+        '"metastore_address": "\"redis://redis.example.com:6380/0\""}'
     ]
 
     pd_server_args = [
@@ -92,7 +92,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"kv_role": "kv_producer", "mooncake_rpc_port": "0"}}',
             "--metastore-client-config"
             '{"metastore_client": "RedisMetastoreClient",'
-            '"metastore_address": "redis://redis.example.com:6380/0"}'
+            '"metastore_address": "\"redis://redis.example.com:6380/0\""}'
         ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
@@ -107,7 +107,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": "0"}}',
             "--metastore-client-config"
             '{"metastore_client": "RedisMetastoreClient",'
-            '"metastore_address": "redis://redis.example.com:6380/0"}'
+            '"metastore_address": "\"redis://redis.example.com:6380/0\""}'
         ]
     ]
 
