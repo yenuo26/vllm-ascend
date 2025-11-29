@@ -10,6 +10,7 @@ import msgspec
 import json
 import numpy as np
 import uvicorn
+import uvloop
 import lm_service.envs as lm_service_envs
 import vllm.envs as envs
 
@@ -24,6 +25,7 @@ from vllm.multimodal.image import convert_image_mode
 from vllm.sampling_params import SamplingParams
 
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 app = FastAPI()
 
@@ -202,6 +204,18 @@ async def health_check():
     return {"status": "healthy", "timestamp": asyncio.get_event_loop().time()}
 
 
+@asynccontextmanager
+async def controller_ctx(proxy_config_dict):
+    c = Proxy(**proxy_config_dict)
+    yield c
+    c.shutdown()
+
+async def run_server_worker(proxy_config_dict, host, port) -> None:
+    async with controller_ctx(proxy_config_dict) as app.state.proxy:
+        config = uvicorn.Config(app, host=host, port=port)
+        server = uvicorn.Server(config)
+        await server.serve()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="VLLM Disaggregated Proxy")
     parser.add_argument("--host",
@@ -222,12 +236,4 @@ if __name__ == "__main__":
         proxy_config_dict["router"] = RoundRobinRouter
     elif proxy_config_dict.get("router", "test") == "LeastInFlightRouter":
         proxy_config_dict["router"] = LeastInFlightRouter
-    app.state.proxy = Proxy(**proxy_config_dict)
-    app.state.is_load_image = args.is_load_image
-    print(f"Starting API server on {args.host}:{args.port}")
-    uvicorn.run(app=app,
-                host=args.host,
-                port=args.port,
-                log_level="info",
-                access_log=True,
-                loop="asyncio")
+    uvloop.run(run_server_worker(proxy_config_dict, args.host, args.port))

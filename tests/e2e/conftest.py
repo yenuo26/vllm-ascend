@@ -595,18 +595,25 @@ class RemoteEPDServer:
     def _start_zmq_proxy(self):
         for key, value in self.env_dict.items():
             os.environ[key] = value
+
         self.proxy_config = {
-            'proxy_addr': self.proxy_addr,
-            'encode_addr_list': self._share_info.get_addr_list("e"),
             'model_name': self.model
         }
-        if self._share_info.get_addr_list("pd"):
-            self.proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
+        if self.proxy_args is not None and "--metastore-client-config" in self.proxy_args:
+            self.proxy_config['metastore_client_config'] = json.loads(
+                self.proxy_args[self.proxy_args.index("--metastore-client-config") + 1])
         else:
             self.proxy_config.update({
-                'p_addr_list': self._share_info.get_addr_list("p"),
-                'd_addr_list': self._share_info.get_addr_list("d")
+                'proxy_addr': self.proxy_addr,
+                'encode_addr_list': self._share_info.get_addr_list("e"),
             })
+            if self._share_info.get_addr_list("pd"):
+                self.proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
+            else:
+                self.proxy_config.update({
+                    'p_addr_list': self._share_info.get_addr_list("p"),
+                    'd_addr_list': self._share_info.get_addr_list("d")
+                })
         if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
             self.proxy_config['transfer_protocol'] = self.proxy_args[
                 self.proxy_args.index("--transfer_protocol") + 1]
@@ -624,8 +631,6 @@ class RemoteEPDServer:
                 self.proxy_config['router'] = RoundRobinRouter
             else:
                 self.proxy_config['router'] = LeastInFlightRouter
-        if self.proxy_args is not None and "--metastore-client-config" in self.proxy_args:
-            self.proxy_config['metastore_client_config'] = json.loads(self.proxy_args[self.proxy_args.index("--metastore-client-config") + 1])
 
         print(f"proxy params is: {self.proxy_config}")
         p = Proxy(**self.proxy_config)
