@@ -236,4 +236,5 @@ if __name__ == "__main__":
         proxy_config_dict["router"] = RoundRobinRouter
     elif proxy_config_dict.get("router", "test") == "LeastInFlightRouter":
         proxy_config_dict["router"] = LeastInFlightRouter
+    app.state.is_load_image = args.is_load_image
     uvloop.run(run_server_worker(proxy_config_dict, args.host, args.port))
