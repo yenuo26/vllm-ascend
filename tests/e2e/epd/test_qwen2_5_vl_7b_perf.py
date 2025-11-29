@@ -35,13 +35,15 @@ async def teardown():
                          result_figure_prefix=f"{dataset}_ttft")
 
 
-REQUEST_CONFIG = [(0.2, 170), (0.4, 250), (0.6, 300), (0.8, 420), (1.0, 450)]
+REQUEST_CONFIG = [("image_4", 0.2, 170), ("image_4", 0.4, 250), ("image_4", 0.6, 300), ("image_4", 0.8, 420), ("image_4", 1.0, 450),
+                  ("simulate_truth", 0.2, 170), ("simulate_truth", 0.3, 200), ("simulate_truth", 0.4, 250),
+                  ("simulate_truth", 0.5, 280),
+                  ("simulate_truth", 0.6, 300)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
+@pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                           request_rate: int, num_prompts: int, teardown):
     env_dict = {
@@ -108,13 +110,14 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [(0.2, 600), (0.4, 800), (0.6, 1100), (0.8, 1200), (1.0, 1300)]
+REQUEST_CONFIG = [("image4", 0.2, 500), ("image4", 0.4, 800), ("image4", 0.6, 1200), ("image4", 0.8, 1300), ("image4", 1.0, 1400),
+                  ("simulate_truth", 0.2, 500), ("simulate_truth", 0.3, 700), ("simulate_truth", 0.4, 800), ("simulate_truth", 0.5, 1000),
+                  ("simulate_truth", 0.6, 1100)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
+@pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
     env_dict = {
@@ -205,14 +208,14 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                   index=aisbench_case["request_rate"] / 4)
 
 
-REQUEST_CONFIG = [(0.2, 300), (0.4, 600), (0.6, 900), (0.8, 1200),
-                  (1.0, 1300)]
+REQUEST_CONFIG = [("image_4", 0.2, 300), ("image_4", 0.4, 600), ("image_4", 0.6, 900), ("image_4", 0.8, 1200),
+                  ("image_4", 1.0, 1300), ("simulate_truth", 0.2, 300), ("simulate_truth", 0.3, 500), ("simulate_truth", 0.4, 600), ("simulate_truth", 0.5, 800),
+                  ("simulate_truth", 0.6, 900)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
+@pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
     env_dict = {
