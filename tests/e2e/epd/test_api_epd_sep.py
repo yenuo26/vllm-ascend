@@ -1901,7 +1901,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
     ]
     for _ in range(e_num):
         e_server_args.append(e_arg)
-    for _ in range(pd_num):
+    for _ in range(e_num):
         pd_server_args.append(pd_arg)
 
     mooncake_args = [
@@ -1944,7 +1944,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         "request_rate": request_rate * (e_num+pd_num),
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_proxy_1E1P1D_cross_tcp_mooncake_ipv4",
+        "result_file_name": f"{dataset_name}_proxy_1E_2PD_cross_tcp_mooncake_ipv4",
         "threshold": 0.97
     }]
     api_port = 10001
