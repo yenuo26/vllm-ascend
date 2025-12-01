@@ -2439,7 +2439,8 @@ async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_acc_001(model: str, tp_size
         run_aisbench_cases(model=model,
                            port=api_port,
                            card_num=e_num+p_num+d_num,
-                           aisbench_cases=aisbench_cases)
+                           aisbench_cases=aisbench_cases,
+                           save=False)
 
 REQUEST_RATE = [1.78]
 DATASET_NAME = ["simulate_truth"]
