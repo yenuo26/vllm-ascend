@@ -1901,7 +1901,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
     ]
     for _ in range(e_num):
         e_server_args.append(e_arg)
-    for _ in range(e_num):
+    for _ in range(pd_num):
         pd_server_args.append(pd_arg)
 
     mooncake_args = [
