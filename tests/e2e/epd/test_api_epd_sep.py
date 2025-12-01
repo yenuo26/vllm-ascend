@@ -2197,7 +2197,7 @@ async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_stability_001(model: str, t
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
+            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_producer", "mooncake_rpc_port": "{rpc_port}"}}'
         ],
@@ -2209,7 +2209,7 @@ async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_stability_001(model: str, t
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[2]}", '
             f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
+            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": "{rpc_port}"}}'
         ]
