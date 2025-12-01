@@ -1858,7 +1858,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
     e_num = 1
     pd_num = 2
     cluster = ClusterManager()
-    for i in range(p_num):
+    for i in range(e_num):
         cluster.add_node_info("e", 1, CONTAINER_NAME)
     for i in range(pd_num):
         cluster.add_node_info("pd", 2, CONTAINER_NAME)
