@@ -2285,16 +2285,15 @@ async def test_proxy2e_3p_3d_cross_tcp_mooncake_ipv4_001(model: str, tp_size: in
                            card_num=e_num+p_num+d_num,
                            aisbench_cases=aisbench_cases)
 
-REQUEST_RATE = [0.28, 0.78, 1.28]
+
 DATASET_NAME = ["textvqa_subset"]
 @pytest.mark.asyncio
 @pytest.mark.acc
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_proxy1e_1p_1d_cross_tcp_mooncake_ipv4_acc_001(model: str, tp_size: int,
-                                       dataset_name: str, request_rate: float):
+                                       dataset_name: str):
     '''
     数据集： textvqa_subset
     部署形态： 1E1P1D、proxyE-P_D跨机
