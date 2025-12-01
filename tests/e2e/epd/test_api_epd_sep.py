@@ -1856,6 +1856,8 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
     env_dict["TRANSFER_PROTOCOL"] = "tcp"
     env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
     e_num = 1
+    e_server_args = list()
+    pd_server_args = list()
     pd_num = 2
     cluster = ClusterManager()
     for i in range(e_num):
@@ -1870,7 +1872,8 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
     metrics_port = get_open_port()
 
     mooncake_ip = node_ips[0]
-    e_server_args = [
+
+    e_arg = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
@@ -1883,7 +1886,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
-    pd_server_args = [
+    pd_arg = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
@@ -1896,6 +1899,10 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         '"fast_transfer_buffer_size": 1},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
+    for _ in range(e_num):
+        e_server_args.append(e_arg)
+    for _ in range(pd_num):
+        pd_server_args.append(pd_arg)
 
     mooncake_args = [
             "--rpc_port", str(rpc_port), "--rpc_address", f"{mooncake_ip}", "--enable_http_metadata_server=true",
@@ -1934,7 +1941,7 @@ async def test_proxy_1e_2pd_cross_tcp_mooncake_ipv4_001(model: str, tp_size: int
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate * (e_num+p_num+d_num),
+        "request_rate": request_rate * (e_num+pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_proxy_1E1P1D_cross_tcp_mooncake_ipv4",
