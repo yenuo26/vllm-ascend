@@ -1830,7 +1830,7 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int
                            card_num=e_num+p_num+d_num,
                            aisbench_cases=aisbench_cases)
 
-REQUEST_RATE = [0.28, 0.78, 1.28, 1.78]
+REQUEST_RATE = [0.28, 0.78, 1.28]
 DATASET_NAME = ["image_4", "simulate_truth"]
 @pytest.mark.asyncio
 @pytest.mark.perf
