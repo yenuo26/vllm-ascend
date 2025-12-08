@@ -50,13 +50,12 @@ class EnvManager:
                 "p": [],
                 "d": [],
                 "proxy": [],
-                "ds": [],
                 "common": []
             }
 
     def add_env(self, node_type: str, env_key: str, env_value: str, env_dict=None, index=0):
         if node_type not in self.env_info:
-            raise ValueError("node type can only be e,pd,p,d,proxy,ds,common")
+            raise ValueError("node type can only be e,pd,p,d,proxy,common")
         if env_dict is not None:
             env_list = list()
             if not isinstance(env_dict, list):
