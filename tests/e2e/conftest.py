@@ -213,13 +213,13 @@ class OutputManager:
             for i, flag in enumerate(self.info.get_addr_list("e")):
                 patterns[f'E{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
                 patterns[f'E{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
-                patterns[f'transfer_to_encode'] = fr'{flag}.*Avg proxy to instance requests time: ([\d.]+) ms'
+                patterns['transfer_to_encode'] = fr'{flag}.*Avg proxy to instance requests time: ([\d.]+) ms'
             for i, flag in enumerate(self.info.get_addr_list("pd")):
                 patterns[f'PD{i}_ttft'] = fr'{flag}.*Avg proxy ttft: ([\d.]+) ms'
                 patterns[f'PD{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
                 patterns[f'PD{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
                 patterns[f'PD{i}_first_token'] = fr'{flag}.*Avg time to first token: ([\d.]+) ms'
-                patterns[f'transfer_to_pd'] = fr'{flag}.*Avg proxy to instance requests time: ([\d.]+) ms'
+                patterns['transfer_to_pd'] = fr'{flag}.*Avg proxy to instance requests time: ([\d.]+) ms'
             for key, pattern in patterns.items():
                 match = re.search(pattern, text)
                 if match:

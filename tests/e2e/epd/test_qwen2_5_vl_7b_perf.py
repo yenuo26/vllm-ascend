@@ -12,7 +12,7 @@ from tools.aisbench import create_result_plot, create_ttft_plot
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import EnvManager
 
 model_path = load_config().get("model_path")
-MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
+MODELS = [os.path.join(model_path, "Qwen3-VL-30B-A3B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
 
 TENSOR_PARALLELS = [1]
@@ -134,13 +134,15 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     pd_num = 3
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    card_num = i + e_num
     for i in range(pd_num):
-        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(card_num + 2), index=i)
+        card_num += 2
 
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
+        "1", "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
@@ -150,7 +152,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     pd_server_args = [
         "--model", model, "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "300", "--gpu-memory-utilization",
+        "2", "--max-num-seqs", "300", "--gpu-memory-utilization",
         "0.9", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -186,7 +188,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*(e_num+pd_num),
+        "request_rate": request_rate*(e_num+pd_num*2),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
@@ -213,10 +215,10 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         for aisbench_case in aisbench_cases:
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=e_num+pd_num,
+                               card_num=e_num+pd_num*2,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E3PD_ttft",
-                                  index=aisbench_case["request_rate"] / (e_num+pd_num))
+                                  index=aisbench_case["request_rate"] / (e_num+pd_num*2))
 
 
 REQUEST_CONFIG = [("image_4", 0.2, 300), ("image_4", 0.4, 600), ("image_4", 0.6, 900), ("image_4", 0.8, 1200),
