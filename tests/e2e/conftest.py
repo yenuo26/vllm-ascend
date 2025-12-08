@@ -910,7 +910,7 @@ class RemoteEPDServer:
         self.mooncake_args = mooncake_args
         self.proxy_args = proxy_args
         self.env_dict = env_dict
-        if env_dict.get("TIMECOUNT_ENABLED", 0) == "1":
+        if env_dict.get_node_env("common", 0).get("TIMECOUNT_ENABLED", 0) == "1":
             self._share_info.open_breakdown()
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None

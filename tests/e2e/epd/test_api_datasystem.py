@@ -139,8 +139,6 @@ async def test_1e2pd_datasystem_tcp_001(model: str, tp_size: int, dataset: str, 
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model,
-                               port=api_port,
-                               aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
 
 
