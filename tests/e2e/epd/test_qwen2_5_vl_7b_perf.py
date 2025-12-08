@@ -9,6 +9,7 @@ from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tools.aisbench import create_result_plot, create_ttft_plot
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import EnvManager
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -120,12 +121,15 @@ REQUEST_CONFIG = [("image_4", 0.2, 500), ("image_4", 0.4, 800), ("image_4", 0.6,
 @pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
-    env_dict = {
+
+    env = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
         "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -218,12 +222,14 @@ REQUEST_CONFIG = [("image_4", 0.2, 300), ("image_4", 0.4, 600), ("image_4", 0.6,
 @pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
-    env_dict = {
+    env = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
         "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",

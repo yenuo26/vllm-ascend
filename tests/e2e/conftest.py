@@ -454,7 +454,7 @@ class RemoteEPDServer:
         self._run_server_new_session(etcd_args, None, "[ETCD] ")
 
     def _start_datasystem(self) -> None:
-        etcd_address = f"10.170.27.165:{self.etcd_client_port}"
+        etcd_address = f"{self.cluster_ips[0]}:{self.etcd_client_port}"
         self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
         self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
         self.datasystem_port = get_open_port()
