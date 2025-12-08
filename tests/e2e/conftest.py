@@ -461,7 +461,9 @@ class RemoteEPDServer:
         master_datasystem_port = get_open_port()
         self.env_dict.add_env("ds", "DS_WORKER_ADDR", f"{self.cluster_ips[0]}:{master_datasystem_port}")
         self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{master_datasystem_port}",
-                                      "--etcd_address", etcd_address], self.env_dict, "[DATASYSTEM_0] ")
+                                      "--etcd_address", etcd_address],
+                                     self.env_dict.get_node_env("common", 0).update(self.env_dict.get_node_env("ds", 0)),
+                                     "[DATASYSTEM_0] ")
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
                 datasystem_port = get_open_port()
