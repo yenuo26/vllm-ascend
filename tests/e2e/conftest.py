@@ -933,6 +933,7 @@ class RemoteEPDServer:
         if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
         if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
+            self._start_etcd()
             self._start_datasystem()
         if self.store_type == "storage":
             self._delete_shm()

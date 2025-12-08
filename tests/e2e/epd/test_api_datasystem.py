@@ -48,7 +48,6 @@ async def test_1e2pd_datasystem_tcp_001(model: str, tp_size: int, dataset: str, 
     for i in range(pd_num):
         env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i+e_num))
 
-
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
