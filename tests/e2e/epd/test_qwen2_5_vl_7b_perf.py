@@ -130,6 +130,13 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
+    e_num = 1
+    pd_num = 3
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -179,7 +186,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*4,
+        "request_rate": request_rate*(e_num+pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
@@ -191,8 +198,8 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                store_type="storage",
                                proxy_type="api_server",
                                api_server_port=api_port,
-                               pd_num=3,
-                               e_num=1,
+                               pd_num=pd_num,
+                               e_num=e_num,
                                env_dict=env_dict,
                                proxy_args=proxy_args,
                                e_serve_args=e_server_args,
@@ -206,10 +213,10 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         for aisbench_case in aisbench_cases:
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=4,
+                               card_num=e_num+pd_num,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E3PD_ttft",
-                                  index=aisbench_case["request_rate"] / 4)
+                                  index=aisbench_case["request_rate"] / (e_num+pd_num))
 
 
 REQUEST_CONFIG = [("image_4", 0.2, 300), ("image_4", 0.4, 600), ("image_4", 0.6, 900), ("image_4", 0.8, 1200),
@@ -230,6 +237,13 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
+    e_num = 1
+    pd_num = 2
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -279,7 +293,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*3,
+        "request_rate": request_rate*(e_num+pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E2PD",
@@ -291,8 +305,8 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                                store_type="storage",
                                proxy_type="api_server",
                                api_server_port=api_port,
-                               pd_num=2,
-                               e_num=1,
+                               pd_num=pd_num,
+                               e_num=e_num,
                                env_dict=env_dict,
                                proxy_args=proxy_args,
                                e_serve_args=e_server_args,
@@ -306,7 +320,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         for aisbench_case in aisbench_cases:
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=3,
+                               card_num=e_num+pd_num,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E2PD_ttft",
-                                  index=aisbench_case["request_rate"] / 3)
+                                  index=aisbench_case["request_rate"] / (e_num+pd_num))
