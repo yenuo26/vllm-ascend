@@ -209,18 +209,17 @@ class OutputManager:
     def _extract_ttft_data(self, text, prefix):
         metrics = self.info.get_metrics()
         if "PROXY" in prefix.upper():
-            patterns = {
-                'transfer_to_encode':
-                r'Avg proxy to encoder requests: ([\d.]+) ms',
-                'transfer_to_pd': r'Avg proxy to pd requests: ([\d.]+) ms'}
+            patterns = {}
             for i, flag in enumerate(self.info.get_addr_list("e")):
                 patterns[f'E{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
                 patterns[f'E{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
+                patterns[f'transfer_to_encode'] = fr'{flag}.*Avg proxy to instance requests time: ([\d.]+) ms'
             for i, flag in enumerate(self.info.get_addr_list("pd")):
                 patterns[f'PD{i}_ttft'] = fr'{flag}.*Avg proxy ttft: ([\d.]+) ms'
                 patterns[f'PD{i}_queue'] = fr'{flag}.*Avg queue time requests: ([\d.]+) ms'
                 patterns[f'PD{i}_prefill'] = fr'{flag}.*Avg prefill time requests: ([\d.]+) ms'
                 patterns[f'PD{i}_first_token'] = fr'{flag}.*Avg time to first token: ([\d.]+) ms'
+                patterns[f'transfer_to_pd'] = fr'{flag}.*Avg proxy to instance requests time: ([\d.]+) ms'
             for key, pattern in patterns.items():
                 match = re.search(pattern, text)
                 if match:
@@ -455,7 +454,7 @@ class RemoteEPDServer:
         self._run_server_new_session(etcd_args, None, "[ETCD] ")
 
     def _start_datasystem(self) -> None:
-        etcd_address = f"0.0.0.0:{self.etcd_client_port}"
+        etcd_address = f"{self.cluster_ips[0]}:{self.etcd_client_port}"
         self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
         self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
         self.datasystem_port = get_open_port()
