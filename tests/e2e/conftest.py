@@ -582,7 +582,8 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
-                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
+                if self.datasystem_port is not None:
+                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -592,7 +593,8 @@ class RemoteEPDServer:
                     log_prefix=f"[ENCODE_{i}] ",
                 )
             else:
-                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
+                if self.datasystem_port is not None:
+                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
                 self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
         current_p_num = -1
@@ -654,7 +656,8 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     role) is not None:
                 node_id = self.node_info.get_node_info(role, current_node_index).node_id
-                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
+                if self.datasystem_port is not None:
+                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -663,7 +666,8 @@ class RemoteEPDServer:
                     env_dict=env,
                     log_prefix=log_prefix)
             else:
-                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
+                if self.datasystem_port is not None:
+                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
                 self._run_server(pd_serve_arg, env, log_prefix)
 
     def _start_zmq_proxy(self):
@@ -910,6 +914,7 @@ class RemoteEPDServer:
         self.node_info = node_info
         self.proxy_port = get_open_port()
         self.model = None
+        self.datasystem_port = None
         if isinstance(e_serve_args, list):
             if not all(isinstance(item, list) for item in e_serve_args):
                 for i in range(self.e_num):
