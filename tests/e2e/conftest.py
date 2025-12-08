@@ -447,10 +447,10 @@ class RemoteEPDServer:
         self.etcd_client_port = get_open_port()
         etcd_peer_port = get_open_port()
         etcd_args = ["etcd", "--name", "etcd-epd", "--data-dir", "/tmp/etcd-epd-data",
-                     "--listen-client-urls", f"http://0.0.0.0:{self.etcd_client_port}", "--advertise-client-urls",
-                     f"http://0.0.0.0:{self.etcd_client_port}", "--listen-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
-                     "--initial-advertise-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
-                     "--initial-cluster", f"etcd-epd=http://0.0.0.0:{etcd_peer_port}"]
+                     "--listen-client-urls", f"http://{self.cluster_ips[0]}:{self.etcd_client_port}", "--advertise-client-urls",
+                     f"http://{self.cluster_ips[0]}:{self.etcd_client_port}", "--listen-peer-urls", f"http://{self.cluster_ips[0]}:{etcd_peer_port}",
+                     "--initial-advertise-peer-urls", f"http://{self.cluster_ips[0]}:{etcd_peer_port}",
+                     "--initial-cluster", f"etcd-epd=http://{self.cluster_ips[0]}:{etcd_peer_port}"]
         self._run_server_new_session(etcd_args, None, "[ETCD] ")
 
     def _start_datasystem(self) -> None:
@@ -471,6 +471,24 @@ class RemoteEPDServer:
                     server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}",
                                       "--etcd_address", etcd_address],
                     env_dict=self.env_dict.get_node_env("common", 0),
+                    log_prefix=f"[DATASYSTEM_{i}] ",
+                )
+
+
+    def _stop_datasystem(self) -> None:
+        self._run_server_new_session(["dscli", "stop",
+                                      "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}"],
+                                     None,
+                                     "[DATASYSTEM_0] ")
+        if self.node_info is not None:
+            for i in range(1, len(self.cluster_ips)):
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[i],
+                    container_name=self.node_info.get_node_info(
+                        "ds", i).container_name,
+                    server_cmd=["dscli", "stop",
+                                "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}"],
+                    env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
 
@@ -961,6 +979,8 @@ class RemoteEPDServer:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # exit with
+        if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
+            self._stop_datasystem()
         for proc in self._proc_list:
             self._kill_process_tree(proc.pid)
         self._container.kill_container_process_only()
