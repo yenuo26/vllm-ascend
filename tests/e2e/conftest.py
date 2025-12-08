@@ -557,17 +557,17 @@ class RemoteEPDServer:
                     raise ValueError("model must be same between workers")
                 self.model = e_serve_arg[index_e + 1]
 
+            common_env = self.env_dict.get_node_env("common", 0)
+            role_env = self.env_dict.get_node_env("e", i)
+            env = (
+                {**common_env, **role_env}
+                if common_env is not None and role_env is not None
+                else common_env if common_env is not None
+                else role_env
+            )
             if self.node_info is not None and self.node_info.get_node_info(
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
-                common_env = self.env_dict.get_node_env("common", 0)
-                role_env = self.env_dict.get_node_env("e", i)
-                env = (
-                    {**common_env, **role_env}
-                    if common_env is not None and role_env is not None
-                    else common_env if common_env is not None
-                    else role_env
-                )
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -577,7 +577,7 @@ class RemoteEPDServer:
                     log_prefix=f"[ENCODE_{i}] ",
                 )
             else:
-                self._run_server(e_serve_arg, self.env_dict.get_node_env("common", 0), f"[ENCODE_{i}] ")
+                self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
         current_p_num = -1
         current_d_num = -1
@@ -626,18 +626,18 @@ class RemoteEPDServer:
                 worker_index = pd_serve_arg.index("--worker-addr")
                 self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], role)
 
+            common_env = self.env_dict.get_node_env("common", 0)
+            role_env = self.env_dict.get_node_env(role, current_node_index)
+            env = (
+                {**common_env, **role_env}
+                if common_env is not None and role_env is not None
+                else common_env if common_env is not None
+                else role_env
+            )
+
             if self.node_info is not None and self.node_info.get_node_info(
                     role) is not None:
                 node_id = self.node_info.get_node_info(role, current_node_index).node_id
-                common_env = self.env_dict.get_node_env("common", 0)
-                role_env = self.env_dict.get_node_env(role, current_node_index)
-                env = (
-                    {**common_env, **role_env}
-                    if common_env is not None and role_env is not None
-                    else common_env if common_env is not None
-                    else role_env
-                )
-
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -646,7 +646,7 @@ class RemoteEPDServer:
                     env_dict=env,
                     log_prefix=log_prefix)
             else:
-                self._run_server(pd_serve_arg, self.env_dict.get_node_env("common", 0), log_prefix)
+                self._run_server(pd_serve_arg, env, log_prefix)
 
     def _start_zmq_proxy(self):
         if self.env_dict.get_node_env("common", 0) is not None:
