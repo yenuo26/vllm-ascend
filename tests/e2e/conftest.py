@@ -711,7 +711,6 @@ class RemoteEPDServer:
         self._run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ")
 
     def _start_vllm_serve(self):
-
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
 

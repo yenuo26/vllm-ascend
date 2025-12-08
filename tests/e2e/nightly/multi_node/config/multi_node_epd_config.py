@@ -38,15 +38,9 @@ class ClusterManager:
         return None
 
 
-
-@dataclass
-class NodeEnv:
-    env_key: str
-    env_value: str
-
 @dataclass
 class EnvManager:
-    env_info: Dict[str, List[NodeEnv]] = field(default_factory=dict)
+    env_info: Dict[str, List[dict]] = field(default_factory=dict)
 
     def __post_init__(self):
         if not self.env_info:
@@ -60,20 +54,23 @@ class EnvManager:
                 "common": []
             }
 
-    def add_env(self, node_type: str, env_key: str, env_value: str, env_dict=None):
+    def add_env(self, node_type: str, env_key: str, env_value: str, env_dict=None, index=0):
         if node_type not in self.env_info:
             raise ValueError("node type can only be e,pd,p,d,proxy,ds,common")
-        if env_dict is None:
+        if env_dict is not None:
             env_list = list()
-            if not isinstance(env_dict,list):
+            if not isinstance(env_dict, list):
                 env_list.append(env_dict)
-            for envs in env_list:
-                for key, value in envs.items():
-                    new_env = NodeEnv(env_key=key, env_value=value)
-                    self.env_info[node_type].append(new_env)
+            for env in env_list:
+                if index >= len(self.env_info[node_type]):
+                    self.env_info[node_type].append(env)
+                else:
+                    self.env_info[node_type][index].update(env)
         else:
-            new_env = NodeEnv(env_key=env_key, env_value=env_value)
-            self.env_info[node_type].append(new_env)
+            if index >= len(self.env_info[node_type]):
+                self.env_info[node_type].append({env_key: env_value})
+            else:
+                self.env_info[node_type][index][env_key] = env_value
 
 
 
