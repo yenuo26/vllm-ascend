@@ -46,7 +46,7 @@ async def test_1e2pd_datasystem_tcp_001(model: str, tp_size: int, dataset: str, 
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
     for i in range(pd_num):
-        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i+e_num))
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i+e_num), index=i)
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",

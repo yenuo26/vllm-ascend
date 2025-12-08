@@ -654,7 +654,6 @@ class RemoteEPDServer:
                 os.environ[key] = value
 
         if self.env_dict.get_node_env("proxy", 0) is not None:
-
             for key, value in self.env_dict.get_node_env("proxy", 0).items():
                 os.environ[key] = value
 
