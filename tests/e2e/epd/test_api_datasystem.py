@@ -39,11 +39,6 @@ async def test_1e2pd_datasystem_tcp_001(model: str, tp_size: int, dataset: str, 
 
     e_num = 1
     pd_num = 2
-    cluster = ClusterManager()
-    for i in range(e_num):
-        cluster.add_node_info("e", 1, "epd_vllm_ascend_mooncake")
-    for i in range(pd_num):
-        cluster.add_node_info("pd", 2, "epd_vllm_ascend_mooncake")
 
     env_dict = EnvManager()
     env_dict.add_env("common", "VLLM_NIXL_SIDE_CHANNEL_PORT", "6000")
@@ -127,7 +122,6 @@ async def test_1e2pd_datasystem_tcp_001(model: str, tp_size: int, dataset: str, 
                                api_server_port=api_port,
                                pd_num=pd_num,
                                e_num=e_num,
-                               node_info=cluster,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
