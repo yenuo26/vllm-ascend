@@ -649,11 +649,14 @@ class RemoteEPDServer:
                 self._run_server(pd_serve_arg, self.env_dict.get_node_env("common", 0), log_prefix)
 
     def _start_zmq_proxy(self):
-        for key, value in self.env_dict.get_node_env("common", 0).items or {}:
-            os.environ[key] = value
+        if self.env_dict.get_node_env("common", 0) is not None:
+            for key, value in self.env_dict.get_node_env("common", 0).items():
+                os.environ[key] = value
 
-        for key, value in self.env_dict.get_node_env("proxy", 0).items or {}:
-            os.environ[key] = value
+        if self.env_dict.get_node_env("proxy", 0) is not None:
+
+            for key, value in self.env_dict.get_node_env("proxy", 0).items():
+                os.environ[key] = value
 
         self.proxy_config = {
             'model_name': self.model
