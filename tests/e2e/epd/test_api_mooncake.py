@@ -27,8 +27,8 @@ REQUEST_RATE = [x * 2 for x in [0.28, 0.78, 1.28, 1.78]]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: str, request_rate: float):
     '''
     proxy-epd 单机部署, 1E1PD
@@ -150,8 +150,8 @@ REQUEST_RATE = [x * 2 for x in [0.28, 0.78, 1.28, 1.78]]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1pd_merge_mooncake_ipc_001(model: str, tp_size: int, dataset_name: str, request_rate):
     '''
     proxy-epd 单机部署, 1E1PD
@@ -275,9 +275,9 @@ REQUEST_RATE = [x * 3 for x in [0.28, 0.78, 1.28, 1.78]]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("prefix_cache", PREFIX_CACHE)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e2pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: str, request_rate: float, prefix_cache: str):
     '''
     proxy-e-pd 单机部署, 1E2PD
@@ -426,8 +426,8 @@ REQUEST_RATE = [x * 8 for x in [0.28, 0.78, 1.28, 1.78]]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_3e5pd_mooncake_ipc_001(model: str, tp_size: int, dataset_name: str, request_rate: float):
     '''
     proxy-epd 单机部署, 3E5PD
