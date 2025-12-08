@@ -134,9 +134,9 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     pd_num = 3
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
-    card_num = i + e_num
+    card_num = e_num
     for i in range(pd_num):
-        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(card_num + 2), index=i)
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", f"{str(card_num)},{str(card_num + 1)}", index=i)
         card_num += 2
 
     e_server_args = [
