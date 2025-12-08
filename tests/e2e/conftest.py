@@ -451,7 +451,7 @@ class RemoteEPDServer:
                      "--listen-client-urls", f"http://0.0.0.0:{self.etcd_client_port}", "--advertise-client-urls",
                      f"http://0.0.0.0:{self.etcd_client_port}", "--listen-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
                      "--initial-advertise-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
-                     f"--initial-cluster etcd-epd=http://0.0.0.0:{etcd_peer_port}"]
+                     "--initial-cluster", f"etcd-epd=http://0.0.0.0:{etcd_peer_port}"]
         self._run_server_new_session(etcd_args, None, "[ETCD] ")
 
     def _start_datasystem(self) -> None:
