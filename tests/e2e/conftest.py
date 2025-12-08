@@ -458,24 +458,21 @@ class RemoteEPDServer:
         etcd_address = f"0.0.0.0:{self.etcd_client_port}"
         self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
         self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
-        master_datasystem_port = get_open_port()
-        self.env_dict.add_env("ds", "DS_WORKER_ADDR", f"{self.cluster_ips[0]}:{master_datasystem_port}")
-        self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{master_datasystem_port}",
+        self.datasystem_port = get_open_port()
+        self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
                                       "--etcd_address", etcd_address],
-                                     self.env_dict.get_node_env("common", 0).update(self.env_dict.get_node_env("ds", 0)),
+                                     self.env_dict.get_node_env("common", 0),
                                      "[DATASYSTEM_0] ")
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
-                datasystem_port = get_open_port()
-                self.env_dict.add_env("datasystem", "DS_WORKER_ADDR", f"{self.cluster_ips[i]}:{datasystem_port}")
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[i],
                     container_name=self.node_info.get_node_info(
                         "ds", i).container_name,
-                    server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{datasystem_port}",
+                    server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}",
                                       "--etcd_address", etcd_address],
-                    env_dict=self.env_dict.get_node_env("common", 0).update(self.env_dict.get_node_env("ds", i)),
-                    log_prefix=f"[DATASYSTEM] ",
+                    env_dict=self.env_dict.get_node_env("common", 0),
+                    log_prefix=f"[DATASYSTEM_{i}] ",
                 )
 
 
@@ -568,6 +565,7 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
+                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -577,6 +575,7 @@ class RemoteEPDServer:
                     log_prefix=f"[ENCODE_{i}] ",
                 )
             else:
+                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
                 self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
         current_p_num = -1
@@ -638,6 +637,7 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     role) is not None:
                 node_id = self.node_info.get_node_info(role, current_node_index).node_id
+                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -646,6 +646,7 @@ class RemoteEPDServer:
                     env_dict=env,
                     log_prefix=log_prefix)
             else:
+                env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
                 self._run_server(pd_serve_arg, env, log_prefix)
 
     def _start_zmq_proxy(self):
