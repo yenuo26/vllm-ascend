@@ -45,6 +45,7 @@ from tests.e2e.model_utils import (TokensTextLogprobs,
                                    TokensTextLogprobsPromptLogprobs)
 from tests.e2e.nightly.multi_node.config.multi_node_config import NodeInfo
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import EnvManager
 from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
 
 from vllm_ascend.ascend_config import clear_ascend_config
@@ -406,6 +407,14 @@ class RemoteEPDServer:
         self._proc_list.append(proc)
 
     def _start_api_server(self) -> None:
+        common_env = self.env_dict.get_node_env("common", 0)
+        role_env = self.env_dict.get_node_env("proxy", 0)
+        env = (
+            {**common_env, **role_env}
+            if common_env is not None and role_env is not None
+            else common_env if common_env is not None
+            else role_env
+        )
         api_server_args = [
             "--host", "127.0.0.1", "--port",
             str(self.api_server_port), "--proxy-config",
@@ -418,7 +427,7 @@ class RemoteEPDServer:
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, self.env_dict,
+        self._run_server_new_session(api_server_args, env,
                                      "[PROXY] ")
 
     def _start_mooncake(self) -> None:
@@ -432,12 +441,46 @@ class RemoteEPDServer:
             raise RuntimeError("mooncake_args must be a list")
         for arg in mooncake_args_list:
             mooncake_arg = ["mooncake_master", *arg]
-            self._run_server_new_session(mooncake_arg, self.env_dict, "[MOONCAKE] ")
+            self._run_server_new_session(mooncake_arg, self.env_dict.get_node_env("common", 0), "[MOONCAKE] ")
+
+
+    def _start_etcd(self) -> None:
+        self.etcd_client_port = get_open_port()
+        etcd_peer_port = get_open_port()
+        etcd_args = ["etcd", "--name", "etcd-epd", "--data-dir", "/tmp/etcd-epd-data",
+                     "--listen-client-urls", f"http://0.0.0.0:{self.etcd_client_port}", "--advertise-client-urls",
+                     f"http://0.0.0.0:{self.etcd_client_port}", "--listen-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
+                     "--initial-advertise-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
+                     f"--initial-cluster etcd-epd=http://0.0.0.0:{etcd_peer_port}"]
+        self._run_server_new_session(etcd_args, None, "[ETCD] ")
+
+    def _start_datasystem(self) -> None:
+        etcd_address = f"0.0.0.0:{self.etcd_client_port}"
+        self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
+        self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
+        master_datasystem_port = get_open_port()
+        self.env_dict.add_env("ds", "DS_WORKER_ADDR", f"{self.cluster_ips[0]}:{master_datasystem_port}")
+        self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{master_datasystem_port}",
+                                      "--etcd_address", etcd_address], self.env_dict, "[DATASYSTEM_0] ")
+        if self.node_info is not None:
+            for i in range(1, len(self.cluster_ips)):
+                datasystem_port = get_open_port()
+                self.env_dict.add_env("datasystem", "DS_WORKER_ADDR", f"{self.cluster_ips[i]}:{datasystem_port}")
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[i],
+                    container_name=self.node_info.get_node_info(
+                        "ds", i).container_name,
+                    server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{datasystem_port}",
+                                      "--etcd_address", etcd_address],
+                    env_dict=self.env_dict.get_node_env("common", 0).update(self.env_dict.get_node_env("ds", i)),
+                    log_prefix=f"[DATASYSTEM] ",
+                )
+
 
 
     def _get_addr_config(self, args, i, role):
-        if self.env_dict.get("TRANSFER_PROTOCOL") is not None:
-            self.protocol = self.env_dict["TRANSFER_PROTOCOL"].lower()
+        if self.env_dict.get_node_env("common", 0).get("TRANSFER_PROTOCOL") is not None:
+            self.protocol = self.env_dict.get_node_env("common", 0)["TRANSFER_PROTOCOL"].lower()
         elif "--transfer-protocol" in args:
             protocol_index = args.index("--transfer-protocol") + 1
             if protocol_index < len(args):
@@ -476,10 +519,8 @@ class RemoteEPDServer:
                 }
 
     def _start_vllm_worker(self):
-        if self.env_dict is None:
-            self.env_dict = dict()
-        self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
-        self.env_dict['VLLM_USE_V1'] = "1"
+        self.env_dict.add_env("common", 'VLLM_ALLOW_LONG_MAX_MODEL_LEN', "1")
+        self.env_dict.add_env("common", 'VLLM_USE_V1', "1")
 
         serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
@@ -487,7 +528,6 @@ class RemoteEPDServer:
             ]
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
-            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
 
             if "--metastore-client-config" not in e_serve_arg:
@@ -518,25 +558,28 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
+                common_env = self.env_dict.get_node_env("common", 0)
+                role_env = self.env_dict.get_node_env("e", i)
+                env = (
+                    {**common_env, **role_env}
+                    if common_env is not None and role_env is not None
+                    else common_env if common_env is not None
+                    else role_env
+                )
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
                         "e", i).container_name,
                     server_cmd=e_serve_arg,
-                    env_dict=self.env_dict,
+                    env_dict=env,
                     log_prefix=f"[ENCODE_{i}] ",
                 )
             else:
-                self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
+                self._run_server(e_serve_arg, self.env_dict.get_node_env("common", 0), f"[ENCODE_{i}] ")
 
         current_p_num = -1
         current_d_num = -1
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
-            if self.is_epd_same_card:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
-            else:
-                self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i +
-                                                                 self.e_num)
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
             if "--model" not in pd_serve_arg:
                 raise ValueError("must carry --model")
@@ -584,18 +627,30 @@ class RemoteEPDServer:
             if self.node_info is not None and self.node_info.get_node_info(
                     role) is not None:
                 node_id = self.node_info.get_node_info(role, current_node_index).node_id
+                common_env = self.env_dict.get_node_env("common", 0)
+                role_env = self.env_dict.get_node_env(role, current_node_index)
+                env = (
+                    {**common_env, **role_env}
+                    if common_env is not None and role_env is not None
+                    else common_env if common_env is not None
+                    else role_env
+                )
+
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
                         role, current_node_index).container_name,
                     server_cmd=pd_serve_arg,
-                    env_dict=self.env_dict,
+                    env_dict=env,
                     log_prefix=log_prefix)
             else:
-                self._run_server(pd_serve_arg, self.env_dict, log_prefix)
+                self._run_server(pd_serve_arg, self.env_dict.get_node_env("common", 0), log_prefix)
 
     def _start_zmq_proxy(self):
-        for key, value in self.env_dict.items():
+        for key, value in self.env_dict.get_node_env("common", 0).items or {}:
+            os.environ[key] = value
+
+        for key, value in self.env_dict.get_node_env("proxy", 0).items or {}:
             os.environ[key] = value
 
         self.proxy_config = {
@@ -656,22 +711,19 @@ class RemoteEPDServer:
         self._run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ")
 
     def _start_vllm_serve(self):
-        if self.env_dict is None:
-            self.env_dict = dict()
+
         self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         self.env_dict['VLLM_USE_V1'] = "1"
 
         serve_arg_cmd = ["taskset", "-c", "0-96", "vllm", "serve"]
 
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
-            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
             index_e = e_serve_arg.index("--port")
             self._share_info.add_addr_list(f"http://localhost:{e_serve_arg[index_e + 1]}", "e")
             self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
-            self.env_dict["ASCEND_RT_VISIBLE_DEVICES"] = str(i)
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
             index_pd = pd_serve_arg.index("--port")
             self._share_info.add_addr_list(f"http://localhost:{pd_serve_arg[index_pd + 1]}", "pd")
@@ -791,21 +843,21 @@ class RemoteEPDServer:
 
     def __init__(self,
                  run_mode: Literal["serve", "worker"],
-                 store_type: Literal["mooncake", "storage"],
+                 store_type: Literal["mooncake", "storage", "datasystem"],
                  e_num: Optional[int],
                  pd_num: Optional[int],
                  e_serve_args,
                  pd_serve_args,
                  proxy_type: Literal["disagg_proxy", "proxy",
                                      "api_server"] = None,
-                 kv_store_type: Literal["mooncake"] = "",
+                 kv_store_type: Literal["mooncake", "datasystem"] = "",
                  mooncake_args=None,
                  proxy_args: Union[list[str], str] = None,
                  node_info: ClusterManager = None,
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
                  is_epd_same_card: Optional[bool] = False,
-                 env_dict: Optional[dict[str, str]] = None) -> None:
+                 env_dict: EnvManager = None) -> None:
         self._share_info = SharedInfoManager()
         self._output = OutputManager(self._share_info)
         self._container = ContainerManager(self._output)
@@ -815,9 +867,9 @@ class RemoteEPDServer:
         self.p = None
         if run_mode not in ["serve", "worker"]:
             raise ValueError(f"run mode must be serve or worker")
-        if store_type not in ["mooncake", "storage"]:
+        if store_type not in ["mooncake", "storage", "datasystem"]:
             raise ValueError(f"store type must be mooncake or storage")
-        if kv_store_type not in ["mooncake", ""]:
+        if kv_store_type not in ["mooncake", "datasystem", ""]:
             raise ValueError(f"kv store type must be mooncake")
         if proxy_type is not None and proxy_type not in [
                 "disagg_proxy", "proxy", "api_server"
@@ -863,15 +915,15 @@ class RemoteEPDServer:
             self._share_info.open_breakdown()
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
-        if self.env_dict.get("MC_USE_IPV6", "") == "1":
+        if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
             self.enable_ipv6 = True
         if node_info is not None:
-            if self.env_dict.get("MC_USE_IPV6", "") == "1":
+            if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
                 self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
             else:
                 self.cluster_ips = get_cluster_ips()
         else:
-            if self.env_dict.get("MC_USE_IPV6", "") == "1":
+            if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
                 self.cluster_ips = ["[::1]"]
             else:
                 self.cluster_ips = ["127.0.0.1"]
@@ -881,6 +933,8 @@ class RemoteEPDServer:
         max_wait_seconds = 1800
         if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
+        if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
+            self._start_datasystem()
         if self.store_type == "storage":
             self._delete_shm()
         if self.run_mode == "worker":
