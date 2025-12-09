@@ -976,7 +976,7 @@ class RemoteEPDServer:
         if node_info is not None and self.enable_ipv6:
             self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
         elif self.enable_ipv6:
-            self.cluster_ips = get_cluster_ips() or ["[::1]"]
+            self.cluster_ips = get_cluster_ips(family=socket.AF_INET6) or ["[::1]"]
         else:
             self.cluster_ips = get_cluster_ips() or ["127.0.0.1"]
 
