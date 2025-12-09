@@ -58,9 +58,12 @@ class EnvManager:
             raise ValueError("node type can only be e,pd,p,d,proxy,common")
         if env_dict is not None:
             env_list = list()
+            index_list = list()
             if not isinstance(env_dict, list):
                 env_list.append(env_dict)
-            for env in env_list:
+            if not isinstance(index, list):
+                index_list.append(index)
+            for env, index in zip(env_list, index_list):
                 if index >= len(self.env_info[node_type]):
                     self.env_info[node_type].append(env)
                 else:
