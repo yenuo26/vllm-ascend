@@ -486,7 +486,7 @@ class RemoteEPDServer:
                     env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
-        time.sleep(30)
+        time.sleep(10)
 
 
     def _stop_datasystem(self) -> None:
