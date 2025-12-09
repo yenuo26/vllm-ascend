@@ -10,6 +10,7 @@ from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
 
 model_path = load_config().get("model_path")
+CONTAINER_NAME = load_config().get("container_name")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
@@ -238,6 +239,128 @@ async def test_1e2pd_datasystem_tcp_002(model: str, tp_size: int, dataset: str, 
                                api_server_port=api_port,
                                pd_num=pd_num,
                                e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
+        # test perf
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+
+
+
+REQUEST_RATE = [0.28]
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+async def test_1e2pd_datasystem_tcp_003(model: str, tp_size: int, dataset: str, request_rate: float):
+    '''
+    1E2PD, 跨机部署
+    前缀缓存： 开启
+    数据集：模拟ZJ
+    ec transfer: 数据系统
+    通信方式: tcp(ipv4)
+    '''
+
+    e_num = 1
+    pd_num = 2
+
+    env_dict = EnvManager()
+    env_dict.add_env("common", "VLLM_NIXL_SIDE_CHANNEL_PORT", "6000")
+    env_dict.add_env("common", "TRANSFER_PROTOCOL", "tcp")
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i+e_num), index=i)
+
+    cluster = ClusterManager()
+    for i in range(pd_num):
+        cluster.add_node_info("pd", 1, CONTAINER_NAME)
+    cluster.add_node_info("ds", 1, CONTAINER_NAME)
+
+
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1",
+        "--ec-transfer-config",
+        '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
+    ]
+
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen_base64",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate * (e_num+pd_num),
+        "result_file_name": f"{dataset}_cross_1E2PD_DS_TCP",
+        "baseline": 1,
+        "seed": 77,
+        "threshold": 0.97
+    }]
+
+    api_port = 10002
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="datasystem",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=pd_num,
+                               e_num=e_num,
+                               node_info=cluster,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
