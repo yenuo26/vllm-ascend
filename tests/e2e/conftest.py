@@ -947,7 +947,7 @@ class RemoteEPDServer:
         elif self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
             self.cluster_ips = ["[::1]"]
         else:
-            self.cluster_ips = get_cluster_ips()
+            self.cluster_ips = get_cluster_ips() or ["127.0.0.1"]
 
     async def __aenter__(self):
         # start with
