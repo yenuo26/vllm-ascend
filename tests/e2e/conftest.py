@@ -444,24 +444,43 @@ class RemoteEPDServer:
 
 
     def _start_etcd(self) -> None:
-        self.etcd_client_port = get_open_port()
+        etcd_client_port = get_open_port()
         etcd_peer_port = get_open_port()
-        etcd_args = ["etcd", "--name", "etcd-epd", "--data-dir", "/tmp/etcd-epd-data",
-                     "--listen-client-urls", f"http://0.0.0.0:{self.etcd_client_port}", "--advertise-client-urls",
-                     f"http://0.0.0.0:{self.etcd_client_port}", "--listen-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
-                     "--initial-advertise-peer-urls", f"http://0.0.0.0:{etcd_peer_port}",
-                     "--initial-cluster", f"etcd-epd=http://0.0.0.0:{etcd_peer_port}"]
+        if self.enable_ipv6:
+            host = f"[{self.cluster_ips[0]}]"
+            etcd_args = ["etcd", "--name", "etcd-epd", "--data-dir", "/tmp/etcd-epd-data",
+                         "--listen-client-urls", f"http://[::]:{etcd_client_port}", "--advertise-client-urls",
+                         f"http://{host}:{etcd_client_port}", "--listen-peer-urls", f"http://[::]:{etcd_peer_port}",
+                         "--initial-advertise-peer-urls", f"http://{host}:{etcd_peer_port}",
+                         "--initial-cluster", f"etcd-epd=http://{host}:{etcd_peer_port}",
+                         "--initial-cluster-token","etcd-cluster-ipv6","--initial-cluster-state", "new"]
+        else:
+            host = self.cluster_ips[0]
+            etcd_args = ["etcd", "--name", "etcd-epd", "--data-dir", "/tmp/etcd-epd-data",
+                         "--listen-client-urls", f"http://{host}:{etcd_client_port}", "--advertise-client-urls",
+                         f"http://{host}:{etcd_client_port}", "--listen-peer-urls", f"http://{host}:{etcd_peer_port}",
+                         "--initial-advertise-peer-urls", f"http://{host}:{etcd_peer_port}",
+                         "--initial-cluster", f"etcd-epd=http://{host}:{etcd_peer_port}"]
+
+        self.etcd_address = f"{host}:{etcd_client_port}"
         self._run_server_new_session(etcd_args, None, "[ETCD] ")
 
     def _start_datasystem(self) -> None:
-        etcd_address = f"{self.cluster_ips[0]}:{self.etcd_client_port}"
         self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
         self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
         self.datasystem_port = get_open_port()
-        self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
-                                      "--etcd_address", etcd_address, "--shared_memory_size_mb", "20000"],
-                                     None,
-                                     "[DATASYSTEM_0] ")
+        if self.enable_ipv6:
+            self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"[{self.cluster_ips[0]}]:{self.datasystem_port}",
+                                          "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
+                                         None,
+                                         "[DATASYSTEM_0] ")
+        else:
+            self._run_server_new_session(
+                ["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
+                 "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
+                None,
+                "[DATASYSTEM_0] ")
+
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
                 self._container.run_in_remote_container(
@@ -469,7 +488,7 @@ class RemoteEPDServer:
                     container_name=self.node_info.get_node_info(
                         "ds", i).container_name,
                     server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}",
-                                      "--etcd_address", etcd_address, "--shared_memory_size_mb", "20000"],
+                                      "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
                     env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
@@ -584,7 +603,10 @@ class RemoteEPDServer:
                     "e") is not None:
                 node_id = self.node_info.get_node_info("e", i).node_id
                 if self.datasystem_port is not None:
-                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
+                    if self.enable_ipv6:
+                        env.update({"DS_WORKER_ADDR": f"[{self.cluster_ips[node_id]}]:{self.datasystem_port}"})
+                    else:
+                        env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -595,7 +617,10 @@ class RemoteEPDServer:
                 )
             else:
                 if self.datasystem_port is not None:
-                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
+                    if self.enable_ipv6:
+                        env.update({"DS_WORKER_ADDR": f"[{self.cluster_ips[0]}]:{self.datasystem_port}"})
+                    else:
+                        env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
                 self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
         current_p_num = -1
@@ -658,7 +683,10 @@ class RemoteEPDServer:
                     role) is not None:
                 node_id = self.node_info.get_node_info(role, current_node_index).node_id
                 if self.datasystem_port is not None:
-                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
+                    if self.enable_ipv6:
+                        env.update({"DS_WORKER_ADDR": f"[{self.cluster_ips[node_id]}]:{self.datasystem_port}"})
+                    else:
+                        env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[node_id]}:{self.datasystem_port}"})
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[node_id],
                     container_name=self.node_info.get_node_info(
@@ -668,7 +696,10 @@ class RemoteEPDServer:
                     log_prefix=log_prefix)
             else:
                 if self.datasystem_port is not None:
-                    env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
+                    if self.enable_ipv6:
+                        env.update({"DS_WORKER_ADDR": f"[{self.cluster_ips[0]}]:{self.datasystem_port}"})
+                    else:
+                        env.update({"DS_WORKER_ADDR": f"{self.cluster_ips[0]}:{self.datasystem_port}"})
                 self._run_server(pd_serve_arg, env, log_prefix)
 
     def _start_zmq_proxy(self):
@@ -942,10 +973,10 @@ class RemoteEPDServer:
         self.proxy_addr = None
         if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
             self.enable_ipv6 = True
-        if node_info is not None and self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
+        if node_info is not None and self.enable_ipv6:
             self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
-        elif self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
-                self.cluster_ips = ["[::1]"]
+        elif self.enable_ipv6:
+            self.cluster_ips = get_cluster_ips() or ["[::1]"]
         else:
             self.cluster_ips = get_cluster_ips() or ["127.0.0.1"]
 
