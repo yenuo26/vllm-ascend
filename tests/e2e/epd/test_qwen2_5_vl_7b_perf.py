@@ -9,6 +9,7 @@ from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tools.aisbench import create_result_plot, create_ttft_plot
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import EnvManager
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -35,13 +36,15 @@ async def teardown():
                          result_figure_prefix=f"{dataset}_ttft")
 
 
-REQUEST_CONFIG = [(0.2, 170), (0.4, 250), (0.6, 300), (0.8, 420), (1.0, 450)]
+REQUEST_CONFIG = [("image_4", 0.2, 170), ("image_4", 0.4, 250), ("image_4", 0.6, 300), ("image_4", 0.8, 420), ("image_4", 1.0, 450),
+                  ("simulate_truth", 0.2, 170), ("simulate_truth", 0.3, 200), ("simulate_truth", 0.4, 250),
+                  ("simulate_truth", 0.5, 280),
+                  ("simulate_truth", 0.6, 300)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
+@pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                           request_rate: int, num_prompts: int, teardown):
     env_dict = {
@@ -108,25 +111,42 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                            aisbench_cases=aisbench_cases)
 
 
-REQUEST_CONFIG = [(0.2, 600), (0.4, 800), (0.6, 1100), (0.8, 1200), (1.0, 1300)]
+REQUEST_CONFIG = [("image_4", 0.2, 500), ("image_4", 0.4, 800), ("image_4", 0.6, 1200), ("image_4", 0.8, 1300), ("image_4", 1.0, 1400),
+                  ("simulate_truth", 0.2, 500), ("simulate_truth", 0.3, 700), ("simulate_truth", 0.4, 800), ("simulate_truth", 0.5, 1000),
+                  ("simulate_truth", 0.6, 1100)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
+@pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
-    env_dict = {
+
+    env = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
         "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+    e_num = 1
+    pd_num = 3
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+    # for i in range(e_num):
+    #     env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    # card_num = e_num
+    # for i in range(pd_num):
+    #     env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", f"{str(card_num)},{str(card_num + 1)}", index=i)
+    #     card_num += 2
+
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "10000", "--max-num-batched-tokens",
+        "1", "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "1", "--enforce-eager",
         "--gpu-memory-utilization", "0.0", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
@@ -136,7 +156,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     pd_server_args = [
         "--model", model, "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--tensor-parallel-size",
-        str(tp_size), "--max-num-seqs", "300", "--gpu-memory-utilization",
+        "1", "--max-num-seqs", "300", "--gpu-memory-utilization",
         "0.9", "--enforce-eager", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -172,7 +192,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*4,
+        "request_rate": request_rate*(e_num+pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E3PD",
@@ -184,8 +204,8 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
                                store_type="storage",
                                proxy_type="api_server",
                                api_server_port=api_port,
-                               pd_num=3,
-                               e_num=1,
+                               pd_num=pd_num,
+                               e_num=e_num,
                                env_dict=env_dict,
                                proxy_args=proxy_args,
                                e_serve_args=e_server_args,
@@ -199,28 +219,37 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         for aisbench_case in aisbench_cases:
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=4,
+                               card_num=e_num+pd_num,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E3PD_ttft",
-                                  index=aisbench_case["request_rate"] / 4)
+                                  index=aisbench_case["request_rate"] / (e_num+pd_num))
 
 
-REQUEST_CONFIG = [(0.2, 300), (0.4, 600), (0.6, 900), (0.8, 1200),
-                  (1.0, 1300)]
+REQUEST_CONFIG = [("image_4", 0.2, 300), ("image_4", 0.4, 600), ("image_4", 0.6, 900), ("image_4", 0.8, 1200),
+                  ("image_4", 1.0, 1300), ("simulate_truth", 0.2, 300), ("simulate_truth", 0.3, 500), ("simulate_truth", 0.4, 600), ("simulate_truth", 0.5, 800),
+                  ("simulate_truth", 0.6, 900)]
 @pytest.mark.asyncio
 @pytest.mark.perf
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("dataset_name", DATASET_NAME)
-@pytest.mark.parametrize("request_rate, num_prompts", REQUEST_CONFIG)
+@pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                          request_rate: int, num_prompts: int, teardown):
-    env_dict = {
+    env = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
         "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+    e_num = 1
+    pd_num = 2
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
         "--tensor-parallel-size",
@@ -270,7 +299,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*3,
+        "request_rate": request_rate*(e_num+pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"qwen2_5_vl_7b_{dataset_name}_1E2PD",
@@ -282,8 +311,8 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
                                store_type="storage",
                                proxy_type="api_server",
                                api_server_port=api_port,
-                               pd_num=2,
-                               e_num=1,
+                               pd_num=pd_num,
+                               e_num=e_num,
                                env_dict=env_dict,
                                proxy_args=proxy_args,
                                e_serve_args=e_server_args,
@@ -297,7 +326,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
         for aisbench_case in aisbench_cases:
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=3,
+                               card_num=e_num+pd_num,
                                aisbench_cases=[aisbench_case])
             server.save_ttft_data(file_name=f"{dataset_name}_1E2PD_ttft",
-                                  index=aisbench_case["request_rate"] / 3)
+                                  index=aisbench_case["request_rate"] / (e_num+pd_num))
