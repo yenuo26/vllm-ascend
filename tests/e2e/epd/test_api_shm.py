@@ -565,6 +565,96 @@ async def test_1e2pd_shm_tcp_003(model: str, tp_size: int,
                            aisbench_cases=acc_cases, save=False)
 
 
+
+
+DATASET_NAME = ["simulate_truth", "image_4"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
+                                 dataset_name: str):
+    '''
+    1E2PD 单机部署
+    前缀缓存： 开启
+    数据集：模拟ZJ，image_4
+    ec transfer: shm
+    通信方式：tcp(ipv6)
+    '''
+
+    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
+           "MC_USE_IPV6": "1"}
+
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+    e_num = 1
+    pd_num = 2
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd",
+                         "ASCEND_RT_VISIBLE_DEVICES",
+                         str(i + e_num),
+                         index=i)
+
+    proxy_args = ["--transfer-protocol", "tcp"]
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--transfer-protocol", "tcp", "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--transfer-protocol", "tcp", "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+        "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+    ]
+    acc_cases = [{
+        "case_type": "accuracy",
+        "dataset_path": os.path.join(DATASET_PATH, "textvqa_subset"),
+        "request_conf": "vllm_api_general_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "max_out_len": 2048,
+        "batch_size": 128,
+        "temperature": 0,
+        "top_k": -1,
+        "top_p": 1,
+        "repetition_penalty": 1,
+        "request_rate": 0,
+        "baseline": 81,
+        "seed": 77,
+        "threshold": 1
+    }]
+
+    api_port = 10001
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="storage",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=pd_num,
+                               e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args,
+                               proxy_args=proxy_args) as server:
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=acc_cases, save=False)
+
+
 DATASET_NAME = ["simulate_truth"]
 
 
