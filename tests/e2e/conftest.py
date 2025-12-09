@@ -981,6 +981,9 @@ class RemoteEPDServer:
         # exit with
         if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
             self._stop_datasystem()
+            self._run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
+                                         None,
+                                         "[ETCD] ")
         for proc in self._proc_list:
             self._kill_process_tree(proc.pid)
         self._container.kill_container_process_only()
