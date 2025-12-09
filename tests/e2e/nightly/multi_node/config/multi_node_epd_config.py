@@ -22,7 +22,7 @@ class ClusterManager:
 
     def add_node_info(self, node_type: str, node_id: int, container_name="epd_vllm_ascend"):
         if node_type not in self.node_info:
-            raise ValueError("node type can only be e,pd,p,d")
+            raise ValueError("node type can only be e,pd,p,d,ds")
         new_config = NodeConfig(node_id=node_id, container_name=container_name)
         self.node_info[node_type].append(new_config)
         print(f"add {node_type}: node_id={node_id}, container={container_name}")

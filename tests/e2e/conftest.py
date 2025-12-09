@@ -479,8 +479,7 @@ class RemoteEPDServer:
             for i in range(1, len(self.cluster_ips)):
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[i],
-                    container_name=self.node_info.get_node_info(
-                        "ds", i).container_name,
+                    container_name=self.node_info.get_node_info("ds", i-1).container_name,
                     server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}",
                                       "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
                     env_dict=None,
@@ -499,7 +498,7 @@ class RemoteEPDServer:
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[i],
                     container_name=self.node_info.get_node_info(
-                        "ds", i).container_name,
+                        "ds", i-1).container_name,
                     server_cmd=["dscli", "stop",
                                 "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}"],
                     env_dict=None,
