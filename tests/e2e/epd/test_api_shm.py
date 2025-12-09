@@ -621,6 +621,36 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
+
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen_base64",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
     aisbench_cases = [{
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
@@ -649,10 +679,17 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=aisbench_cases, save=False)
+                           aisbench_cases=aisbench_cases)
 
 
 DATASET_NAME = ["simulate_truth"]
