@@ -956,6 +956,8 @@ class RemoteEPDServer:
         self.proxy_addr = None
         if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
             self.enable_ipv6 = True
+        else:
+            self.enable_ipv6 = False
         if node_info is not None and self.enable_ipv6:
             self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
             for i in range(len(self.cluster_ips)):
