@@ -575,8 +575,9 @@ DATASET_NAME = ["simulate_truth", "image_4"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
 async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
-                                 dataset_name: str):
+                                 dataset_name: str, request_rate: float):
     '''
     1E2PD 单机部署
     前缀缓存： 开启
@@ -586,7 +587,7 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
     '''
 
     env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
-           "MC_USE_IPV6": "1"}
+           "MC_USE_IPV6": "1", "TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -600,10 +601,9 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
                          str(i + e_num),
                          index=i)
 
-    proxy_args = ["--transfer-protocol", "tcp"]
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
-        "--transfer-protocol", "tcp", "--tensor-parallel-size",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
@@ -613,7 +613,7 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
-        "--transfer-protocol", "tcp", "--tensor-parallel-size",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
@@ -621,21 +621,22 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
-    acc_cases = [{
-        "case_type": "accuracy",
-        "dataset_path": os.path.join(DATASET_PATH, "textvqa_subset"),
-        "request_conf": "vllm_api_general_chat",
+    aisbench_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "max_out_len": 2048,
+        "num_prompts": 200,
         "batch_size": 128,
-        "temperature": 0,
-        "top_k": -1,
-        "top_p": 1,
-        "repetition_penalty": 1,
-        "request_rate": 0,
-        "baseline": 81,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate*(e_num+pd_num),
+        "baseline": 1,
         "seed": 77,
-        "threshold": 1
+        "result_file_name": f"{dataset_name}_1E2PD_shm_tcp_004",
+        "threshold": 0.97
     }]
 
     api_port = 10001
@@ -647,12 +648,11 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
                                e_num=e_num,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               proxy_args=proxy_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
-                           aisbench_cases=acc_cases, save=False)
+                           aisbench_cases=aisbench_cases, save=False)
 
 
 DATASET_NAME = ["simulate_truth"]
