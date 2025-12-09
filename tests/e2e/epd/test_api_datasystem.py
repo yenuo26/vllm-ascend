@@ -16,9 +16,6 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 TENSOR_PARALLELS = [1]
 DATASET_NAME = ["simulate_truth"]
-
-MOONCAKE_PRODUCER_CONFIG_PATH = load_config().get("mooncake_config_path") + "producer.json"
-MOONCAKE_CONSUMER_CONFIG_PATH = load_config().get("mooncake_config_path") + "consumer.json"
 PREFIX_CACHE = [True, False]
 
 
@@ -43,6 +40,7 @@ async def test_1e2pd_datasystem_tcp_001(model: str, tp_size: int, dataset: str, 
     env_dict = EnvManager()
     env_dict.add_env("common", "VLLM_NIXL_SIDE_CHANNEL_PORT", "6000")
     env_dict.add_env("common", "TRANSFER_PROTOCOL", "tcp")
+    env_dict.add_env("common", "MC_USE_IPV6", "1")
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
     for i in range(pd_num):
