@@ -881,7 +881,6 @@ class RemoteEPDServer:
                  node_info: ClusterManager = None,
                  api_server_port: Optional[int] = 10001,
                  is_image_load: Optional[bool] = True,
-                 is_epd_same_card: Optional[bool] = False,
                  env_dict: EnvManager = None) -> None:
         self._share_info = SharedInfoManager()
         self._output = OutputManager(self._share_info)
@@ -907,7 +906,6 @@ class RemoteEPDServer:
         self.kv_store_type = kv_store_type
         self.proxy_type = proxy_type
         self.is_image_load = is_image_load
-        self.is_epd_same_card = is_epd_same_card
         self.api_server_port = api_server_port
         self.e_serve_args_list = list()
         self.pd_serve_args_list = list()
