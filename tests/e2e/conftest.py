@@ -941,16 +941,13 @@ class RemoteEPDServer:
         self.proxy_addr = None
         if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
             self.enable_ipv6 = True
-        if node_info is not None:
-            if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
-                self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
-            else:
-                self.cluster_ips = get_cluster_ips()
+
+        if node_info is not None and self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
+            self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
+        elif self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
+            self.cluster_ips = ["[::1]"]
         else:
-            if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
-                self.cluster_ips = ["[::1]"]
-            else:
-                self.cluster_ips = ["127.0.0.1"]
+            self.cluster_ips = get_cluster_ips()
 
     async def __aenter__(self):
         # start with
