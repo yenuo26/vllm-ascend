@@ -1356,7 +1356,7 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
         "request_rate": request_rate * (e_num + pd_num*4),
         "baseline": 1,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_1E1PD_shm_tcp",
+        "result_file_name": f"{dataset_name}_1E1PD_shm_tcp_002",
         "threshold": 0.97
     }]
 

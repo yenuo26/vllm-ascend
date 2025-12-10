@@ -726,6 +726,9 @@ class RemoteEPDServer:
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[
                 self.proxy_args.index("--enable-health-monitor") + 1]
+        if self.proxy_args is not None and "--health-check-interval" in self.proxy_args:
+            self.proxy_config['health_check_interval'] = self.proxy_args[
+                self.proxy_args.index("--health-check-interval") + 1]
         if self.proxy_args is not None and "--router" in self.proxy_args:
             self.proxy_config['router'] = self.proxy_args[
                 self.proxy_args.index("--router") + 1]
