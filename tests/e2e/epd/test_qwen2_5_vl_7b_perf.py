@@ -136,12 +136,6 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
     for i in range(pd_num):
         env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
-    # for i in range(e_num):
-    #     env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
-    # card_num = e_num
-    # for i in range(pd_num):
-    #     env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", f"{str(card_num)},{str(card_num + 1)}", index=i)
-    #     card_num += 2
 
     e_server_args = [
         "--no-enable-prefix-caching", "--model", model,
