@@ -7,7 +7,7 @@ from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
-from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -36,8 +36,22 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
     部署形态： 1E1P1D、单机
     存储类型：EC storage , KV mooncake
     '''
-    env_dict = {}
-    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
+    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000"}
+
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+
+    env_dict.add_env("p",
+                     "ASCEND_RT_VISIBLE_DEVICES",
+                     "1")
+
+    env_dict.add_env("d",
+                     "ASCEND_RT_VISIBLE_DEVICES",
+                     "2")
+
+
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
