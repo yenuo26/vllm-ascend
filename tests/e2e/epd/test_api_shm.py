@@ -1292,7 +1292,8 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
     模型：qwen3-30B(E:TP=1, PD: TP=4)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1"}
+    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1",
+           "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1308,17 +1309,17 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
         "1", "--enforce-eager", "--no-enable-prefix-caching",
-        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-model-len", "20000", "--max-num-batched-tokens", "20000",
         "--max-num-seqs", "1", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.9",
         "--tensor-parallel-size",
-        "4", "--enforce-eager", "--max-model-len", "10000",
-        "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+        "4", "--enforce-eager", "--max-model-len", "20000",
+        "--max-num-batched-tokens", "20000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
