@@ -720,9 +720,9 @@ class RemoteEPDServer:
                     'p_addr_list': self._share_info.get_addr_list("p"),
                     'd_addr_list': self._share_info.get_addr_list("d")
                 })
-        if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
+        if self.proxy_args is not None and "--transfer-protocol" in self.proxy_args:
             self.proxy_config['transfer_protocol'] = self.proxy_args[
-                self.proxy_args.index("--transfer_protocol") + 1]
+                self.proxy_args.index("--transfer-protocol") + 1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[
                 self.proxy_args.index("--enable-health-monitor") + 1]
