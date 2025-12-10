@@ -615,9 +615,16 @@ class AisbenchRunner:
         self._get_result_performance()
         output_throughput = self.result_json["Output Token Throughput"][
             "total"].replace("token/s", "")
+        success_num = self.result_json["Success Requests"][
+            "total"]
+        total_num = self.result_json["Total Requests"][
+            "total"]
         assert float(
             output_throughput
         ) >= self.threshold * self.baseline, f"Performance verification failed. The current Output Token Throughput is {output_throughput} token/s, which is not greater than or equal to {self.threshold} * baseline {self.baseline}."
+        assert int(
+            success_num
+        ) == total_num, f"Performance verification failed. The current Success Request is {success_num}, which is not equal to {total_num}."
 
     def _accuracy_verify(self):
         acc_value = self._get_result_accuracy()
