@@ -75,10 +75,10 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"local_hostname": "localhost", '
-            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
-            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"metadata_server": "http://localhost:8083/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50053", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'],
+            '"kv_role": "kv_producer", "mooncake_rpc_port": "50053"}'],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
@@ -86,18 +86,18 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"local_hostname": "localhost", '
-            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
-            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"metadata_server": "http://localhost:8083/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50053", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}']
+            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50053"}']
     ]
 
     mooncake_args = [
-        "--rpc_port", "50051", "--enable_http_metadata_server=true",
+        "--rpc_port", "50053", "--enable_http_metadata_server=true",
         "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
+        "--http_metadata_server_port=8083", "--rpc_thread_num", "8",
         "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9"
+        "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
 
     warmup_cases = [{
