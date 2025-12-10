@@ -344,7 +344,7 @@ class RemoteEPDServer:
             print(f"delete shm_path is: {shm_path}")
             self._run_server(args, None,"[DELETE] ")
 
-        if self.node_info.get_node_info("e") is not None:
+        if self.node_info is not None and self.node_info.get_node_info("e") is not None:
             for i in range(1, len(self.cluster_ips)):
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[i],
