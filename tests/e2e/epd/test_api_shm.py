@@ -108,7 +108,7 @@ async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
         "threshold": 0.97
     }]
 
-    api_port = 10001
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -208,7 +208,7 @@ async def test_1e1pd_sc_shm_tcp_001(model: str, tp_size: int,
         "result_file_name": f"{dataset_name}_1E1PD_sc_shm_tcp",
         "threshold": 0.97
     }]
-    api_port = 10001
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -334,7 +334,7 @@ async def test_1e2pd_shm_tcp_001(model: str, tp_size: int,
         "result_file_name": f"{dataset_name}_1E2PD_shm_tcp_001",
         "threshold": 0.97
     }]
-    api_port = 10001
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -458,7 +458,7 @@ async def test_1e2pd_shm_tcp_002(model: str, tp_size: int,
         "threshold": 0.97
     }]
 
-    api_port = 10001
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -552,7 +552,7 @@ async def test_1e2pd_shm_tcp_003(model: str, tp_size: int,
         "threshold": 1
     }]
 
-    api_port = 10001
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -924,7 +924,7 @@ async def test_3e5pd_shm_tcp_001(model: str, tp_size: int,
         "threshold": 0.97
     }]
 
-    api_port = 10001
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -1053,7 +1053,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int,
         "seed": 77,
         "threshold": 0.97
     }]
-    api_port = 10002
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -1153,7 +1153,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_002(model: str, tp_size: int,
         "threshold": 1
     }]
 
-    api_port = 10002
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
@@ -1247,7 +1247,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_003(model: str, tp_size: int,
         "result_file_name": f"{dataset_name}_1E2PD_cross_p_epd_shm_tcp_003"
     }]
 
-    api_port = 10002
+    api_port = get_open_port()
     async with RemoteEPDServer(run_mode="worker",
                                store_type="storage",
                                proxy_type="api_server",
