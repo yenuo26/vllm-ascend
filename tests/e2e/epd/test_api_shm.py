@@ -127,6 +127,7 @@ async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num+e_num,
                            aisbench_cases=aisbench_cases)
 
 
@@ -226,6 +227,7 @@ async def test_1e1pd_sc_shm_tcp_001(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=aisbench_cases)
 
 
@@ -351,6 +353,7 @@ async def test_1e2pd_shm_tcp_001(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=aisbench_cases)
 
 
@@ -475,6 +478,7 @@ async def test_1e2pd_shm_tcp_002(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=aisbench_cases)
 
 
@@ -562,6 +566,7 @@ async def test_1e2pd_shm_tcp_003(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=acc_cases, save=False)
 
 
@@ -938,6 +943,7 @@ async def test_3e5pd_shm_tcp_001(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=aisbench_cases)
 
 
@@ -1068,6 +1074,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int,
         # test perf
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=aisbench_cases)
 
 
@@ -1160,6 +1167,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_002(model: str, tp_size: int,
 
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=acc_cases, save=False)
 
 
@@ -1253,6 +1261,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_003(model: str, tp_size: int,
 
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=pd_num + e_num,
                            aisbench_cases=aisbench_cases)
 
 
