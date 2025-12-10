@@ -19,6 +19,7 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 TENSOR_PARALLELS = [1]
 PREFIX_CACHE = [True, False]
+ROUTER = ["RandomRouter", "RoundRobinRouter", "LeastInFlightRouter"]
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -36,8 +37,8 @@ async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
     1E1PD 单机部署
     前缀缓存： 开启
     数据集：模拟ZJ
-    测试类型：perf
     ec transfer: shm
+    通信方式：tcp(ipv4)
     '''
 
     env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
@@ -143,8 +144,8 @@ async def test_1e1pd_sc_shm_tcp_001(model: str, tp_size: int,
     1E1PD共卡 单机部署
     前缀缓存： 开启
     数据集：模拟ZJ
-    测试类型：perf
     ec transfer: shm
+    通信方式：tcp(ipv4)
     '''
     env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
 
@@ -835,14 +836,15 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("router", ROUTER)
 async def test_3e5pd_shm_tcp_001(model: str, tp_size: int,
-                                    dataset_name: str, request_rate: float):
+                                    dataset_name: str, request_rate: float, router: str):
     '''
     3E5PD 单机部署
     前缀缓存： 开启
     数据集：模拟ZJ
     ec transfer: shm
-    通信方式：tcp(ipv4)
+    通信方式：tcp(ipv6)
     '''
     env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
 
@@ -877,6 +879,9 @@ async def test_3e5pd_shm_tcp_001(model: str, tp_size: int,
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
     ]
+
+    proxy_args = ["--router", router]
+
     warmup_cases = [{
         "case_type":
         "performance",
@@ -933,7 +938,8 @@ async def test_3e5pd_shm_tcp_001(model: str, tp_size: int,
                                e_num=e_num,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args) as server:
+                               pd_serve_args=pd_server_args,
+                               proxy_args=proxy_args) as server:
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
