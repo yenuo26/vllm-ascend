@@ -335,14 +335,15 @@ class RemoteEPDServer:
 
     def _delete_shm(self) -> None:
         for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
-            index = arg.index("--ec-transfer-config")
-            shm_path = json.loads(arg[index + 1]).get(
-                "ec_connector_extra_config").get("shared_storage_path")
-            args = [
-                "rm", "-r", "-f", shm_path
-            ]
-            print(f"delete shm_path is: {shm_path}")
-            self._run_server(args, None,"[DELETE] ")
+            if "--ec-transfer-config" in arg:
+                index = arg.index("--ec-transfer-config")
+                shm_path = json.loads(arg[index + 1]).get(
+                    "ec_connector_extra_config").get("shared_storage_path")
+                args = [
+                    "rm", "-r", "-f", shm_path
+                ]
+                print(f"delete shm_path is: {shm_path}")
+                self._run_server(args, None,"[DELETE] ")
 
         if self.node_info is not None and self.node_info.get_node_info("e") is not None:
             for i in range(1, len(self.cluster_ips)):
