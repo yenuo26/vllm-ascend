@@ -1293,7 +1293,8 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
     '''
 
     env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1",
-           "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"}
+           "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True", "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
