@@ -381,9 +381,9 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
         f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
-        f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
+        f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"10", "device_name": "",'
-        f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
+        f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}',
         "--metastore-client-config",
@@ -399,15 +399,15 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
             f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
-            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
+            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
-            f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
+            f'"master_server_address": "{mooncake_ip}:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
-            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
+            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_producer", "mooncake_rpc_port": "0"}}',
             "--metastore-client-config",
@@ -421,8 +421,8 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv4_001(model: str, tp_size: int
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
             f'{{"kv_connector_extra_config": {{"local_hostname": "{node_ips[1]}", '
-            f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","protocol": "tcp", '
-            f'"device_name": "", "master_server_address": "[{mooncake_ip}]:{rpc_port}", '
+            f'"metadata_server": "http://{mooncake_ip}:{http_metadata_server_port}/metadata","protocol": "tcp", '
+            f'"device_name": "", "master_server_address": "{mooncake_ip}:{rpc_port}", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
             f'"kv_role": "kv_consumer", "mooncake_rpc_port": "0"}}',
             "--metastore-client-config",
