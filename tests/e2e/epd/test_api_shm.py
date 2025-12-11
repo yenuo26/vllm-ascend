@@ -962,7 +962,7 @@ DATASET_NAME = ["simulate_truth", "image_4"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int,
+async def test_1e2pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
                                                  dataset_name: str, request_rate: float):
     '''
     proxy-epd 跨机部署, 1E2PD
@@ -1092,7 +1092,7 @@ DATASET_NAME = ["textvqa-subset"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_cross_p_epd_storage_tcp_002(model: str, tp_size: int,
+async def test_1e2pd_cross_p_epd_shm_tcp_002(model: str, tp_size: int,
                                                  dataset_name: str):
     '''
     proxy-epd 跨机部署, 1E2PD
@@ -1185,7 +1185,7 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_cross_p_epd_storage_tcp_003(model: str, tp_size: int,
+async def test_1e2pd_cross_p_epd_shm_tcp_003(model: str, tp_size: int,
                                                  dataset_name: str):
     '''
     proxy-epd 跨机部署, 1E2PD
