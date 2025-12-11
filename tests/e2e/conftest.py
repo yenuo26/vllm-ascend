@@ -335,15 +335,25 @@ class RemoteEPDServer:
 
     def _delete_shm(self) -> None:
         for i, arg in enumerate(self.e_serve_args_list + self.pd_serve_args_list):
-            index = arg.index("--ec-transfer-config")
-            shm_path = json.loads(arg[index + 1]).get(
-                "ec_connector_extra_config").get("shared_storage_path")
-            args = [
-                "rm", "-r", "-f", shm_path
-            ]
-            print(f"delete shm_path is: {shm_path}")
-            self._run_server(args, None,"[DELETE] ")
+            if "--ec-transfer-config" in arg:
+                index = arg.index("--ec-transfer-config")
+                shm_path = json.loads(arg[index + 1]).get(
+                    "ec_connector_extra_config").get("shared_storage_path")
+                args = [
+                    "rm", "-r", "-f", shm_path
+                ]
+                print(f"delete shm_path is: {shm_path}")
+                self._run_server(args, None,"[DELETE] ")
 
+        if self.node_info is not None and self.node_info.get_node_info("e") is not None:
+            for i in range(1, len(self.cluster_ips)):
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[i],
+                    container_name=self.node_info.get_node_info("e").container_name,
+                    server_cmd=["rm", "-r", "-f", shm_path],
+                    env_dict=None,
+                    log_prefix=f"[DELETE] ",
+                )
 
     def _run_server(self, server_cmd: list[str], env_dict: Optional[dict[str,
                                                                          str]],
@@ -711,12 +721,15 @@ class RemoteEPDServer:
                     'p_addr_list': self._share_info.get_addr_list("p"),
                     'd_addr_list': self._share_info.get_addr_list("d")
                 })
-        if self.proxy_args is not None and "--transfer_protocol" in self.proxy_args:
+        if self.proxy_args is not None and "--transfer-protocol" in self.proxy_args:
             self.proxy_config['transfer_protocol'] = self.proxy_args[
-                self.proxy_args.index("--transfer_protocol") + 1]
+                self.proxy_args.index("--transfer-protocol") + 1]
         if self.proxy_args is not None and "--enable-health-monitor" in self.proxy_args:
             self.proxy_config['enable_health_monitor'] = self.proxy_args[
                 self.proxy_args.index("--enable-health-monitor") + 1]
+        if self.proxy_args is not None and "--health-check-interval" in self.proxy_args:
+            self.proxy_config['health_check_interval'] = self.proxy_args[
+                self.proxy_args.index("--health-check-interval") + 1]
         if self.proxy_args is not None and "--router" in self.proxy_args:
             self.proxy_config['router'] = self.proxy_args[
                 self.proxy_args.index("--router") + 1]

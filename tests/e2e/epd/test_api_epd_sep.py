@@ -7,8 +7,7 @@ from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
-from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager
-from vllm.utils import get_open_port
+from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
 
 model_path = load_config().get("model_path")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
@@ -37,8 +36,22 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
     部署形态： 1E1P1D、单机
     存储类型：EC storage , KV mooncake
     '''
-    env_dict = {}
-    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
+    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000"}
+
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+
+    env_dict.add_env("p",
+                     "ASCEND_RT_VISIBLE_DEVICES",
+                     "1")
+
+    env_dict.add_env("d",
+                     "ASCEND_RT_VISIBLE_DEVICES",
+                     "2")
+
+
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
@@ -62,10 +75,10 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"local_hostname": "localhost", '
-            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
-            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"metadata_server": "http://localhost:8083/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50053", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            '"kv_role": "kv_producer", "mooncake_rpc_port": "50051"}'],
+            '"kv_role": "kv_producer", "mooncake_rpc_port": "50053"}'],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
@@ -73,18 +86,18 @@ async def test_1e1p1d_ipc_storage_mooncake_001(model: str, tp_size: int,
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"local_hostname": "localhost", '
-            '"metadata_server": "http://localhost:8081/metadata","protocol": "tcp", '
-            '"device_name": "", "master_server_address": "localhost:50051", '
+            '"metadata_server": "http://localhost:8083/metadata","protocol": "tcp", '
+            '"device_name": "", "master_server_address": "localhost:50053", '
             '"global_segment_size": 30000000000},"kv_connector": "MooncakeConnectorStoreV1", '
-            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50051"}']
+            '"kv_role": "kv_consumer", "mooncake_rpc_port": "50053"}']
     ]
 
     mooncake_args = [
-        "--rpc_port", "50051", "--enable_http_metadata_server=true",
+        "--rpc_port", "50053", "--enable_http_metadata_server=true",
         "--http_metadata_server_host=0.0.0.0",
-        "--http_metadata_server_port=8081", "--rpc_thread_num", "8",
+        "--http_metadata_server_port=8083", "--rpc_thread_num", "8",
         "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
-        "--eviction_high_watermark_ratio", "0.9"
+        "--eviction_high_watermark_ratio", "0.9", "--metrics_port", "9004"
     ]
 
     warmup_cases = [{
