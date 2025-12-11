@@ -1040,6 +1040,7 @@ class RemoteOpenAIServer:
         env['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
         env['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
         env['VLLM_USE_V1'] = "1"
+        env["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
         if env_dict is not None:
             env.update(env_dict)
         self.proc: subprocess.Popen = subprocess.Popen(
