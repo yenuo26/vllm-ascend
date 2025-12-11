@@ -41,7 +41,7 @@ async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
     通信方式：tcp(ipv4)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -148,7 +148,7 @@ async def test_1e1pd_sc_shm_tcp_001(model: str, tp_size: int,
     ec transfer: shm
     通信方式：tcp(ipv4)
     '''
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -251,7 +251,7 @@ async def test_1e2pd_shm_tcp_001(model: str, tp_size: int,
     ec transfer: shm
     通信方式：tcp(ipv4),环境变量指定
     '''
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -377,10 +377,7 @@ async def test_1e2pd_shm_tcp_002(model: str, tp_size: int,
     通信方式：tcp(ipv4)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000"}
-
     env_dict = EnvManager()
-    env_dict.add_env("common", env_dict=env)
     e_num = 1
     pd_num = 2
     for i in range(e_num):
@@ -501,10 +498,7 @@ async def test_1e2pd_shm_tcp_003(model: str, tp_size: int,
     通信方式：tcp(ipv4)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000"}
-
     env_dict = EnvManager()
-    env_dict.add_env("common", env_dict=env)
     e_num = 1
     pd_num = 2
     for i in range(e_num):
@@ -592,8 +586,7 @@ async def test_1e2pd_shm_tcp_004(model: str, tp_size: int,
     通信方式：tcp(ipv6)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
-           "MC_USE_IPV6": "1", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"MC_USE_IPV6": "1", "TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -720,10 +713,7 @@ async def test_1e2pd_shm_ipc_001(model: str, tp_size: int,
     通信方式：ipc
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000"}
-
     env_dict = EnvManager()
-    env_dict.add_env("common", env_dict=env)
     e_num = 1
     pd_num = 2
     for i in range(e_num):
@@ -846,7 +836,7 @@ async def test_3e5pd_shm_tcp_001(model: str, tp_size: int,
     ec transfer: shm
     通信方式：tcp(ipv6)
     '''
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1"}
+    env = {"TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -975,7 +965,7 @@ async def test_1e2pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
 
     e_num = 1
     pd_num = 2
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1104,7 +1094,7 @@ async def test_1e2pd_cross_p_epd_shm_tcp_002(model: str, tp_size: int,
 
     e_num = 1
     pd_num = 2
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1197,7 +1187,7 @@ async def test_1e2pd_cross_p_epd_shm_tcp_003(model: str, tp_size: int,
 
     e_num = 1
     pd_num = 2
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp"}
+    env = {"TRANSFER_PROTOCOL": "tcp"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1295,8 +1285,7 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
     模型：qwen3-30B(E:TP=1, PD: TP=4)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1",
-           "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True", "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
+    env = {"TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1","VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"}
 
     env_dict = EnvManager()
@@ -1407,8 +1396,7 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str,
     模型：qwen3-30B(E:TP=1, PD: TP=4)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
-           "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True", "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120", "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"}
+    env = {"VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120", "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"}
 
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1498,52 +1486,53 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str,
 
 
 
+DATASET_NAME = ["textvqa-subset"]
 
 @pytest.mark.asyncio
 @pytest.mark.acc
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e1pd_shm_tcp_004(model: str, tp_size: int,
+async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
                                  dataset_name: str):
     '''
-    1E2PD 单机部署
+    1E1PD proxy-epd跨机部署
     前缀缓存： 开启
     数据集：textvqa-subset
     ec transfer: shm
     通信方式：tcp(ipv6)
     '''
 
-    env = {"VLLM_NIXL_SIDE_CHANNEL_PORT": "6000", "MC_USE_IPV6": "1"}
-
     env_dict = EnvManager()
-    env_dict.add_env("common", env_dict=env)
     e_num = 1
-    pd_num = 2
+    pd_num = 1
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+
+    env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", "1,2,3,4")
+
+    cluster = ClusterManager()
     for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+        cluster.add_node_info("e", 1, CONTAINER_NAME)
     for i in range(pd_num):
-        env_dict.add_env("pd",
-                         "ASCEND_RT_VISIBLE_DEVICES",
-                         str(i + e_num),
-                         index=i)
+        cluster.add_node_info("pd", 1, CONTAINER_NAME)
 
     proxy_args = ["--transfer-protocol", "tcp"]
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--transfer-protocol", "tcp", "--tensor-parallel-size",
-        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
-        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "1", "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "20000", "--max-num-batched-tokens", "20000",
         "--max-num-seqs", "1", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
     pd_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--model", model, "--gpu-memory-utilization", "0.9",
         "--transfer-protocol", "tcp", "--tensor-parallel-size",
-        str(tp_size), "--enforce-eager", "--max-model-len", "10000",
-        "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+        "4", "--enforce-eager", "--max-model-len", "20000",
+        "--max-num-batched-tokens", "20000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
         SHARED_STORAGE_PATH +
@@ -1574,13 +1563,13 @@ async def test_1e1pd_shm_tcp_004(model: str, tp_size: int,
                                pd_num=pd_num,
                                e_num=e_num,
                                env_dict=env_dict,
+                               node_info=cluster,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args,
                                proxy_args=proxy_args) as server:
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
-                           card_num=pd_num + e_num,
                            aisbench_cases=acc_cases, save=False)
 
 
