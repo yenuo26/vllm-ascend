@@ -1504,10 +1504,10 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str,
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e1pd_shm_tcp_004(model: str, tp_size: int,
+async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
                                  dataset_name: str):
     '''
-    1E2PD 单机部署
+    1E1PD 单机部署
     前缀缓存： 开启
     数据集：textvqa-subset
     ec transfer: shm
@@ -1519,7 +1519,7 @@ async def test_1e1pd_shm_tcp_004(model: str, tp_size: int,
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
     e_num = 1
-    pd_num = 2
+    pd_num = 1
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
     for i in range(pd_num):
@@ -1527,6 +1527,12 @@ async def test_1e1pd_shm_tcp_004(model: str, tp_size: int,
                          "ASCEND_RT_VISIBLE_DEVICES",
                          str(i + e_num),
                          index=i)
+
+    cluster = ClusterManager()
+    for i in range(e_num):
+        cluster.add_node_info("e", 1, CONTAINER_NAME)
+    for i in range(pd_num):
+        cluster.add_node_info("pd", 1, CONTAINER_NAME)
 
     proxy_args = ["--transfer-protocol", "tcp"]
     e_server_args = [
@@ -1580,7 +1586,6 @@ async def test_1e1pd_shm_tcp_004(model: str, tp_size: int,
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
-                           card_num=pd_num + e_num,
                            aisbench_cases=acc_cases, save=False)
 
 
