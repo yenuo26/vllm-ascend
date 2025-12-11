@@ -518,7 +518,7 @@ class RemoteEPDServer:
 
 
     def _get_addr_config(self, args, i, role):
-        if self.env_dict.get_node_env("common", 0).get("TRANSFER_PROTOCOL") is not None:
+        if (common_env:=self.env_dict.get_node_env("common", 0)) and common_env.get("TRANSFER_PROTOCOL") is not None:
             self.protocol = self.env_dict.get_node_env("common", 0)["TRANSFER_PROTOCOL"].lower()
         elif "--transfer-protocol" in args:
             protocol_index = args.index("--transfer-protocol") + 1
@@ -964,11 +964,11 @@ class RemoteEPDServer:
         self.mooncake_args = mooncake_args
         self.proxy_args = proxy_args
         self.env_dict = env_dict
-        if env_dict.get_node_env("common", 0).get("TIMECOUNT_ENABLED", 0) == "1":
+        if (common_env:=self.env_dict.get_node_env("common", 0)) and common_env.get("TIMECOUNT_ENABLED", 0) == "1":
             self._share_info.open_breakdown()
         self._default_addr_prefix = "/tmp/"
         self.proxy_addr = None
-        if self.env_dict.get_node_env("common", 0).get("MC_USE_IPV6", "") == "1":
+        if (common_env:=self.env_dict.get_node_env("common", 0)) and common_env.get("MC_USE_IPV6", "") == "1":
             self.enable_ipv6 = True
         else:
             self.enable_ipv6 = False
