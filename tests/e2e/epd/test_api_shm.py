@@ -1498,6 +1498,7 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str,
 
 
 
+DATASET_NAME = ["textvqa-subset"]
 
 @pytest.mark.asyncio
 @pytest.mark.acc
@@ -1507,7 +1508,7 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str,
 async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
                                  dataset_name: str):
     '''
-    1E1PD 单机部署
+    1E1PD proxy-epd跨机部署
     前缀缓存： 开启
     数据集：textvqa-subset
     ec transfer: shm
@@ -1520,13 +1521,10 @@ async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
     env_dict.add_env("common", env_dict=env)
     e_num = 1
     pd_num = 1
-    for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
-    for i in range(pd_num):
-        env_dict.add_env("pd",
-                         "ASCEND_RT_VISIBLE_DEVICES",
-                         str(i + e_num),
-                         index=i)
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+
+    env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", "1,2,3,4")
 
     cluster = ClusterManager()
     for i in range(e_num):
@@ -1538,7 +1536,7 @@ async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--transfer-protocol", "tcp", "--tensor-parallel-size",
-        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "1", "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
@@ -1548,7 +1546,7 @@ async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--transfer-protocol", "tcp", "--tensor-parallel-size",
-        str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+        "4", "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
