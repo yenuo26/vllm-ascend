@@ -47,9 +47,6 @@ REQUEST_CONFIG = [("image_4", 0.2, 170), ("image_4", 0.4, 250), ("image_4", 0.6,
 @pytest.mark.parametrize("dataset_name, request_rate, num_prompts", REQUEST_CONFIG)
 async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                           request_rate: int, num_prompts: int, teardown):
-    env_dict = {
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
-    }
     api_port = 10001
     vllm_server_args = [
         "--port",
@@ -96,7 +93,6 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str,
                             vllm_server_args,
                             server_host="127.0.0.1",
                             server_port=api_port,
-                            env_dict=env_dict,
                             auto_port=False) as server:
 
         # warm up
@@ -125,8 +121,7 @@ async def test_1e3pd_001(model: str, tp_size: int, dataset_name: str,
     env = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
-        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -232,8 +227,7 @@ async def test_1e2pd_001(model: str, tp_size: int, dataset_name: str,
     env = {
         "TIMECOUNT_ENABLED": "1",
         "VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
-        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
