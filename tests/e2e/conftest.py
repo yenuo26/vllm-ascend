@@ -560,6 +560,8 @@ class RemoteEPDServer:
     def _start_vllm_worker(self):
         self.env_dict.add_env("common", 'VLLM_ALLOW_LONG_MAX_MODEL_LEN', "1")
         self.env_dict.add_env("common", 'VLLM_USE_V1', "1")
+        self.env_dict.add_env("common", 'VLLM_NIXL_SIDE_CHANNEL_PORT', "6000")
+        self.env_dict.add_env("common", 'PYTORCH_NPU_ALLOC_CONF', "expandable_segments:True")
 
         serve_arg_cmd = [
                 "taskset", "-c", "0-96", "python", "-m",
