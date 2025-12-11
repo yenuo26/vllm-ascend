@@ -1021,7 +1021,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int,
         "request_conf":
         "vllm_api_stream_chat",
         "dataset_conf":
-        "textvqa/textvqa_gen_base64_base64",
+        "textvqa/textvqa_gen_base64",
         "num_prompts":
         50,
         "max_out_len":
@@ -1046,7 +1046,7 @@ async def test_1e2pd_cross_p_epd_storage_tcp_001(model: str, tp_size: int,
         "case_type": "performance",
         "dataset_path": os.path.join(DATASET_PATH,dataset_name),
         "request_conf": "vllm_api_stream_chat",
-        "dataset_conf": "textvqa/textvqa_gen_base64_base64",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 200,
         "batch_size": 128,
         "temperature": 0.5,
