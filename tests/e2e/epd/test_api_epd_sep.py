@@ -1230,22 +1230,32 @@ async def test_2e3p3d_tcp_mooncake_ipv4_001(model: str, tp_size: int,
     通信方式： TCP
 
     '''
-    env_dict = {}
-    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
-    env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
-    env_dict["MC_MS_AUTO_DISC"] = "0"
-    env_dict["MC_USE_IPV6"] = "0"
-    env_dict["TRANSFER_PROTOCOL"] = "tcp"
-    env_dict["PYTORCH_NPU_ALLOC_CONF"] = "expandable_segments:True"
+    e_num = 2
+    p_num = 3
+    d_num = 3
+    env = {
+        "VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
+        "MC_MS_AUTO_DISC": "0",
+        "MC_USE_IPV6": "0",
+        "TRANSFER_PROTOCOL": "tcp",
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+    }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
+    for i in range(p_num):
+        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+    for i in range(d_num):
+        env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num + p_num), index=i)
+
 
     rpc_port = get_open_port()
     http_metadata_server_port = get_open_port()
     metrics_port = get_open_port()
 
     mooncake_ip = "0.0.0.0"
-    e_num = 2
-    p_num = 3
-    d_num = 3
     e_server_args = list()
     pd_server_args = list()
 
