@@ -1661,6 +1661,12 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str):
                            card_num=pd_num*4+e_num,
                            aisbench_cases=aisbench_cases)
 
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           card_num=pd_num*4+e_num,
+                           aisbench_cases=aisbench_cases)
+
 
 
 
