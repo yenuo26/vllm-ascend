@@ -1267,7 +1267,7 @@ async def test_1e2pd_cross_p_epd_shm_tcp_003(model: str, tp_size: int,
 
 REQUEST_RATE = [0.02, 0.06, 0.12]
 MODELS = [os.path.join(model_path, "Qwen3-VL-30B-A3B-Instruct")]
-DATASET_NAME = ["simulate_truth"]
+DATASET_NAME = ["simulate_truth", "image_4"]
 
 @pytest.mark.asyncio
 @pytest.mark.perf
@@ -1321,7 +1321,7 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
     ]
     warmup_cases = [{
         "case_type": "performance",
-        "dataset_path": os.path.join(DATASET_PATH, "image_4"),
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 50,
