@@ -1678,7 +1678,7 @@ TENSOR_PARALLELS = [4]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e1pd_shm_tcp_004(model: str, tp_size: int, dataset_name: str, request_rate: float):
+async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, request_rate: float):
     '''
     PD合并 单机部署
     前缀缓存： 开启
@@ -1735,12 +1735,12 @@ async def test_1e1pd_shm_tcp_004(model: str, tp_size: int, dataset_name: str, re
                             vllm_server_args,
                             server_host="127.0.0.1",
                             server_port=api_port,
+                            env_dict=env_dict,
                             auto_port=False) as server:
 
         # warm up
         run_aisbench_cases(model=model,
                            port=api_port,
-                           env_dict=env_dict,
                            aisbench_cases=warmup_cases,
                            verify=False,
                            save=False)
