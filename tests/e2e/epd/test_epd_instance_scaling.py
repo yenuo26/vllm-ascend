@@ -237,7 +237,7 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int
         "--max-num-seqs", "1", "--ec-transfer-config",
         f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
         f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
-        '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"10", "device_name": "",'
+        '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"20", "device_name": "",'
         f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}',
@@ -255,7 +255,7 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int
             "--ec-transfer-config",
             f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
-            '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+            '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"20", "device_name": "",'
             f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
@@ -290,7 +290,7 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int
             "--rpc_port", str(rpc_port), "--rpc_address", "::", "--enable_http_metadata_server=true",
             "--http_metadata_server_host=::",
             f"--http_metadata_server_port={http_metadata_server_port}", "--rpc_thread_num", "8",
-            "--default_kv_lease_ttl", "10000", "--eviction_ratio", "0.05",
+            "--default_kv_lease_ttl", "10000", "--client_ttl","1","--eviction_ratio", "0.05",
             "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
     ]
     proxy_args = [
