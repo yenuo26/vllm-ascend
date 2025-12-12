@@ -571,21 +571,20 @@ class RemoteEPDServer:
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
 
-            if "--metastore-client-config" not in e_serve_arg:
-                config = self._get_addr_config(e_serve_arg, i, "E")
-                if "--proxy-addr" not in e_serve_arg:
-                    e_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
-                if "--worker-addr" not in e_serve_arg:
-                    e_serve_arg.extend(["--worker-addr", config["worker_addr"]])
+            config = self._get_addr_config(e_serve_arg, i, "E")
+            if "--proxy-addr" not in e_serve_arg:
+                e_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
+            if "--worker-addr" not in e_serve_arg:
+                e_serve_arg.extend(["--worker-addr", config["worker_addr"]])
 
-                index_e = e_serve_arg.index("--proxy-addr")
-                if self.proxy_addr is not None and e_serve_arg[
-                        index_e + 1] != self.proxy_addr:
-                    raise ValueError("proxy addr must be same between workers")
-                self.proxy_addr = e_serve_arg[index_e + 1]
+            index_e = e_serve_arg.index("--proxy-addr")
+            if self.proxy_addr is not None and e_serve_arg[
+                    index_e + 1] != self.proxy_addr:
+                raise ValueError("proxy addr must be same between workers")
+            self.proxy_addr = e_serve_arg[index_e + 1]
 
-                index_e = e_serve_arg.index("--worker-addr")
-                self._share_info.add_addr_list(e_serve_arg[index_e + 1], "e")
+            index_e = e_serve_arg.index("--worker-addr")
+            self._share_info.add_addr_list(e_serve_arg[index_e + 1], "e")
 
             if "--model" not in e_serve_arg:
                 raise ValueError("must carry --model")
@@ -655,20 +654,20 @@ class RemoteEPDServer:
                 role = "pd"
                 current_node_index = i
 
-            if "--metastore-client-config" not in pd_serve_arg:
-                config = self._get_addr_config(pd_serve_arg, current_node_index, role)
-                if "--proxy-addr" not in pd_serve_arg:
-                    pd_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
-                if "--worker-addr" not in pd_serve_arg:
-                    pd_serve_arg.extend(["--worker-addr", config["worker_addr"]])
 
-                index_pd = pd_serve_arg.index("--proxy-addr")
-                if self.proxy_addr is not None and pd_serve_arg[
-                        index_pd + 1] != self.proxy_addr:
-                    raise ValueError("proxy addr must be same between workers")
+            config = self._get_addr_config(pd_serve_arg, current_node_index, role)
+            if "--proxy-addr" not in pd_serve_arg:
+                pd_serve_arg.extend(["--proxy-addr", config["proxy_addr"]])
+            if "--worker-addr" not in pd_serve_arg:
+                pd_serve_arg.extend(["--worker-addr", config["worker_addr"]])
 
-                worker_index = pd_serve_arg.index("--worker-addr")
-                self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], role)
+            index_pd = pd_serve_arg.index("--proxy-addr")
+            if self.proxy_addr is not None and pd_serve_arg[
+                    index_pd + 1] != self.proxy_addr:
+                raise ValueError("proxy addr must be same between workers")
+
+            worker_index = pd_serve_arg.index("--worker-addr")
+            self._share_info.add_addr_list(pd_serve_arg[worker_index + 1], role)
 
             common_env = self.env_dict.get_node_env("common", 0)
             role_env = self.env_dict.get_node_env(role, current_node_index)
@@ -711,18 +710,18 @@ class RemoteEPDServer:
         if self.proxy_args is not None and "--metastore-client-config" in self.proxy_args:
             self.proxy_config['metastore_client_config'] = json.loads(
                 self.proxy_args[self.proxy_args.index("--metastore-client-config") + 1])
+
+        self.proxy_config.update({
+            'proxy_addr': self.proxy_addr,
+            'encode_addr_list': self._share_info.get_addr_list("e"),
+        })
+        if self._share_info.get_addr_list("pd"):
+            self.proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
         else:
             self.proxy_config.update({
-                'proxy_addr': self.proxy_addr,
-                'encode_addr_list': self._share_info.get_addr_list("e"),
+                'p_addr_list': self._share_info.get_addr_list("p"),
+                'd_addr_list': self._share_info.get_addr_list("d")
             })
-            if self._share_info.get_addr_list("pd"):
-                self.proxy_config['pd_addr_list'] = self._share_info.get_addr_list("pd")
-            else:
-                self.proxy_config.update({
-                    'p_addr_list': self._share_info.get_addr_list("p"),
-                    'd_addr_list': self._share_info.get_addr_list("d")
-                })
         if self.proxy_args is not None and "--transfer-protocol" in self.proxy_args:
             self.proxy_config['transfer_protocol'] = self.proxy_args[
                 self.proxy_args.index("--transfer-protocol") + 1]
@@ -1048,7 +1047,7 @@ class RemoteOpenAIServer:
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            universal_newlines=True, 
+            universal_newlines=True,
             bufsize=1)
         stdout_thread = threading.Thread(target=self._output.read_output,
                                          args=(self.proc.stdout, ""),
