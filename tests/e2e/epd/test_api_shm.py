@@ -1575,5 +1575,100 @@ async def test_1e1pd_cross_p_epd_shm_tcp_001(model: str, tp_size: int,
 
 
 
+DATASET_NAME = ["simulate_truth"]
+
+@pytest.mark.asyncio
+@pytest.mark.stability
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str):
+    '''
+    1E1PD 单机部署
+    前缀缓存： 开启
+    数据集：模拟ZJ
+    ec transfer: shm
+    通信方式：tcp(ipv6)
+    模型：qwen3-30B(E:TP=1, PD: TP=4)
+    '''
+
+    env = {"TRANSFER_PROTOCOL": "tcp", "MC_USE_IPV6": "1","VLLM_HTTP_TIMEOUT_KEEP_ALIVE": "120",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300"}
+
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+    e_num = 1
+    pd_num = 1
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+
+    env_dict.add_env("pd",
+                     "ASCEND_RT_VISIBLE_DEVICES", "1,2,3,4")
+
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size",
+        "1", "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "20000", "--max-num-batched-tokens", "20000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.9",
+        "--tensor-parallel-size",
+        "4", "--enforce-eager", "--max-model-len", "20000",
+        "--max-num-batched-tokens", "20000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+    ]
+
+    aisbench_cases = [{
+        "case_type": "pressure",
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "batch_size": 128,
+        "temperature": 0.5,
+        "pressure_time": 86400,
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0.12,
+        "baseline": 1,
+        "seed": 77,
+        "threshold": 0.97,
+        "result_file_name": f"{dataset_name}_1E1PD_shm_tcp_003"
+    }]
+
+    api_port = get_open_port()
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="storage",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=pd_num,
+                               e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           card_num=pd_num*4+e_num,
+                           aisbench_cases=aisbench_cases)
+
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           card_num=pd_num*4+e_num,
+                           aisbench_cases=aisbench_cases)
+
+
+
+
 
 
