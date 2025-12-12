@@ -1724,7 +1724,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, request_r
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate,
+        "request_rate": request_rate*4,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_PD_mix",
@@ -1747,6 +1747,7 @@ async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, request_r
         # aisbench test
         run_aisbench_cases(model=model,
                            port=api_port,
+                           card_num=4,
                            aisbench_cases=aisbench_cases)
 
 
