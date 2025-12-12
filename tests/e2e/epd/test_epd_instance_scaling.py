@@ -189,7 +189,7 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int
                                        dataset_name: str, request_rate: float):
     '''
     数据集： simulate_truth
-    部署形态： redis 1E1P1D、跨机
+    部署形态： redis 1E1P1D、单机
     存储类型：EC mooncake , KV mooncake
     通信方式：redis worker mooncake ipv6
     redis通信方式： 使用域名
@@ -220,22 +220,15 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int
     http_metadata_server_port = 8083
     metrics_port = 9003
 
-    cluster = ClusterManager()
-    for i in range(e_num):
-        cluster.add_node_info("e", 1, CONTAINER_NAME)
-    for i in range(p_num):
-        cluster.add_node_info("p", 1, CONTAINER_NAME)
-    for i in range(d_num):
-        cluster.add_node_info("d", 1, CONTAINER_NAME)
-    node_ips = get_cluster_ips(family=socket.AF_INET6)
-    mooncake_ip = node_ips[0]
+
+    mooncake_ip = "::1"
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
-        f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
+        f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
         f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
         '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"20", "device_name": "",'
         f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
@@ -253,7 +246,7 @@ async def test_redis_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int
             str(tp_size), "--enforce-eager", "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--ec-transfer-config",
-            f'{{"ec_connector_extra_config":{{"local_hostname":"{node_ips[1]}",'
+            f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
             '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"20", "device_name": "",'
             f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
