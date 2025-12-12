@@ -1046,9 +1046,19 @@ class RemoteOpenAIServer:
         self.proc: subprocess.Popen = subprocess.Popen(
             server_cmd,
             env=env,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        )
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True, 
+            bufsize=1)
+        stdout_thread = threading.Thread(target=self._output.read_output,
+                                         args=(self.proc.stdout, ""),
+                                         daemon=True)
+        stderr_thread = threading.Thread(target=self._output.read_output,
+                                         args=(self.proc.stderr, ""),
+                                         daemon=True)
+
+        stdout_thread.start()
+        stderr_thread.start()
 
     def __init__(self,
                  model: str,
@@ -1102,6 +1112,8 @@ class RemoteOpenAIServer:
         self.disaggregated_prefill = disaggregated_prefill
         self.cur_index = os.getenv("LWS_WORKER_INDEX", 0)
         self.proxy_port = proxy_port
+        self._share_info = SharedInfoManager()
+        self._output = OutputManager(self._share_info)
 
         self._start_server(model, vllm_serve_args, env_dict)
         max_wait_seconds = max_wait_seconds or 1800
