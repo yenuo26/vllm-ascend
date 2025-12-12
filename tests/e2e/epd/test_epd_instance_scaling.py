@@ -33,7 +33,7 @@ DATASET_NAME = ["image_4", "simulate_truth"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
+async def test_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float):
     '''
     数据集： simulate_truth
@@ -42,16 +42,31 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
     通信方式：redis worker mooncake ipv6
     redis通信方式： 使用域名
     '''
-    env_dict = {}
-    env_dict["VLLM_NIXL_SIDE_CHANNEL_PORT"] = "6000"
-    env_dict["LM_SERVICE_REQUEST_TIMEOUT_SECONDS"] = "300"
-    env_dict["MC_MS_AUTO_DISC"] = "0"
-    env_dict["MC_USE_IPV6"] = "1"
-    env_dict["TRANSFER_PROTOCOL"] = "tcp"
+    e_num = 1
+    p_num = 1
+    d_num = 1
 
-    rpc_port = get_open_port()
-    http_metadata_server_port = get_open_port()
-    metrics_port = get_open_port()
+    env = {
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
+        "MC_MS_AUTO_DISC": "0",
+        "MC_USE_IPV6": "0",
+        "TRANSFER_PROTOCOL": "tcp",
+        "TIMECOUNT_ENABLED": "1",
+        "VLLM_LOG_STATS_INTERVAL": "10",
+        "VLLM_ASCEND_MODEL_EXECUTE_TIME_OBSERVER": "1"
+    }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
+    for i in range(p_num):
+        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+    for i in range(d_num):
+        env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num + p_num), index=i)
+
+    rpc_port = 50053
+    http_metadata_server_port = 8083
+    metrics_port = 9003
 
     mooncake_ip = "::1"
     e_server_args = [
@@ -62,7 +77,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
         "--max-num-seqs", "1", "--ec-transfer-config",
         f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
         f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 32212254720, '
-        '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+        '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"20", "device_name": "",'
         f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
         '"fast_transfer_buffer_size": 1, "ec_max_num_scheduled_tokens": "1000000000000000000"},'
         '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}',
@@ -80,7 +95,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--ec-transfer-config",
             f'{{"ec_connector_extra_config":{{"local_hostname":"{mooncake_ip}",'
             f'"metadata_server": "http://[{mooncake_ip}]:{http_metadata_server_port}/metadata","global_segment_size": 0, '
-            '"local_buffer_size": 1073741824, "protocol": "tcp", "device_name": "",'
+            '"local_buffer_size": 1073741824, "protocol": "tcp","transfer_timeout":"20", "device_name": "",'
             f'"master_server_address": "[{mooncake_ip}]:{rpc_port}","replica_num": 1, "fast_transfer":true, '
             '"fast_transfer_buffer_size": 1},'
             '"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
@@ -115,7 +130,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
             "--rpc_port", str(rpc_port), "--rpc_address", "::", "--enable_http_metadata_server=true",
             "--http_metadata_server_host=::",
             f"--http_metadata_server_port={http_metadata_server_port}", "--rpc_thread_num", "8",
-            "--default_kv_lease_ttl", "10000", "eviction_ratio", "0.05",
+            "--default_kv_lease_ttl", "10000", "--client_ttl","1","--eviction_ratio", "0.05",
             "--eviction_high_watermark_ratio", "0.9", "--metrics_port", str(metrics_port)
     ]
     proxy_args = [
@@ -126,7 +141,7 @@ async def test_1e1p1d_ipc_mooncake_ipv6_001(model: str, tp_size: int,
 
     aisbench_cases = [{
         "case_type": "pressure",
-        "pressure_time": 60,
+        "pressure_time": 300,
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
