@@ -2779,7 +2779,7 @@ DATASET_NAME = ["image_4"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int,
+async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_acc_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float):
     '''
     数据集： image_4
@@ -2898,21 +2898,21 @@ async def test_proxy_1e1p1d_cross_tcp_mooncake_ipv6_001(model: str, tp_size: int
     }]
 
     aisbench_cases = [{
-        "case_type": "performance",
+        "case_type": "accuracy",
         "dataset_path": os.path.join(DATASET_PATH, dataset_name),
-        "request_conf": "vllm_api_stream_chat",
+        "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
-        "num_prompts": 200,
+        "num_prompts": 2048,
+        "max_out_len": 2048,
         "batch_size": 128,
-        "temperature": 0.5,
-        "top_k": 10,
-        "top_p": 0.7,
-        "repetition_penalty": 1.2,
-        "request_rate": request_rate * (e_num+p_num+d_num),
-        "baseline": 1,
+        "temperature": 0,
+        "top_k": -1,
+        "top_p": 1,
+        "repetition_penalty": 1,
+        "request_rate": 0,
+        "baseline": 81,
         "seed": 77,
-        "result_file_name": f"{dataset_name}_proxy_1E1P1D_cross_tcp_mooncake_ipv6",
-        "threshold": 0.97
+        "threshold": 1
     }]
     api_port = 10001
     async with RemoteEPDServer(run_mode="worker",
