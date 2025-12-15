@@ -47,7 +47,7 @@ def get_cluster_ips(family=socket.AF_INET) -> list[str]:
                 result_ips.append(result[0][4][0])
             return result_ips
         except Exception as e:
-            print("cluster ip load failed, will use default set")
+            print(f"cluster ip load failed: {e}, will use default set")
             return []
     else:
         return []
