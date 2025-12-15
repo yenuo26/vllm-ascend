@@ -5,6 +5,7 @@ import pytest_asyncio
 import copy
 
 from tests.e2e.conftest import RemoteEPDServer
+from tests.e2e.conftest import RemoteOpenAIServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
@@ -1266,7 +1267,7 @@ async def test_1e2pd_cross_p_epd_shm_tcp_003(model: str, tp_size: int,
 
 REQUEST_RATE = [0.02, 0.06, 0.12]
 MODELS = [os.path.join(model_path, "Qwen3-VL-30B-A3B-Instruct")]
-DATASET_NAME = ["simulate_truth"]
+DATASET_NAME = ["simulate_truth", "image_4"]
 
 @pytest.mark.asyncio
 @pytest.mark.perf
@@ -1320,7 +1321,7 @@ async def test_1e1pd_shm_tcp_002(model: str, tp_size: int, dataset_name: str,
     ]
     warmup_cases = [{
         "case_type": "performance",
-        "dataset_path": os.path.join(DATASET_PATH, "image_4"),
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf": "vllm_api_stream_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 50,
@@ -1582,7 +1583,7 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str):
+async def test_1e1pd_shm_tcp_004(model: str, tp_size: int, dataset_name: str):
     '''
     1E1PD 单机部署
     前缀缓存： 开启
@@ -1669,6 +1670,84 @@ async def test_1e1pd_shm_tcp_003(model: str, tp_size: int, dataset_name: str):
 
 
 
+DATASET_NAME = ["simulate_truth", "image_4"]
+TENSOR_PARALLELS = [4]
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+async def test_pd_mix_001(model: str, tp_size: int, dataset_name: str, request_rate: float):
+    '''
+    PD合并 单机部署
+    前缀缓存： 开启
+    数据集：模拟ZJ
+    ec transfer: shm
+    模型：qwen3-30B(TP=4)
+    '''
 
+    env_dict = {"ASCEND_RT_VISIBLE_DEVICES": "0,1,2,3"}
+    api_port = get_open_port()
+    vllm_server_args = [
+        "--port",
+        str(api_port), "--tensor-parallel-size",
+        str(tp_size), "--max-model-len", "20000", "--max-num-batched-tokens",
+        "20000", "--max-num-seqs", "128", "--enforce-eager",
+        "--gpu-memory-utilization", "0.9"
+    ]
+
+    warmup_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 50,
+        "max_out_len": 256,
+        "batch_size": 16,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": 0,
+        "seed": 77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 100,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate*4,
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_PD_mix",
+        "threshold": 0.97
+    }]
+
+    with RemoteOpenAIServer(model,
+                            vllm_server_args,
+                            server_host="127.0.0.1",
+                            server_port=api_port,
+                            env_dict=env_dict,
+                            auto_port=False) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           aisbench_cases=warmup_cases,
+                           verify=False,
+                           save=False)
+        # aisbench test
+        run_aisbench_cases(model=model,
+                           port=api_port,
+                           card_num=4,
+                           aisbench_cases=aisbench_cases)
 
 

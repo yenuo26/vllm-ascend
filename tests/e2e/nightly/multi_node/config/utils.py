@@ -41,10 +41,14 @@ def get_cluster_ips(family=socket.AF_INET) -> list[str]:
     if os.getenv("CLUSTER_ADDRESS"):
         cluster_dns = os.getenv("CLUSTER_ADDRESS").split(";")
         result_ips = list()
-        for dns in cluster_dns:
-            result = socket.getaddrinfo(dns, None, family)
-            result_ips.append(result[0][4][0])
-        return result_ips
+        try:
+            for dns in cluster_dns:
+                result = socket.getaddrinfo(dns, None, family)
+                result_ips.append(result[0][4][0])
+            return result_ips
+        except Exception as e:
+            print(f"cluster ip load failed: {e}, will use default set")
+            return []
     else:
         return []
 
