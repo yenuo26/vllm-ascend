@@ -982,7 +982,7 @@ class RemoteEPDServer:
 
     async def __aenter__(self):
         # start with
-        max_wait_seconds = 1800
+        max_wait_seconds = 600
         if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
         if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
