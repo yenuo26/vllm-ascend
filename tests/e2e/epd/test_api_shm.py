@@ -1173,6 +1173,7 @@ DATASET_NAME = ["simulate_truth"]
 
 @pytest.mark.asyncio
 @pytest.mark.stability
+@pytest.mark.timeout(90000)
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
@@ -1580,6 +1581,7 @@ DATASET_NAME = ["simulate_truth"]
 
 @pytest.mark.asyncio
 @pytest.mark.stability
+@pytest.mark.timeout(90000)
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
