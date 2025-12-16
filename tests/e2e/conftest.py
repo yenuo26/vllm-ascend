@@ -801,7 +801,7 @@ class RemoteEPDServer:
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
             e_port = get_open_port()
             if "--port" not in e_serve_arg:
-                e_serve_arg.extend(["--port", e_port])
+                e_serve_arg.extend(["--port", str(e_port)])
             index_e = e_serve_arg.index("--port")
             self._share_info.add_addr_list(f"http://localhost:{e_serve_arg[index_e + 1]}", "e")
             self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
@@ -817,7 +817,7 @@ class RemoteEPDServer:
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
             pd_port = get_open_port()
             if "--port" not in pd_serve_arg:
-                pd_serve_arg.extend(["--port", pd_port])
+                pd_serve_arg.extend(["--port", str(pd_port)])
             index_pd = pd_serve_arg.index("--port")
             self._share_info.add_addr_list(f"http://localhost:{pd_serve_arg[index_pd + 1]}", "pd")
             self._run_server(pd_serve_arg, env, f"[PD_{i}] ")
