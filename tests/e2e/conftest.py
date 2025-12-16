@@ -50,16 +50,12 @@ from vllm_ascend.ascend_config import clear_ascend_config
 # TODO: remove this part after the patch merged into vllm, if
 # we not explicitly patch here, some of them might be effectiveless
 # in pytest scenario
-from vllm_ascend.utils import adapt_patch  # noqa E402
 from vllm_ascend.utils import vllm_version_is
 
 if vllm_version_is("0.11.0"):
     from vllm.utils import get_open_port
 else:
     from vllm.utils.network_utils import get_open_port
-
-adapt_patch(True)
-adapt_patch(False)
 
 from vllm.distributed.parallel_state import (  # noqa E402
     destroy_distributed_environment, destroy_model_parallel)
@@ -376,7 +372,7 @@ def kill_process_tree(pid):
 
 
 class RemoteEPDServer:
-    def get_proxy(self) -> Proxy:
+    def get_proxy(self):
         return self.p
 
     def check_log(self, check_info, timeout) -> bool:
