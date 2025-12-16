@@ -33,7 +33,7 @@ DATASET_NAME = ["image_4", "simulate_truth"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
+async def test_redis_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float):
     '''
     数据集： simulate_truth
@@ -49,7 +49,7 @@ async def test_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
     env = {
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
         "MC_MS_AUTO_DISC": "0",
-        "MC_USE_IPV6": "0",
+        "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
         "TIMECOUNT_ENABLED": "1",
         "VLLM_LOG_STATS_INTERVAL": "10",
