@@ -888,22 +888,18 @@ class RemoteEPDServer:
             try:
                 response = requests.get(health_url, timeout=3)
                 if response.status_code == 200:
-                    data = response.json()
-                    print(
-                        f"✅ api server is ready: {data.get('status', 'unknown')}"
-                    )
                     return True
                 else:
                     print(
-                        f"❌ api server start error, http error code: {response.status_code}"
+                        f"❌ server start error, http error code: {response.status_code}"
                     )
             except requests.exceptions.ConnectionError:
                 print("⏳ waiting for ready ...")
             except requests.exceptions.RequestException as e:
-                print(f"api server start error: {e}")
+                print(f"server start error: {e}")
 
             await asyncio.sleep(check_interval)
-        print("api server start timeout")
+        print("server start timeout")
         return False
 
     def __init__(self,
@@ -1054,6 +1050,7 @@ class DisaggEpdProxy:
             VLLM_PATH,
             "examples/online_serving/disaggregated_encoder/disagg_epd_proxy.py"
         )
+        print(f"proxy param is: {proxy_args}")
         proxy_args = ["python", proxy_path, *proxy_args]
         self._proc_list.append(run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ", self.serve._output))
 
