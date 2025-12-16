@@ -52,7 +52,7 @@ async def test_1e1pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
                          index=i)
 
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.1",
+        "--model", model, "--gpu-memory-utilization", "0.01",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
