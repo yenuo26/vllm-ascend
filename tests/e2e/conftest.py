@@ -26,9 +26,7 @@ import torch
 import importlib
 from PIL import Image
 from datetime import datetime
-from lm_service.apis.vllm.proxy import Proxy
-from lm_service.protocol.protocol import ServerType
-from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
+
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
@@ -862,10 +860,12 @@ class RemoteEPDServer:
 
 
     async def _wait_for_server(self,
+                               port,
+                               host="127.0.0.1",
                                timeout: int = 300,
                                check_interval: float = 0.5) -> bool:
 
-        base_url = f"http://127.0.0.1:{self.api_server_port}"
+        base_url = f"http://{host}:{port}"
         health_url = f"{base_url}/health"
 
         start_time = time.time()
@@ -991,17 +991,26 @@ class RemoteEPDServer:
         if self.store_type == "storage":
             self._delete_shm()
         if self.run_mode == "worker":
+            from lm_service.apis.vllm.proxy import Proxy
+            from lm_service.protocol.protocol import ServerType
+            from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
             self._start_vllm_worker()
             self.p = self._start_zmq_proxy()
             await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
         elif self.run_mode == "serve":
             self._start_vllm_serve()
+            for url in self._share_info.get_addr_list("e"):
+                port = url.split(":")[-1]
+                await self._wait_for_server(port=port)
+            for url in self._share_info.get_addr_list("pd"):
+                port = url.split(":")[-1]
+                await self._wait_for_server(port=port)
         if self.proxy_type is None:
             self.p.shutdown()
         elif self.proxy_type == "api_server":
             self.p.shutdown()
             self._start_api_server()
-            await self._wait_for_server()
+            await self._wait_for_server(port=self.api_server_port)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
