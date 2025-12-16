@@ -2953,15 +2953,15 @@ DATASET_NAME = ["image_4"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_proxy_1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
+async def test_proxy1e1p1d_tcp_mooncake_ipv6_001(model: str, tp_size: int,
                                        dataset_name: str, request_rate: float):
     '''
     数据集： image_4
-    部署形态： 1E1P1D、proxy-EPD跨机
+    部署形态： 1E1P1D、proxyEPD单机
     存储类型：EC mooncake , KV mooncake
     通信方式： TCP
     开启前缀缓存
-    ipv4
+    ipv6
     '''
     e_num = 1
     p_num = 1
