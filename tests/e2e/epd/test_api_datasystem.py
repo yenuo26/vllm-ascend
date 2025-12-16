@@ -487,7 +487,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
         "top_p": 0.7,
         "repetition_penalty": 1.2,
         "request_rate": request_rate * (e_num+pd_num),
-        "result_file_name": f"{dataset}_1E2PD_DS_TCP",
+        "result_file_name": f"{dataset}_PROXY_1E_2PD_DS_TCP_IPV4",
         "baseline": 1,
         "seed": 77,
         "threshold": 0.97
