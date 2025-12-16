@@ -1015,7 +1015,7 @@ class RemoteEPDServer:
             for url in self._share_info.get_addr_list("pd"):
                 port = url.split(":")[-1]
                 await self._wait_for_server(port=port)
-        if self.proxy_type is None:
+        if self.proxy_type is None and self.p is not None:
             self.p.shutdown()
         elif self.proxy_type == "api_server":
             self.p.shutdown()
@@ -1043,8 +1043,8 @@ class DisaggEpdProxy:
         proxy_args = [
             "--host", "127.0.0.1", "--port",
             str(self.port), "--encode-servers-urls",
-            ",".join(self.serve._share_info.get_addr_list("e")), "--decode-servers-urls",
-            ",".join(self.serve._share_info.get_addr_list("pd")), "--prefill-servers-urls", "disable"
+            ",".join(self.server._share_info.get_addr_list("e")), "--decode-servers-urls",
+            ",".join(self.server._share_info.get_addr_list("pd")), "--prefill-servers-urls", "disable"
         ]
         proxy_path = os.path.join(
             VLLM_PATH,
@@ -1052,7 +1052,7 @@ class DisaggEpdProxy:
         )
         print(f"proxy param is: {proxy_args}")
         proxy_args = ["python", proxy_path, *proxy_args]
-        self._proc_list.append(run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ", self.serve._output))
+        self._proc_list.append(run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ", self.server._output))
 
     async def _wait_for_server(self,
                                timeout: int = 300,
@@ -1067,32 +1067,31 @@ class DisaggEpdProxy:
             try:
                 response = requests.get(health_url, timeout=3)
                 if response.status_code == 200:
-                    data = response.json()
                     print(
-                        f"✅ api server is ready: {data.get('status', 'unknown')}"
+                        f"✅proxy is ready"
                     )
                     return True
                 else:
                     print(
-                        f"❌ api server start error, http error code: {response.status_code}"
+                        f"❌ proxy start error, http error code: {response.status_code}"
                     )
             except requests.exceptions.ConnectionError:
                 print("⏳ waiting for ready ...")
             except requests.exceptions.RequestException as e:
-                print(f"api server start error: {e}")
+                print(f"proxy start error: {e}")
 
             await asyncio.sleep(check_interval)
-        print("api server start timeout")
+        print("proxy start timeout")
         return False
 
     def __init__(self,
                  port,
                  proxy_args: Union[list[str], str] = None,
                  env_dict: EnvManager = None,
-                 serve: RemoteEPDServer = None) -> None:
+                 server: RemoteEPDServer = None) -> None:
         self.port = port
         self.proxy_args = proxy_args
-        self.serve = serve
+        self.server = server
         self.env_dict = env_dict
         self._proc_list = list()
 
