@@ -421,6 +421,8 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
         cluster.add_node_info("pd", 2, CONTAINER_NAME)
     # for i in range(d_num):
     #     cluster.add_node_info("d", 1, CONTAINER_NAME)
+    cluster.add_node_info("ds", 1, CONTAINER_NAME)
+    cluster.add_node_info("ds", 2, CONTAINER_NAME)
 
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
