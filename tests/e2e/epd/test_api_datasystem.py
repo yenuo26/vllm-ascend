@@ -374,7 +374,7 @@ async def test_1e2pd_datasystem_tcp_003(model: str, tp_size: int, dataset: str, 
         # test perf
         run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
 
-REQUEST_RATE = [0.28, 0.78, 1.28]
+REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
 @pytest.mark.asyncio
 @pytest.mark.perf
@@ -403,9 +403,9 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
-    env_dict.add_env("proxy", "MC_TCP_BIND_ADDRESS","10.170.27.89")
+    env_dict.add_env("proxy", "MC_TCP_BIND_ADDRESS","10.170.27.165")
     env_dict.add_env("e", "MC_TCP_BIND_ADDRESS", "10.170.27.163")
-    env_dict.add_env("pd", "MC_TCP_BIND_ADDRESS", "10.170.27.165")
+    env_dict.add_env("pd", "MC_TCP_BIND_ADDRESS", "10.170.27.89")
 
     for i in range(e_num):
         env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
@@ -423,11 +423,6 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
     #     cluster.add_node_info("d", 1, CONTAINER_NAME)
     cluster.add_node_info("ds", 1, CONTAINER_NAME)
     cluster.add_node_info("ds", 2, CONTAINER_NAME)
-
-    for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
-    for i in range(pd_num):
-        env_dict.add_env("pd", "ASCEND_RT_VISIBLE_DEVICES", str(i+e_num), index=i)
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
