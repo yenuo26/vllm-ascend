@@ -374,8 +374,8 @@ async def test_proxy1e1pdmerge_datasystem_ipc_001(model: str, tp_size: int, data
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate * (e_num+pd_num),
-        "result_file_name": f"{dataset}_PROXY1E1PD_DS_IPC",
+        "request_rate": request_rate,
+        "result_file_name": f"{dataset}_PROXY1E1PDMERGE_DS_IPC",
         "baseline": 1,
         "seed": 77,
         "threshold": 0.97
