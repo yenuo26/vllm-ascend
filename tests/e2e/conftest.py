@@ -461,7 +461,7 @@ class RemoteEPDServer:
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
         self._proc_list.append(run_server_new_session(api_server_args, env,
-                                     "[PROXY] "), self._output)
+                                     "[PROXY] ",self._output))
 
     def _start_mooncake(self) -> None:
         mooncake_args_list = list()
