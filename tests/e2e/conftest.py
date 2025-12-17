@@ -369,143 +369,6 @@ def kill_process_tree(pid):
 
 
 class RemoteEPDServer:
-    def __init__(self,
-                 run_mode: Literal["serve", "worker"],
-                 store_type: Literal["mooncake", "storage", "datasystem"],
-                 e_num: Optional[int],
-                 pd_num: Optional[int],
-                 e_serve_args,
-                 pd_serve_args,
-                 proxy_type: Literal["proxy",
-                                     "api_server"] = None,
-                 kv_store_type: Literal["mooncake", "datasystem"] = "",
-                 mooncake_args=None,
-                 proxy_args: Union[list[str], str] = None,
-                 node_info: ClusterManager = None,
-                 api_server_port: Optional[int] = 10001,
-                 is_image_load: Optional[bool] = True,
-                 env_dict: EnvManager = None) -> None:
-        self._share_info = SharedInfoManager()
-        self._output = OutputManager(self._share_info)
-        self._container = ContainerManager(self._output)
-        self._proc_list = list()
-        self.e_num = e_num
-        self.pd_num = pd_num
-        self.p = None
-        if run_mode not in ["serve", "worker"]:
-            raise ValueError(f"run mode must be serve or worker")
-        if store_type not in ["mooncake", "storage", "datasystem"]:
-            raise ValueError(f"store type must be mooncake or storage")
-        if kv_store_type not in ["mooncake", "datasystem", ""]:
-            raise ValueError(f"kv store type must be mooncake")
-        if proxy_type is not None and proxy_type not in [
-                "proxy", "api_server"
-        ]:
-            raise ValueError(
-                f"proxy type must be proxy or api_server")
-        self.run_mode = run_mode
-        self.store_type = store_type
-        self.protocol = ""
-        self.kv_store_type = kv_store_type
-        self.proxy_type = proxy_type
-        self.is_image_load = is_image_load
-        self.api_server_port = api_server_port
-        self.e_serve_args_list = list()
-        self.pd_serve_args_list = list()
-        self.node_info = node_info
-        self.proxy_port = get_open_port()
-        self.model = None
-        self.datasystem_port = None
-        if isinstance(e_serve_args, list):
-            if not all(isinstance(item, list) for item in e_serve_args):
-                for i in range(self.e_num):
-                    self.e_serve_args_list.append(copy.deepcopy(e_serve_args))
-            else:
-                self.e_serve_args_list = e_serve_args
-        else:
-            raise RuntimeError("e_serve_args must be a list")
-
-        if isinstance(pd_serve_args, list):
-            if not all(isinstance(item, list) for item in pd_serve_args):
-                for i in range(self.pd_num):
-                    self.pd_serve_args_list.append(
-                        copy.deepcopy(pd_serve_args))
-            else:
-                self.pd_serve_args_list = pd_serve_args
-        else:
-            raise RuntimeError("pd_serve_args must be a list")
-
-        self.mooncake_args = mooncake_args
-        self.proxy_args = proxy_args
-        self.env_dict = env_dict
-        if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("TIMECOUNT_ENABLED", 0) == "1":
-            self._share_info.open_breakdown()
-        self._default_addr_prefix = "/tmp/"
-        self.proxy_addr = None
-        if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("MC_USE_IPV6", "") == "1":
-            self.enable_ipv6 = True
-        else:
-            self.enable_ipv6 = False
-        if node_info is not None and self.enable_ipv6:
-            self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
-            for i in range(len(self.cluster_ips)):
-                self.cluster_ips[i] = f"[{self.cluster_ips[i]}]"
-        elif self.enable_ipv6:
-            self.cluster_ips = get_cluster_ips(family=socket.AF_INET6) or ["::1"]
-            for i in range(len(self.cluster_ips)):
-                self.cluster_ips[i] = f"[{self.cluster_ips[i]}]"
-        else:
-            self.cluster_ips = get_cluster_ips() or ["127.0.0.1"]
-
-    async def __aenter__(self):
-        # start with
-        max_wait_seconds = 600
-        if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
-            self._start_mooncake()
-        if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
-            self._start_etcd()
-            self._start_datasystem()
-        if self.store_type == "storage":
-            self._delete_shm()
-        if self.run_mode == "worker":
-            from lm_service.apis.vllm.proxy import Proxy
-            from lm_service.protocol.protocol import ServerType
-            from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
-            self._start_vllm_worker()
-            self.p = self._start_zmq_proxy()
-            await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
-        elif self.run_mode == "serve":
-            self._start_vllm_serve()
-            for url in self._share_info.get_addr_list("e"):
-                port = url.split(":")[-1]
-                await self._wait_for_server(port=port)
-            for url in self._share_info.get_addr_list("pd"):
-                port = url.split(":")[-1]
-                await self._wait_for_server(port=port)
-        if self.proxy_type is None and self.p is not None:
-            self.p.shutdown()
-        elif self.proxy_type == "api_server":
-            self.p.shutdown()
-            self._start_api_server()
-            await self._wait_for_server(port=self.api_server_port)
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        # exit with
-        if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
-            self._stop_datasystem()
-            run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
-                                         None,
-                                         "[ETCD] ", self._output)
-
-        for proc in self._proc_list:
-            kill_process_tree(proc.pid)
-        self._container.kill_container_process_only()
-        print("vllm instance and api server is stoping")
-        if self.p is not None:
-            self.p.shutdown()
-        print("proxy is stoping")
-
     def get_proxy(self):
         return self.p
 
@@ -867,6 +730,8 @@ class RemoteEPDServer:
                 self._run_server(pd_serve_arg, env, log_prefix)
 
     def _start_zmq_proxy(self):
+        from lm_service.apis.vllm.proxy import Proxy
+        from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
         if self.env_dict.get_node_env("common", 0) is not None:
             for key, value in self.env_dict.get_node_env("common", 0).items():
                 os.environ[key] = value
@@ -966,6 +831,7 @@ class RemoteEPDServer:
             self._run_server(pd_serve_arg, env, f"[PD_{i}] ")
 
     async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
+        from lm_service.protocol.protocol import ServerType
         sleep_times = 10
         timeout_times = 3
         start_time = time.time()
@@ -1045,7 +911,139 @@ class RemoteEPDServer:
         print("server start timeout")
         return False
 
+    def __init__(self,
+                 run_mode: Literal["serve", "worker"],
+                 store_type: Literal["mooncake", "storage", "datasystem"],
+                 e_num: Optional[int],
+                 pd_num: Optional[int],
+                 e_serve_args,
+                 pd_serve_args,
+                 proxy_type: Literal["proxy",
+                                     "api_server"] = None,
+                 kv_store_type: Literal["mooncake", "datasystem"] = "",
+                 mooncake_args=None,
+                 proxy_args: Union[list[str], str] = None,
+                 node_info: ClusterManager = None,
+                 api_server_port: Optional[int] = 10001,
+                 is_image_load: Optional[bool] = True,
+                 env_dict: EnvManager = None) -> None:
+        self._share_info = SharedInfoManager()
+        self._output = OutputManager(self._share_info)
+        self._container = ContainerManager(self._output)
+        self._proc_list = list()
+        self.e_num = e_num
+        self.pd_num = pd_num
+        self.p = None
+        if run_mode not in ["serve", "worker"]:
+            raise ValueError(f"run mode must be serve or worker")
+        if store_type not in ["mooncake", "storage", "datasystem"]:
+            raise ValueError(f"store type must be mooncake or storage")
+        if kv_store_type not in ["mooncake", "datasystem", ""]:
+            raise ValueError(f"kv store type must be mooncake")
+        if proxy_type is not None and proxy_type not in [
+                "proxy", "api_server"
+        ]:
+            raise ValueError(
+                f"proxy type must be proxy or api_server")
+        self.run_mode = run_mode
+        self.store_type = store_type
+        self.protocol = ""
+        self.kv_store_type = kv_store_type
+        self.proxy_type = proxy_type
+        self.is_image_load = is_image_load
+        self.api_server_port = api_server_port
+        self.e_serve_args_list = list()
+        self.pd_serve_args_list = list()
+        self.node_info = node_info
+        self.proxy_port = get_open_port()
+        self.model = None
+        self.datasystem_port = None
+        if isinstance(e_serve_args, list):
+            if not all(isinstance(item, list) for item in e_serve_args):
+                for i in range(self.e_num):
+                    self.e_serve_args_list.append(copy.deepcopy(e_serve_args))
+            else:
+                self.e_serve_args_list = e_serve_args
+        else:
+            raise RuntimeError("e_serve_args must be a list")
 
+        if isinstance(pd_serve_args, list):
+            if not all(isinstance(item, list) for item in pd_serve_args):
+                for i in range(self.pd_num):
+                    self.pd_serve_args_list.append(
+                        copy.deepcopy(pd_serve_args))
+            else:
+                self.pd_serve_args_list = pd_serve_args
+        else:
+            raise RuntimeError("pd_serve_args must be a list")
+
+        self.mooncake_args = mooncake_args
+        self.proxy_args = proxy_args
+        self.env_dict = env_dict
+        if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("TIMECOUNT_ENABLED", 0) == "1":
+            self._share_info.open_breakdown()
+        self._default_addr_prefix = "/tmp/"
+        self.proxy_addr = None
+        if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("MC_USE_IPV6", "") == "1":
+            self.enable_ipv6 = True
+        else:
+            self.enable_ipv6 = False
+        if node_info is not None and self.enable_ipv6:
+            self.cluster_ips = get_cluster_ips(family=socket.AF_INET6)
+            for i in range(len(self.cluster_ips)):
+                self.cluster_ips[i] = f"[{self.cluster_ips[i]}]"
+        elif self.enable_ipv6:
+            self.cluster_ips = get_cluster_ips(family=socket.AF_INET6) or ["::1"]
+            for i in range(len(self.cluster_ips)):
+                self.cluster_ips[i] = f"[{self.cluster_ips[i]}]"
+        else:
+            self.cluster_ips = get_cluster_ips() or ["127.0.0.1"]
+
+    async def __aenter__(self):
+        # start with
+        max_wait_seconds = 600
+        if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
+            self._start_mooncake()
+        if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
+            self._start_etcd()
+            self._start_datasystem()
+        if self.store_type == "storage":
+            self._delete_shm()
+        if self.run_mode == "worker":
+            self._start_vllm_worker()
+            self.p = self._start_zmq_proxy()
+            await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
+        elif self.run_mode == "serve":
+            self._start_vllm_serve()
+            for url in self._share_info.get_addr_list("e"):
+                port = url.split(":")[-1]
+                await self._wait_for_server(port=port)
+            for url in self._share_info.get_addr_list("pd"):
+                port = url.split(":")[-1]
+                await self._wait_for_server(port=port)
+        if self.proxy_type is None and self.p is not None:
+            self.p.shutdown()
+        elif self.proxy_type == "api_server":
+            self.p.shutdown()
+            self._start_api_server()
+            await self._wait_for_server(port=self.api_server_port)
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        # exit with
+        if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
+            self._stop_datasystem()
+            run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
+                                         None,
+                                         "[ETCD] ", self._output)
+
+        for proc in self._proc_list:
+            kill_process_tree(proc.pid)
+        self._container.kill_container_process_only()
+        print("vllm instance and api server is stoping")
+        if self.p is not None:
+            self.p.shutdown()
+        print("proxy is stoping")
 
 class DisaggEpdProxy:
     def _start_disagg_proxy(self):
