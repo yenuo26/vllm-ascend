@@ -389,7 +389,6 @@ async def test_proxy1e1pdmerge_datasystem_ipc_001(model: str, tp_size: int, data
                                pd_num=pd_num,
                                e_num=e_num,
                                env_dict=env_dict,
-                               is_epd_same_card=True,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
 
