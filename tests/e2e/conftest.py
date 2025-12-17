@@ -70,7 +70,7 @@ PromptAudioInput = _PromptMultiModalInput[Tuple[np.ndarray, int]]
 PromptVideoInput = _PromptMultiModalInput[np.ndarray]
 
 _TEST_DIR = os.path.dirname(__file__)
-
+DISAGG_EPD_PROXY_SCRIPT = "examples/epd/disagg_epd_proxy.py"
 
 def get_package_location(package_name):
     try:
@@ -78,9 +78,6 @@ def get_package_location(package_name):
         return str(distribution.locate_file(''))
     except importlib.metadata.PackageNotFoundError:
         return None
-
-
-VLLM_PATH = get_package_location("vllm")
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
@@ -1046,12 +1043,8 @@ class DisaggEpdProxy:
             ",".join(self.server._share_info.get_addr_list("e")), "--decode-servers-urls",
             ",".join(self.server._share_info.get_addr_list("pd")), "--prefill-servers-urls", "disable"
         ]
-        proxy_path = os.path.join(
-            VLLM_PATH,
-            "examples/online_serving/disaggregated_encoder/disagg_epd_proxy.py"
-        )
         print(f"proxy param is: {proxy_args}")
-        proxy_args = ["python", proxy_path, *proxy_args]
+        proxy_args = ["python", DISAGG_EPD_PROXY_SCRIPT, *proxy_args]
         self._proc_list.append(run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ", self.server._output))
 
     async def _wait_for_server(self,
