@@ -7,6 +7,7 @@ import copy
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
+from tests.e2e.nightly.multi_node.config.utils import get_cluster_ips
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
 
 model_path = load_config().get("model_path")
