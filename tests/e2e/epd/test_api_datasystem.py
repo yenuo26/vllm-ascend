@@ -546,7 +546,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_001(model: str, tp_size: int, data
         "VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
         "MC_MS_AUTO_DISC": "0",
-        "MC_USE_IPV6": "1",
+        "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
         "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
