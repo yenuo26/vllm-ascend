@@ -70,7 +70,7 @@ PromptAudioInput = _PromptMultiModalInput[Tuple[np.ndarray, int]]
 PromptVideoInput = _PromptMultiModalInput[np.ndarray]
 
 _TEST_DIR = os.path.dirname(__file__)
-DISAGG_EPD_PROXY_SCRIPT = "examples/epd/disagg_epd_proxy.py"
+DISAGG_EPD_PROXY_SCRIPT = "../../../examples/epd/disagg_epd_proxy.py"
 
 def get_package_location(package_name):
     try:
@@ -474,7 +474,7 @@ class RemoteEPDServer:
             raise RuntimeError("mooncake_args must be a list")
         for arg in mooncake_args_list:
             mooncake_arg = ["mooncake_master", *arg]
-            self._proc_list.append(self.run_server_new_session(mooncake_arg, self.env_dict.get_node_env("common", 0), "[MOONCAKE] ", self._output))
+            self._proc_list.append(run_server_new_session(mooncake_arg, self.env_dict.get_node_env("common", 0), "[MOONCAKE] ", self._output))
 
 
     def _start_etcd(self) -> None:
@@ -528,6 +528,9 @@ class RemoteEPDServer:
                                       "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}"],
                                      None,
                                      "[DATASYSTEM_0] ", self._output))
+        run_server_new_session(["rm", "-rf", "datasystem"],
+                               None,
+                               "[DATASYSTEM_0] ", self._output)
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
                 self._container.run_in_remote_container(
@@ -539,8 +542,14 @@ class RemoteEPDServer:
                     env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
-
-
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[i],
+                    container_name=self.node_info.get_node_info(
+                        "ds", i - 1).container_name,
+                    server_cmd=["rm", "-rf", "datasystem"],
+                    env_dict=None,
+                    log_prefix=f"[DATASYSTEM_{i}] ",
+                )
 
     def _get_addr_config(self, args, i, role):
         if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("TRANSFER_PROTOCOL") is not None:
@@ -1027,6 +1036,7 @@ class RemoteEPDServer:
             run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
                                          None,
                                          "[ETCD] ", self._output)
+
         for proc in self._proc_list:
             kill_process_tree(proc.pid)
         self._container.kill_container_process_only()
