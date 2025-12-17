@@ -1,11 +1,9 @@
 import os
 
 import pytest
-import pytest_asyncio
-import copy
 
-from tests.e2e.conftest import RemoteEPDServer
-from tests.e2e.conftest import RemoteOpenAIServer
+
+from tests.e2e.conftest import RemoteEPDServer,RemoteOpenAIServer,DisaggEpdProxy
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
@@ -32,20 +30,17 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
+async def test_1e1pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
                                  request_rate: float):
     '''
     1E1PD 单机部署
     前缀缓存： 开启
     数据集：模拟ZJ
     ec transfer: shm
-    通信方式：tcp(ipv4)
+    通信方式：http
     '''
 
-    env = {"TRANSFER_PROTOCOL": "tcp"}
-
     env_dict = EnvManager()
-    env_dict.add_env("common", env_dict=env)
     e_num = 1
     pd_num = 1
     for i in range(e_num):
@@ -57,7 +52,7 @@ async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
                          index=i)
 
     e_server_args = [
-        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--model", model, "--gpu-memory-utilization", "0.01",
         "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
@@ -111,26 +106,26 @@ async def test_1e1pd_shm_tcp_001(model: str, tp_size: int, dataset_name: str,
     }]
 
     api_port = get_open_port()
-    async with RemoteEPDServer(run_mode="worker",
+    async with RemoteEPDServer(run_mode="serve",
                                store_type="storage",
-                               proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=pd_num,
                                e_num=e_num,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
-        # warm up
-        run_aisbench_cases(model=model,
-                           port=api_port,
-                           aisbench_cases=warmup_cases,
-                           verify=False,
-                           save=False)
-        # aisbench test
-        run_aisbench_cases(model=model,
-                           port=api_port,
-                           card_num=pd_num+e_num,
-                           aisbench_cases=aisbench_cases)
+        async with DisaggEpdProxy(port=api_port, server=server) as proxy:
+            # warm up
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
+            # aisbench test
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               card_num=pd_num+e_num,
+                               aisbench_cases=aisbench_cases)
 
 
 
@@ -1173,7 +1168,6 @@ DATASET_NAME = ["simulate_truth"]
 
 @pytest.mark.asyncio
 @pytest.mark.stability
-@pytest.mark.timeout(90000)
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
@@ -1581,7 +1575,6 @@ DATASET_NAME = ["simulate_truth"]
 
 @pytest.mark.asyncio
 @pytest.mark.stability
-@pytest.mark.timeout(90000)
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
