@@ -619,12 +619,16 @@ class AisbenchRunner:
             "total"]
         total_num = self.result_json["Total Requests"][
             "total"]
+        output_success_num = self.result_csv.loc[self.result_csv['Performance Parameters'] == 'TPOT', 'N'].values[0]
         assert float(
             output_throughput
         ) >= self.threshold * self.baseline, f"Performance verification failed. The current Output Token Throughput is {output_throughput} token/s, which is not greater than or equal to {self.threshold} * baseline {self.baseline}."
         assert int(
             success_num
         ) == total_num, f"Performance verification failed. The current Success Request is {success_num}, which is not equal to {total_num}."
+        assert int(
+            output_success_num
+        ) == total_num, f"Performance verification failed. {total_num-output_success_num} Request output is empty."
 
     def _accuracy_verify(self):
         acc_value = self._get_result_accuracy()
