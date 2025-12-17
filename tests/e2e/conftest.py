@@ -26,9 +26,7 @@ import torch
 import importlib
 from PIL import Image
 from datetime import datetime
-from lm_service.apis.vllm.proxy import Proxy
-from lm_service.protocol.protocol import ServerType
-from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
+
 from modelscope import snapshot_download  # type: ignore[import-untyped]
 from torch import nn
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
@@ -52,16 +50,12 @@ from vllm_ascend.ascend_config import clear_ascend_config
 # TODO: remove this part after the patch merged into vllm, if
 # we not explicitly patch here, some of them might be effectiveless
 # in pytest scenario
-from vllm_ascend.utils import adapt_patch  # noqa E402
 from vllm_ascend.utils import vllm_version_is
 
-if vllm_version_is("0.11.0"):
-    from vllm.utils import get_open_port
-else:
+if vllm_version_is("0.9.1"):
     from vllm.utils.network_utils import get_open_port
-
-adapt_patch(True)
-adapt_patch(False)
+else:
+    from vllm.utils import get_open_port
 
 from vllm.distributed.parallel_state import (  # noqa E402
     destroy_distributed_environment, destroy_model_parallel)
@@ -76,7 +70,7 @@ PromptAudioInput = _PromptMultiModalInput[Tuple[np.ndarray, int]]
 PromptVideoInput = _PromptMultiModalInput[np.ndarray]
 
 _TEST_DIR = os.path.dirname(__file__)
-
+DISAGG_EPD_PROXY_SCRIPT = "../../../examples/epd/disagg_epd_proxy.py"
 
 def get_package_location(package_name):
     try:
@@ -84,9 +78,6 @@ def get_package_location(package_name):
         return str(distribution.locate_file(''))
     except importlib.metadata.PackageNotFoundError:
         return None
-
-
-VLLM_PATH = get_package_location("vllm")
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
@@ -312,9 +303,73 @@ class ContainerManager:
             except subprocess.TimeoutExpired:
                 ssh_proc.kill()
 
+def run_server_new_session(server_cmd: list[str],
+                            env_dict: Optional[dict[str, str]],
+                            log_prefix: str, output: OutputManager) -> None:
+    """Subclasses override this method to customize server process launch
+    """
+    env = os.environ.copy()
+    # the current process might initialize npu,
+    # to be safe, we should use spawn method
+    if env_dict is not None:
+        env.update(env_dict)
+    proc = subprocess.Popen(
+        server_cmd,
+        cwd=None,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+        text=True,
+        bufsize=1,
+        universal_newlines=True)
+
+    stdout_thread = threading.Thread(target=output.read_output,
+                                     args=(proc.stdout, log_prefix),
+                                     daemon=True)
+    stderr_thread = threading.Thread(target=output.read_output,
+                                     args=(proc.stderr, log_prefix),
+                                     daemon=True)
+
+    stdout_thread.start()
+    stderr_thread.start()
+    return proc
+
+def kill_process_tree(pid):
+    """kill process and its children"""
+    try:
+        parent = psutil.Process(pid)
+        children = parent.children(recursive=True)
+        for child in children:
+            try:
+                child.terminate()
+            except psutil.NoSuchProcess:
+                pass
+
+        gone, still_alive = psutil.wait_procs(children, timeout=10)
+
+        for child in still_alive:
+            try:
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
+
+        try:
+            parent.terminate()
+            parent.wait(timeout=10)
+        except (psutil.NoSuchProcess, psutil.TimeoutExpired):
+            try:
+                parent.kill()
+            except psutil.NoSuchProcess:
+                pass
+
+    except psutil.NoSuchProcess:
+        pass
+
 
 class RemoteEPDServer:
-    def get_proxy(self) -> Proxy:
+    def get_proxy(self):
         return self.p
 
     def check_log(self, check_info, timeout) -> bool:
@@ -383,38 +438,6 @@ class RemoteEPDServer:
         stderr_thread.start()
         self._proc_list.append(proc)
 
-    def _run_server_new_session(self, server_cmd: list[str],
-                                env_dict: Optional[dict[str, str]],
-                                log_prefix: str) -> None:
-        """Subclasses override this method to customize server process launch
-        """
-        env = os.environ.copy()
-        # the current process might initialize npu,
-        # to be safe, we should use spawn method
-        if env_dict is not None:
-            env.update(env_dict)
-        proc = subprocess.Popen(
-            server_cmd,
-            cwd=None,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL,
-            start_new_session=True,
-            text=True,
-            bufsize=1,
-            universal_newlines=True)
-
-        stdout_thread = threading.Thread(target=self._output.read_output,
-                                         args=(proc.stdout, log_prefix),
-                                         daemon=True)
-        stderr_thread = threading.Thread(target=self._output.read_output,
-                                         args=(proc.stderr, log_prefix),
-                                         daemon=True)
-
-        stdout_thread.start()
-        stderr_thread.start()
-        self._proc_list.append(proc)
 
     def _start_api_server(self) -> None:
         common_env = self.env_dict.get_node_env("common", 0)
@@ -437,8 +460,8 @@ class RemoteEPDServer:
         api_server_path = Path(
             __file__).parent.parent.parent / "tools" / "api_server.py"
         api_server_args = ["python", api_server_path, *api_server_args]
-        self._run_server_new_session(api_server_args, env,
-                                     "[PROXY] ")
+        self._proc_list.append(run_server_new_session(api_server_args, env,
+                                     "[PROXY] ",self._output))
 
     def _start_mooncake(self) -> None:
         mooncake_args_list = list()
@@ -451,7 +474,7 @@ class RemoteEPDServer:
             raise RuntimeError("mooncake_args must be a list")
         for arg in mooncake_args_list:
             mooncake_arg = ["mooncake_master", *arg]
-            self._run_server_new_session(mooncake_arg, self.env_dict.get_node_env("common", 0), "[MOONCAKE] ")
+            self._proc_list.append(run_server_new_session(mooncake_arg, self.env_dict.get_node_env("common", 0), "[MOONCAKE] ", self._output))
 
 
     def _start_etcd(self) -> None:
@@ -474,16 +497,18 @@ class RemoteEPDServer:
                          "--initial-cluster", f"etcd-epd=http://{host}:{etcd_peer_port}"]
 
         self.etcd_address = f"{host}:{etcd_client_port}"
-        self._run_server_new_session(etcd_args, None, "[ETCD] ")
+        self._proc_list.append(run_server_new_session(etcd_args, None, "[ETCD] ", self._output))
+
 
     def _start_datasystem(self) -> None:
         self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
         self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
         self.datasystem_port = get_open_port()
-        self._run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
+        self._proc_list.append(run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
                                       "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
                                      None,
-                                     "[DATASYSTEM_0] ")
+                                     "[DATASYSTEM_0] ", self._output))
+
 
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
@@ -499,10 +524,13 @@ class RemoteEPDServer:
 
 
     def _stop_datasystem(self) -> None:
-        self._run_server_new_session(["dscli", "stop",
+        self._proc_list.append(run_server_new_session(["dscli", "stop",
                                       "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}"],
                                      None,
-                                     "[DATASYSTEM_0] ")
+                                     "[DATASYSTEM_0] ", self._output))
+        run_server_new_session(["rm", "-rf", "datasystem"],
+                               None,
+                               "[DATASYSTEM_0] ", self._output)
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
                 self._container.run_in_remote_container(
@@ -514,8 +542,14 @@ class RemoteEPDServer:
                     env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
-
-
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[i],
+                    container_name=self.node_info.get_node_info(
+                        "ds", i - 1).container_name,
+                    server_cmd=["rm", "-rf", "datasystem"],
+                    env_dict=None,
+                    log_prefix=f"[DATASYSTEM_{i}] ",
+                )
 
     def _get_addr_config(self, args, i, role):
         if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("TRANSFER_PROTOCOL") is not None:
@@ -696,6 +730,8 @@ class RemoteEPDServer:
                 self._run_server(pd_serve_arg, env, log_prefix)
 
     def _start_zmq_proxy(self):
+        from lm_service.apis.vllm.proxy import Proxy
+        from lm_service.routing_logic import RandomRouter, RoundRobinRouter, LeastInFlightRouter
         if self.env_dict.get_node_env("common", 0) is not None:
             for key, value in self.env_dict.get_node_env("common", 0).items():
                 os.environ[key] = value
@@ -750,39 +786,52 @@ class RemoteEPDServer:
                 self.proxy_args.index("--router") + 1]
         return p
 
-    def _start_disagg_proxy(self):
-        proxy_args = [
-            "--host", "127.0.0.1", "--port",
-            str(self.api_server_port), "--encode-servers-urls",
-            ",".join(self._share_info.get_addr_list("e")), "--decode-servers-urls",
-            ",".join(self._share_info.get_addr_list("pd")), "--prefill-servers-urls", "disable"
-        ]
-        proxy_path = os.path.join(
-            VLLM_PATH,
-            "examples/online_serving/disaggregated_encoder/mooncake_connector/disagg_epd_proxy.py"
-        )
-        proxy_args = ["python", proxy_path, *proxy_args]
-        self._run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ")
+
 
     def _start_vllm_serve(self):
-        self.env_dict['VLLM_ALLOW_LONG_MAX_MODEL_LEN'] = "1"
-        self.env_dict['VLLM_USE_V1'] = "1"
+        self.env_dict.add_env("common", 'VLLM_ALLOW_LONG_MAX_MODEL_LEN', "1")
+        self.env_dict.add_env("common", 'VLLM_USE_V1', "1")
+        self.env_dict.add_env("common", 'PYTORCH_NPU_ALLOC_CONF', "expandable_segments:True")
 
         serve_arg_cmd = ["taskset", "-c", "0-96", "vllm", "serve"]
 
+        common_env = self.env_dict.get_node_env("common", 0)
+
+
         for i, e_serve_arg in enumerate(self.e_serve_args_list):
+            role_env = self.env_dict.get_node_env("e", i)
+            env = (
+                {**common_env, **role_env}
+                if common_env is not None and role_env is not None
+                else common_env if common_env is not None
+                else role_env
+            )
             e_serve_arg = [*serve_arg_cmd, *e_serve_arg]
+            e_port = get_open_port()
+            if "--port" not in e_serve_arg:
+                e_serve_arg.extend(["--port", str(e_port)])
             index_e = e_serve_arg.index("--port")
             self._share_info.add_addr_list(f"http://localhost:{e_serve_arg[index_e + 1]}", "e")
-            self._run_server(e_serve_arg, self.env_dict, f"[ENCODE_{i}] ")
+            self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
+            role_env = self.env_dict.get_node_env("pd", i)
+            env = (
+                {**common_env, **role_env}
+                if common_env is not None and role_env is not None
+                else common_env if common_env is not None
+                else role_env
+            )
             pd_serve_arg = [*serve_arg_cmd, *pd_serve_arg]
+            pd_port = get_open_port()
+            if "--port" not in pd_serve_arg:
+                pd_serve_arg.extend(["--port", str(pd_port)])
             index_pd = pd_serve_arg.index("--port")
             self._share_info.add_addr_list(f"http://localhost:{pd_serve_arg[index_pd + 1]}", "pd")
-            self._run_server(pd_serve_arg, self.env_dict, f"[PD_{i}] ")
+            self._run_server(pd_serve_arg, env, f"[PD_{i}] ")
 
     async def _wait_for_vllm_worker(self, max_wait_seconds) -> None:
+        from lm_service.protocol.protocol import ServerType
         sleep_times = 10
         timeout_times = 3
         start_time = time.time()
@@ -832,42 +881,14 @@ class RemoteEPDServer:
 
         raise RuntimeError("epd instance start failed!")
 
-    def _kill_process_tree(self, pid):
-        """kill process and its children"""
-        try:
-            parent = psutil.Process(pid)
-            children = parent.children(recursive=True)
-            for child in children:
-                try:
-                    child.terminate()
-                except psutil.NoSuchProcess:
-                    pass
-
-            gone, still_alive = psutil.wait_procs(children, timeout=10)
-
-            for child in still_alive:
-                try:
-                    child.kill()
-                except psutil.NoSuchProcess:
-                    pass
-
-            try:
-                parent.terminate()
-                parent.wait(timeout=10)
-            except (psutil.NoSuchProcess, psutil.TimeoutExpired):
-                try:
-                    parent.kill()
-                except psutil.NoSuchProcess:
-                    pass
-
-        except psutil.NoSuchProcess:
-            pass
 
     async def _wait_for_server(self,
+                               port,
+                               host="127.0.0.1",
                                timeout: int = 300,
                                check_interval: float = 0.5) -> bool:
 
-        base_url = f"http://127.0.0.1:{self.api_server_port}"
+        base_url = f"http://{host}:{port}"
         health_url = f"{base_url}/health"
 
         start_time = time.time()
@@ -876,22 +897,18 @@ class RemoteEPDServer:
             try:
                 response = requests.get(health_url, timeout=3)
                 if response.status_code == 200:
-                    data = response.json()
-                    print(
-                        f"✅ api server is ready: {data.get('status', 'unknown')}"
-                    )
                     return True
                 else:
                     print(
-                        f"❌ api server start error, http error code: {response.status_code}"
+                        f"❌ server start error, http error code: {response.status_code}"
                     )
             except requests.exceptions.ConnectionError:
                 print("⏳ waiting for ready ...")
             except requests.exceptions.RequestException as e:
-                print(f"api server start error: {e}")
+                print(f"server start error: {e}")
 
             await asyncio.sleep(check_interval)
-        print("api server start timeout")
+        print("server start timeout")
         return False
 
     def __init__(self,
@@ -901,7 +918,7 @@ class RemoteEPDServer:
                  pd_num: Optional[int],
                  e_serve_args,
                  pd_serve_args,
-                 proxy_type: Literal["disagg_proxy", "proxy",
+                 proxy_type: Literal["proxy",
                                      "api_server"] = None,
                  kv_store_type: Literal["mooncake", "datasystem"] = "",
                  mooncake_args=None,
@@ -924,10 +941,10 @@ class RemoteEPDServer:
         if kv_store_type not in ["mooncake", "datasystem", ""]:
             raise ValueError(f"kv store type must be mooncake")
         if proxy_type is not None and proxy_type not in [
-                "disagg_proxy", "proxy", "api_server"
+                "proxy", "api_server"
         ]:
             raise ValueError(
-                f"proxy type must be disagg_proxy, proxy or api_server")
+                f"proxy type must be proxy or api_server")
         self.run_mode = run_mode
         self.store_type = store_type
         self.protocol = ""
@@ -984,7 +1001,7 @@ class RemoteEPDServer:
 
     async def __aenter__(self):
         # start with
-        max_wait_seconds = 1800
+        max_wait_seconds = 600
         if self.store_type == "mooncake" or self.kv_store_type == "mooncake":
             self._start_mooncake()
         if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
@@ -998,33 +1015,99 @@ class RemoteEPDServer:
             await self._wait_for_vllm_worker(max_wait_seconds=max_wait_seconds)
         elif self.run_mode == "serve":
             self._start_vllm_serve()
-        if self.proxy_type is None:
+            for url in self._share_info.get_addr_list("e"):
+                port = url.split(":")[-1]
+                await self._wait_for_server(port=port)
+            for url in self._share_info.get_addr_list("pd"):
+                port = url.split(":")[-1]
+                await self._wait_for_server(port=port)
+        if self.proxy_type is None and self.p is not None:
             self.p.shutdown()
-        elif self.proxy_type == "disagg_proxy":
-            self._start_disagg_proxy()
-            await self._wait_for_server()
         elif self.proxy_type == "api_server":
             self.p.shutdown()
             self._start_api_server()
-            await self._wait_for_server()
-
+            await self._wait_for_server(port=self.api_server_port)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # exit with
         if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
             self._stop_datasystem()
-            self._run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
+            run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
                                          None,
-                                         "[ETCD] ")
+                                         "[ETCD] ", self._output)
+
         for proc in self._proc_list:
-            self._kill_process_tree(proc.pid)
+            kill_process_tree(proc.pid)
         self._container.kill_container_process_only()
         print("vllm instance and api server is stoping")
         if self.p is not None:
             self.p.shutdown()
         print("proxy is stoping")
 
+class DisaggEpdProxy:
+    def _start_disagg_proxy(self):
+        proxy_args = [
+            "--host", "127.0.0.1", "--port",
+            str(self.port), "--encode-servers-urls",
+            ",".join(self.server._share_info.get_addr_list("e")), "--decode-servers-urls",
+            ",".join(self.server._share_info.get_addr_list("pd")), "--prefill-servers-urls", "disable"
+        ]
+        print(f"proxy param is: {proxy_args}")
+        proxy_args = ["python", DISAGG_EPD_PROXY_SCRIPT, *proxy_args]
+        self._proc_list.append(run_server_new_session(proxy_args, self.env_dict, "[PRXOY] ", self.server._output))
+
+    async def _wait_for_server(self,
+                               timeout: int = 300,
+                               check_interval: float = 0.5) -> bool:
+
+        base_url = f"http://127.0.0.1:{self.port}"
+        health_url = f"{base_url}/health"
+
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            try:
+                response = requests.get(health_url, timeout=3)
+                if response.status_code == 200:
+                    print(
+                        f"✅proxy is ready"
+                    )
+                    return True
+                else:
+                    print(
+                        f"❌ proxy start error, http error code: {response.status_code}"
+                    )
+            except requests.exceptions.ConnectionError:
+                print("⏳ waiting for ready ...")
+            except requests.exceptions.RequestException as e:
+                print(f"proxy start error: {e}")
+
+            await asyncio.sleep(check_interval)
+        print("proxy start timeout")
+        return False
+
+    def __init__(self,
+                 port,
+                 proxy_args: Union[list[str], str] = None,
+                 env_dict: EnvManager = None,
+                 server: RemoteEPDServer = None) -> None:
+        self.port = port
+        self.proxy_args = proxy_args
+        self.server = server
+        self.env_dict = env_dict
+        self._proc_list = list()
+
+    async def __aenter__(self):
+        self._start_disagg_proxy()
+        await self._wait_for_server()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        # exit with
+        for proc in self._proc_list:
+            kill_process_tree(proc.pid)
+        print("proxy is stoping")
 
 class RemoteOpenAIServer:
     DUMMY_API_KEY = "token-abc123"  # vLLM's OpenAI server does not need API key
