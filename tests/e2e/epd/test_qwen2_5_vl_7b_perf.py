@@ -37,7 +37,7 @@ async def teardown():
 
 
 REQUEST_CONFIG = [("image_4", 0.2, 170), ("image_4", 0.4, 250), ("image_4", 0.6, 300), ("image_4", 0.8, 420), ("image_4", 1.0, 450),
-                  ("simulate_truth", 0.2, 170), ("simulate_truth", 0.3, 200), ("simulate_truth", 0.4, 250),
+                  ("simulate_truth", 0.2, 180), ("simulate_truth", 0.3, 200), ("simulate_truth", 0.4, 240),
                   ("simulate_truth", 0.5, 280),
                   ("simulate_truth", 0.6, 300)]
 @pytest.mark.asyncio
