@@ -2499,8 +2499,6 @@ async def test_proxy1e2pd_datasystem_ipc_acc_001(model: str, tp_size: int, datas
         "--ec-transfer-config",
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
-    if not enable_prefix:
-        pd_server_args.append("--no-enable-prefix-caching")
 
     warmup_cases = [{
         "case_type":
@@ -2619,8 +2617,6 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int, 
         "--ec-transfer-config",
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
-    if not enable_prefix:
-        pd_server_args.append("--no-enable-prefix-caching")
 
     warmup_cases = [{
         "case_type":
