@@ -774,7 +774,7 @@ DATASET_NAME = ["simulate_truth_samereq"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-@pytest.mark.parametrize("enable_prefix", ENABLE_PREFIX)
+@pytest.mark.parametrize("enable_prefix", PREFIX_CACHE)
 @pytest.mark.parametrize("dataset", DATASET_NAME)
 async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, dataset: str, request_rate: float, enable_prefix: bool):
     '''
