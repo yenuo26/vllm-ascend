@@ -3,6 +3,7 @@ import os
 import pytest
 import pytest_asyncio
 import copy
+import socket
 
 from tests.e2e.conftest import RemoteEPDServer
 from tests.e2e.epd.conftest import load_config
@@ -1054,7 +1055,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
     }
     env_dict = EnvManager()
-    node_ips = get_cluster_ips()
+    node_ips = get_cluster_ips(family=socket.AF_INET6)
     env_dict.add_env("common", env_dict=env)
     env_dict.add_env("proxy", "MC_TCP_BIND_ADDRESS", f"{node_ips[0]}")
     env_dict.add_env("e", "MC_TCP_BIND_ADDRESS", f"{node_ips[0]}")
@@ -1069,7 +1070,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num + p_num), index=i)
 
     cluster = ClusterManager()
-    for i in range(pd_num):
+    for i in range(d_num):
         cluster.add_node_info("d", 1, CONTAINER_NAME)
 
     cluster.add_node_info("ds", 1, CONTAINER_NAME)
