@@ -1166,11 +1166,13 @@ DATASET_NAME = ["simulate_truth_samereq"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("enable_prefix", PREFIX_CACHE)
 @pytest.mark.parametrize("dataset", DATASET_NAME)
-async def test_proxy1e1p1d_datasystem_ipc_002(model: str, tp_size: int, dataset: str, request_rate: float):
+async def test_proxy1e1p1d_datasystem_ipc_002(model: str, tp_size: int, dataset: str, request_rate: float,
+                                                  enable_prefix: bool):
     '''
     P1E1P-1D, 单机部署
-    前缀缓存： 开启
+    前缀缓存： 开启/关闭
     数据集：同请求相同图片
     ec transfer: 数据系统
     通信方式: ipc
@@ -1226,6 +1228,8 @@ async def test_proxy1e1p1d_datasystem_ipc_002(model: str, tp_size: int, dataset:
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
         ]
     ]
+    if not enable_prefix:
+        pd_server_args.append("--no-enable-prefix-caching")
 
     warmup_cases = [{
         "case_type":
