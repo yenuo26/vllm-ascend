@@ -774,8 +774,9 @@ DATASET_NAME = ["simulate_truth_samereq"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("enable_prefix", ENABLE_PREFIX)
 @pytest.mark.parametrize("dataset", DATASET_NAME)
-async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, dataset: str, request_rate: float):
+async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, dataset: str, request_rate: float, enable_prefix: bool):
     '''
     1E2PD, 单机部署
     前缀缓存： 开启
@@ -820,6 +821,9 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, data
         "--ec-transfer-config",
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
+    if not enable_prefix:
+        for args in pd_server_args:
+            args.append("--no-enable-prefix-caching")
 
     warmup_cases = [{
         "case_type":
@@ -863,7 +867,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, data
         "top_p": 0.7,
         "repetition_penalty": 1.2,
         "request_rate": request_rate * (e_num+pd_num),
-        "result_file_name": f"{dataset}_PROXY1E2PD_DS_TCP_IPV6",
+        "result_file_name": f"{dataset}_PROXY1E2PD_PREFIX_DS_TCP_IPV6",
         "baseline": 1,
         "seed": 77,
         "threshold": 0.97
@@ -1141,7 +1145,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "top_p": 0.7,
         "repetition_penalty": 1.2,
         "request_rate": request_rate * (e_num+p_num+d_num),
-        "result_file_name": f"{dataset}_PROXY1E_2PD_CROSS_DS_TCP_IPV6",
+        "result_file_name": f"{dataset}_PROXY1E1P_1D_CROSS_DS_TCP_IPV6",
         "baseline": 1,
         "seed": 77,
         "threshold": 0.97
