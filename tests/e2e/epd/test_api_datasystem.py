@@ -2964,11 +2964,11 @@ DATASET_NAME = ["textvqa_subset"]
 @pytest.mark.parametrize("dataset", DATASET_NAME)
 async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int, dataset: str, request_rate: float):
     '''
-    P1E1P1D, 单机部署
+    P1E1P-1D, 跨机部署
     前缀缓存： 开启
     数据集：textvqa_subset
     ec transfer: 数据系统
-    通信方式: ipv4
+    通信方式: ipv6
     '''
 
     e_num = 1
