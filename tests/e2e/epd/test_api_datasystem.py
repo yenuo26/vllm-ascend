@@ -1008,6 +1008,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
                                pd_num=pd_num,
                                e_num=e_num,
                                env_dict=env_dict,
+                               node_info=cluster,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
 
@@ -1147,6 +1148,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_002(model: str, tp_size: i
                                pd_num=pd_num,
                                e_num=e_num,
                                env_dict=env_dict,
+                               node_info=cluster,
                                e_serve_args=e_server_args,
                                pd_serve_args=pd_server_args) as server:
 
