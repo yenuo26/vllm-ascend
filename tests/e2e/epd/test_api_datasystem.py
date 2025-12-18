@@ -1155,6 +1155,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
     api_port = 10002
     async with RemoteEPDServer(run_mode="worker",
                                store_type="datasystem",
+                               kv_store_type="datasystem",
                                proxy_type="api_server",
                                api_server_port=api_port,
                                pd_num=p_num+d_num,
