@@ -823,8 +823,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, data
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}'
     ]
     if not enable_prefix:
-        for args in pd_server_args:
-            args.append("--no-enable-prefix-caching")
+        pd_server_args.append("--no-enable-prefix-caching")
 
     warmup_cases = [{
         "case_type":
