@@ -1229,7 +1229,8 @@ async def test_proxy1e1p1d_datasystem_ipc_002(model: str, tp_size: int, dataset:
         ]
     ]
     if not enable_prefix:
-        pd_server_args.append("--no-enable-prefix-caching")
+        for args in pd_server_args:
+            args.append("--no-enable-prefix-caching")
 
     warmup_cases = [{
         "case_type":
