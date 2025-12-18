@@ -2531,7 +2531,7 @@ async def test_proxy1e2pd_datasystem_ipc_acc_001(model: str, tp_size: int, datas
 
     aisbench_cases = [{
         "case_type": "accuracy",
-        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
         "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 2048,
@@ -2649,7 +2649,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int, 
 
     aisbench_cases = [{
         "case_type": "accuracy",
-        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
         "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 2048,
@@ -2783,7 +2783,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int,
 
     aisbench_cases = [{
         "case_type": "accuracy",
-        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
         "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 2048,
@@ -2918,7 +2918,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int,
 
     aisbench_cases = [{
         "case_type": "accuracy",
-        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
         "request_conf": "vllm_api_general_chat",
         "dataset_conf": "textvqa/textvqa_gen_base64",
         "num_prompts": 2048,
