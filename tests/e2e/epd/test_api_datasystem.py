@@ -1022,6 +1022,280 @@ async def test_proxy1e1p1d_datasystem_ipc_001(model: str, tp_size: int, dataset:
         # test perf
         run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
 
+REQUEST_RATE = [0.28, 0.56, 0.84]
+DATASET_NAME = ["simulate_truth","image_4"]
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("dataset", DATASET_NAME)
+async def test_proxy1e1p1d_datasystem_tcp_ipv4_001(model: str, tp_size: int, dataset: str, request_rate: float):
+    '''
+    P1E1P-1D, 单机部署
+    前缀缓存： 开启
+    数据集：模拟ZJ、image4
+    ec transfer: 数据系统
+    通信方式: ipv4
+    '''
+
+    e_num = 1
+    p_num = 1
+    d_num = 1
+    env = {
+        "VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
+        "MC_MS_AUTO_DISC": "0",
+        "MC_USE_IPV6": "0",
+        "TRANSFER_PROTOCOL": "tcp",
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+    }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+
+
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
+    for i in range(p_num):
+        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+    for i in range(d_num):
+        env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num + p_num), index=i)
+
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1",
+        "--ec-transfer-config",
+        '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [[
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
+        "--kv-transfer-config",
+        '{"kv_connector":"YuanRongConnector","kv_role": "kv_producer"}'
+    ],
+        [
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "128",
+        "--kv-transfer-config",
+        '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
+        ]
+    ]
+
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen_base64",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate * (e_num+p_num+d_num),
+        "result_file_name": f"{dataset}_PROXY1E1P1D_DS_TCP_IPV4",
+        "baseline": 1,
+        "seed": 77,
+        "threshold": 0.97
+    }]
+
+    api_port = 10002
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="datasystem",
+                               kv_store_type="datasystem",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=p_num+d_num,
+                               e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
+        # test perf
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+
+
+REQUEST_RATE = [0.28, 0.56, 0.84]
+DATASET_NAME = ["simulate_truth","image_4"]
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("dataset", DATASET_NAME)
+async def test_proxy1e1p1d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dataset: str, request_rate: float):
+    '''
+    P1E1P-1D, 单机部署
+    前缀缓存： 开启
+    数据集：模拟ZJ、image4
+    ec transfer: 数据系统
+    通信方式: ipv6
+    '''
+
+    e_num = 1
+    p_num = 1
+    d_num = 1
+    env = {
+        "VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
+        "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
+        "MC_MS_AUTO_DISC": "0",
+        "MC_USE_IPV6": "1",
+        "TRANSFER_PROTOCOL": "tcp",
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+    }
+    env_dict = EnvManager()
+    env_dict.add_env("common", env_dict=env)
+
+
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
+    for i in range(p_num):
+        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
+    for i in range(d_num):
+        env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num + p_num), index=i)
+
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.0",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "1",
+        "--ec-transfer-config",
+        '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [[
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
+        "--kv-transfer-config",
+        '{"kv_connector":"YuanRongConnector","kv_role": "kv_producer"}'
+    ],
+        [
+        "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size", str(tp_size), "--enforce-eager",
+        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "10000", "--max-num-seqs", "128",
+        "--kv-transfer-config",
+        '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
+        ]
+    ]
+
+    warmup_cases = [{
+        "case_type":
+            "performance",
+        "dataset_path":
+            os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+            "vllm_api_stream_chat",
+        "dataset_conf":
+            "textvqa/textvqa_gen_base64",
+        "num_prompts":
+            50,
+        "max_out_len":
+            256,
+        "batch_size":
+            16,
+        "temperature":
+            0.5,
+        "top_k":
+            10,
+        "top_p":
+            0.7,
+        "repetition_penalty":
+            1.2,
+        "request_rate":
+            0,
+        "seed":
+            77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_path": os.path.join(DATASET_PATH, dataset),
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "max_out_len": 150,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate * (e_num+p_num+d_num),
+        "result_file_name": f"{dataset}_PROXY1E1P1D_DS_TCP_IPV6",
+        "baseline": 1,
+        "seed": 77,
+        "threshold": 0.97
+    }]
+
+    api_port = 10002
+    async with RemoteEPDServer(run_mode="worker",
+                               store_type="datasystem",
+                               kv_store_type="datasystem",
+                               proxy_type="api_server",
+                               api_server_port=api_port,
+                               pd_num=p_num+d_num,
+                               e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+
+        # warm up
+        run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
+        # test perf
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
