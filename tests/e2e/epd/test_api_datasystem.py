@@ -1070,7 +1070,9 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         "--ec-transfer-config",
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
-    pd_server_args = [[
+    pd_server_args = list()
+
+    p_arg = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1079,8 +1081,8 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
         "--kv-transfer-config",
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_producer"}'
-    ],
-        [
+    ]
+    d_arg = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -1088,7 +1090,10 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         "--kv-transfer-config",
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
         ]
-    ]
+    for _ in range(p_num):
+        pd_server_args.append(p_arg)
+    for _ in range(d_num):
+        pd_server_args.append(d_arg)
 
     warmup_cases = [{
         "case_type":
@@ -2344,7 +2349,9 @@ async def test_proxy2e3p_3d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "--ec-transfer-config",
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_producer"}'
     ]
-    pd_server_args = [[
+    pd_server_args = list()
+
+    p_arg = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
@@ -2353,16 +2360,20 @@ async def test_proxy2e3p_3d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
         "--kv-transfer-config",
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_producer"}'
-    ],
-        [
+    ]
+    d_arg = [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--kv-transfer-config",
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
-        ]
     ]
+    for _ in range(p_num):
+        pd_server_args.append(p_arg)
+    for _ in range(d_num):
+        pd_server_args.append(d_arg)
+
     proxy_args = ["--router", router]
 
     warmup_cases = [{
