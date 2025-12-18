@@ -1039,9 +1039,9 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
     通信方式: ipv6
     '''
 
-    e_num = 1
-    p_num = 1
-    d_num = 1
+    e_num = 2
+    p_num = 3
+    d_num = 3
     env = {
         "VLLM_NIXL_SIDE_CHANNEL_PORT": "6000",
         "LM_SERVICE_REQUEST_TIMEOUT_SECONDS": "300",
