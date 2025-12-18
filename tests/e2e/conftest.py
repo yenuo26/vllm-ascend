@@ -497,6 +497,9 @@ class RemoteEPDServer:
                          "--initial-cluster", f"etcd-epd=http://{host}:{etcd_peer_port}"]
 
         self.etcd_address = f"{host}:{etcd_client_port}"
+        run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
+                               None,
+                               "[ETCD] ", self._output)
         self._proc_list.append(run_server_new_session(etcd_args, None, "[ETCD] ", self._output))
 
 
@@ -504,6 +507,9 @@ class RemoteEPDServer:
         self.env_dict.add_env("common", "EC_STORE_TYPE", "datasystem")
         self.env_dict.add_env("common", "USING_PREFIX_CONNECTOR", "0")
         self.datasystem_port = get_open_port()
+        run_server_new_session(["rm", "-rf", "datasystem"],
+                               None,
+                               "[DATASYSTEM_0] ", self._output)
         self._proc_list.append(run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
                                       "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
                                      None,
@@ -512,6 +518,14 @@ class RemoteEPDServer:
 
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
+                self._container.run_in_remote_container(
+                    host=self.cluster_ips[i],
+                    container_name=self.node_info.get_node_info(
+                        "ds", i - 1).container_name,
+                    server_cmd=["rm", "-rf", "datasystem"],
+                    env_dict=None,
+                    log_prefix=f"[DATASYSTEM_{i}] ",
+                )
                 self._container.run_in_remote_container(
                     host=self.cluster_ips[i],
                     container_name=self.node_info.get_node_info("ds", i-1).container_name,
@@ -528,9 +542,7 @@ class RemoteEPDServer:
                                       "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}"],
                                      None,
                                      "[DATASYSTEM_0] ", self._output))
-        run_server_new_session(["rm", "-rf", "datasystem"],
-                               None,
-                               "[DATASYSTEM_0] ", self._output)
+
         if self.node_info is not None:
             for i in range(1, len(self.cluster_ips)):
                 self._container.run_in_remote_container(
@@ -542,14 +554,7 @@ class RemoteEPDServer:
                     env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
-                self._container.run_in_remote_container(
-                    host=self.cluster_ips[i],
-                    container_name=self.node_info.get_node_info(
-                        "ds", i - 1).container_name,
-                    server_cmd=["rm", "-rf", "datasystem"],
-                    env_dict=None,
-                    log_prefix=f"[DATASYSTEM_{i}] ",
-                )
+
 
     def _get_addr_config(self, args, i, role):
         if (common_env := self.env_dict.get_node_env("common", 0)) and common_env.get("TRANSFER_PROTOCOL") is not None:
@@ -1033,9 +1038,7 @@ class RemoteEPDServer:
         # exit with
         if self.store_type == "datasystem" or self.kv_store_type == "datasystem":
             self._stop_datasystem()
-            run_server_new_session(["rm", "-rf", "/tmp/etcd-epd-data"],
-                                         None,
-                                         "[ETCD] ", self._output)
+
 
         for proc in self._proc_list:
             kill_process_tree(proc.pid)
