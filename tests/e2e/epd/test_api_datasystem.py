@@ -1226,7 +1226,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "--max-model-len", "10000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--kv-transfer-config",
-        '{"kv_connector":"YuanRongConnector","kv_role": "kv_producer"}'
+        '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
         ]
     ]
 
