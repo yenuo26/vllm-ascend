@@ -156,10 +156,9 @@ async def test_1e2pd_shm_http_003(model: str, tp_size: int,
                          str(i + e_num),
                          index=i)
 
-    proxy_args = ["--transfer-protocol", "tcp"]
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.0",
-        "--transfer-protocol", "tcp", "--tensor-parallel-size",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
         "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
         "--max-num-seqs", "1", "--ec-transfer-config",
@@ -169,7 +168,7 @@ async def test_1e2pd_shm_http_003(model: str, tp_size: int,
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
-        "--transfer-protocol", "tcp", "--tensor-parallel-size",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
@@ -202,8 +201,7 @@ async def test_1e2pd_shm_http_003(model: str, tp_size: int,
                                e_num=e_num,
                                env_dict=env_dict,
                                e_serve_args=e_server_args,
-                               pd_serve_args=pd_server_args,
-                               proxy_args=proxy_args) as server:
+                               pd_serve_args=pd_server_args) as server:
         async with DisaggEpdProxy(port=api_port, server=server) as proxy:
             # aisbench test
             run_aisbench_cases(model=model,
