@@ -2981,7 +2981,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_acc_001(model: str, tp_siz
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
 
-    node_ips = get_cluster_ips(family=socket.AF_INET6)
+    node_ips = get_cluster_ips()
     env_dict.add_env("common", env_dict=env)
     env_dict.add_env("proxy", "MC_TCP_BIND_ADDRESS", f"{node_ips[0]}")
     env_dict.add_env("e", "MC_TCP_BIND_ADDRESS", f"{node_ips[1]}")
