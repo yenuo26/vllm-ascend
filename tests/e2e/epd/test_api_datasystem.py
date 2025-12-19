@@ -2690,9 +2690,8 @@ DATASET_NAME = ["textvqa_subset"]
 @pytest.mark.acc
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset", DATASET_NAME)
-async def test_proxy1e1p1d_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int, dataset: str, request_rate: float):
+async def test_proxy1e1p1d_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int, dataset: str):
     '''
     P1E1P1D, 单机部署
     前缀缓存： 开启
@@ -2825,9 +2824,8 @@ DATASET_NAME = ["textvqa_subset"]
 @pytest.mark.acc
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset", DATASET_NAME)
-async def test_proxy1e1p1d_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int, dataset: str, request_rate: float):
+async def test_proxy1e1p1d_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int, dataset: str):
     '''
     P1E1P1D, 单机部署
     前缀缓存： 开启
@@ -2960,9 +2958,8 @@ DATASET_NAME = ["textvqa_subset"]
 @pytest.mark.acc
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
-@pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("dataset", DATASET_NAME)
-async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int, dataset: str, request_rate: float):
+async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int, dataset: str):
     '''
     P1E1P-1D, 跨机部署
     前缀缓存： 开启
