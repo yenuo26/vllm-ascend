@@ -2744,7 +2744,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int,
         [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "--max-model-len", "20000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--kv-transfer-config",
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
@@ -2868,7 +2868,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int,
     pd_server_args = [[
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "--max-model-len", "20000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector":"ECMooncakeStorageConnector","ec_role": "ec_consumer"}',
@@ -3025,7 +3025,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_acc_001(model: str, tp_siz
         [
         "--model", model, "--gpu-memory-utilization", "0.95",
         "--tensor-parallel-size", str(tp_size), "--enforce-eager",
-        "--max-model-len", "10000", "--max-num-batched-tokens",
+        "--max-model-len", "20000", "--max-num-batched-tokens",
         "10000", "--max-num-seqs", "128",
         "--kv-transfer-config",
         '{"kv_connector":"YuanRongConnector","kv_role": "kv_consumer"}'
