@@ -511,7 +511,7 @@ class RemoteEPDServer:
                                None,
                                "[DATASYSTEM_0] ", self._output)
         self._proc_list.append(run_server_new_session(["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[0]}:{self.datasystem_port}",
-                                      "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
+                                      "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "200000"],
                                      None,
                                      "[DATASYSTEM_0] ", self._output))
 
@@ -530,7 +530,7 @@ class RemoteEPDServer:
                     host=self.cluster_ips[i],
                     container_name=self.node_info.get_node_info("ds", i-1).container_name,
                     server_cmd=["dscli", "start", "-w", "--worker_address", f"{self.cluster_ips[i]}:{self.datasystem_port}",
-                                      "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "20000"],
+                                      "--etcd_address", self.etcd_address, "--shared_memory_size_mb", "200000"],
                     env_dict=None,
                     log_prefix=f"[DATASYSTEM_{i}] ",
                 )
