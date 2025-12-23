@@ -14,30 +14,31 @@
 # limitations under the License.
 # This file is a part of the vllm-ascend project.
 #
-from typing import Any
 
-import openai
 import pytest
 from vllm.utils import get_open_port
 
-from tests.e2e.conftest import RemoteOpenAIServer
+from tests.e2e.conftest import RemoteEPDServer, DisaggEpdProxy
 from tools.aisbench import run_aisbench_cases
-from tools.send_mm_request import send_image_request
 
 MODELS = [
     "Qwen/Qwen2.5-VL-7B-Instruct",
 ]
-
+SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 TENSOR_PARALLELS = [1]
 
-prompts = [
-    "San Francisco is a",
-]
-
-api_keyword_args = {
-    "max_tokens": 10,
-}
-
+warmup_cases = [{
+    "case_type": "performance",
+    "dataset_path": "vllm-ascend/textvqa-perf-1080p",
+    "request_conf": "vllm_api_stream_chat",
+    "dataset_conf": "textvqa/textvqa_gen_base64",
+    "num_prompts": 50,
+    "max_out_len": 20,
+    "batch_size": 32,
+    "request_rate": 0,
+    "baseline": 1,
+    "threshold": 0.97
+}]
 aisbench_cases = [{
     "case_type": "accuracy",
     "dataset_path": "vllm-ascend/textvqa-lite",
@@ -65,45 +66,44 @@ aisbench_cases = [{
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 async def test_models(model: str, tp_size: int) -> None:
-    port = get_open_port()
-
+    encode_port = get_open_port()
+    pd_port = get_open_port()
     e_server_args = [
-        "--no-enable-prefix-caching", "--mm-processor-cache-gb", "0",
+        "--port",
+        str(encode_port), "--model", model, "--gpu-memory-utilization", "0.01",
         "--tensor-parallel-size",
-        str(tp_size), "--port",
-        str(port), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "400", "--trust-remote-code",
-        "--gpu-memory-utilization", "0.8", "--compilation_config",
-        '{"cudagraph_mode": "FULL_DECODE_ONLY"}'
+        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
-
     pd_server_args = [
-        "--no-enable-prefix-caching", "--mm-processor-cache-gb", "0",
-        "--tensor-parallel-size",
-        str(tp_size), "--port",
-        str(port), "--max-model-len", "30000", "--max-num-batched-tokens",
-        "40000", "--max-num-seqs", "400", "--trust-remote-code",
-        "--gpu-memory-utilization", "0.8", "--compilation_config",
-        '{"cudagraph_mode": "FULL_DECODE_ONLY"}'
+        "--port",
+        str(pd_port), "--model", model, "--gpu-memory-utilization",
+        "0.95", "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+        "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+    ]
+    proxy_port = get_open_port()
+    proxy_args = [
+        "--host", "127.0.0.1", "--port",
+        str(proxy_port), "--encode-servers-urls",
+        f"http://localhost:{encode_port}", "--decode-servers-urls",
+        f"http://localhost:{pd_port}", "--prefill-servers-urls", "disable"
     ]
 
-    request_keyword_args: dict[str, Any] = {
-        **api_keyword_args,
-    }
-    with RemoteOpenAIServer(model,
-                            server_args,
-                            server_port=port,
-                            env_dict=env_dict,
-                            auto_port=False) as server:
-        client = server.get_async_client()
-        batch = await client.completions.create(
-            model=model,
-            prompt=prompts,
-            **request_keyword_args,
-        )
-        choices: list[openai.types.CompletionChoice] = batch.choices
-        assert choices[0].text, "empty response"
-        print(choices)
-        send_image_request(model, server)
-        # aisbench test
-        run_aisbench_cases(model, port, aisbench_cases)
+    async with RemoteEPDServer(e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+        async with DisaggEpdProxy(proxy_args=proxy_args) as proxy:
+            # warm up
+            run_aisbench_cases(model=model,
+                               port=proxy_port,
+                               aisbench_cases=warmup_cases)
+            # aisbench test
+            run_aisbench_cases(model, proxy_port, aisbench_cases)
