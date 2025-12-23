@@ -820,8 +820,8 @@ class RemoteEPDServer:
             self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
-            current_d_num = 0
-            current_p_num = 0
+            current_d_num = -1
+            current_p_num = -1
             if "--kv-transfer-config" in pd_serve_arg:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
