@@ -83,7 +83,7 @@ logger = logging.getLogger(__name__)
 _TEST_DIR = os.path.dirname(__file__)
 
 
-DISAGG_EPD_PROXY_SCRIPT = "../../../examples/epd/disagg_epd_proxy.py"
+DISAGG_EPD_PROXY_SCRIPT = "../../../../examples/disaggregated_encoder/disagg_epd_proxy.py"
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
@@ -131,12 +131,11 @@ def kill_process_tree(pid):
         pass
 
 
-def read_output(self, pipe, prefix):
+def read_output(pipe, prefix):
     try:
         with pipe:
             for line in iter(pipe.readline, ''):
                 if line:
-                    self._text = line
                     print(f"{prefix}: {line}", end='')
 
     except Exception as e:
