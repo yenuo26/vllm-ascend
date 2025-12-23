@@ -480,7 +480,7 @@ DATASET_NAME = ["textvqa-subset"]
 async def test_1e1p1d_shm_http_002(model: str, tp_size: int,
                                  dataset_name: str):
     '''
-    1E2PD 单机部署
+    1E1P1D 单机部署
     前缀缓存： 开启
     数据集：textvqa-subset
     ec transfer: shm
@@ -490,13 +490,10 @@ async def test_1e1p1d_shm_http_002(model: str, tp_size: int,
     env_dict = EnvManager()
     e_num = 1
     pd_num = 2
-    for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
-    for i in range(pd_num):
-        env_dict.add_env("pd",
-                         "ASCEND_RT_VISIBLE_DEVICES",
-                         str(i + e_num),
-                         index=i)
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+    env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", "1")
+    env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", "2")
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.01",
