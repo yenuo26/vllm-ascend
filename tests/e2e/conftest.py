@@ -262,7 +262,10 @@ class RemoteEPDServer:
         else:
             raise RuntimeError("pd_serve_args must be a list")
 
-        self.env_dict = env_dict
+        if env_dict is None:
+            self.env_dict = dict()
+        else:
+            self.env_dict = env_dict
 
     async def __aenter__(self):
         # start with
