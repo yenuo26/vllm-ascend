@@ -18,7 +18,6 @@ SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
 
 TENSOR_PARALLELS = [1]
 PREFIX_CACHE = [True, False]
-ROUTER = ["RandomRouter", "RoundRobinRouter", "LeastInFlightRouter"]
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -220,6 +219,132 @@ async def test_1e2pd_shm_http_001(model: str, tp_size: int,
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_1E2PD_shm_http_001",
+        "threshold": 0.97
+    }]
+
+    api_port = get_open_port()
+    async with RemoteEPDServer(run_mode="serve",
+                               store_type="storage",
+                               api_server_port=api_port,
+                               pd_num=pd_num,
+                               e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+        async with DisaggEpdProxy(port=api_port, server=server) as proxy:
+            # warm up
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
+            # aisbench test
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               card_num=pd_num + e_num,
+                               aisbench_cases=aisbench_cases)
+
+
+
+DATASET_NAME = ["simulate_truth_samereq"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+@pytest.mark.parametrize("prefix", PREFIX_CACHE)
+async def test_1e2pd_shm_http_002(model: str, tp_size: int,
+                                    dataset_name: str, request_rate: float, prefix: bool):
+    '''
+    1E2PD 单机部署
+    前缀缓存： 开启、关闭
+    数据集：跨/同请求相同图片
+    ec transfer: shm
+    通信方式：http
+    '''
+
+    env_dict = EnvManager()
+    e_num = 1
+    pd_num = 2
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+    for i in range(pd_num):
+        env_dict.add_env("pd",
+                         "ASCEND_RT_VISIBLE_DEVICES",
+                         str(i + e_num),
+                         index=i)
+
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.01",
+        "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+    ]
+    pd_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.95",
+       "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+        "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+        "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}'
+    ]
+
+    if not prefix:
+        pd_server_args.append("--no-enable-prefix-caching")
+
+    warmup_cases = [{
+        "case_type":
+        "performance",
+        "dataset_path":
+        os.path.join(DATASET_PATH, "simulate_truth"),
+        "request_conf":
+        "vllm_api_stream_chat",
+        "dataset_conf":
+        "textvqa/textvqa_gen_base64",
+        "num_prompts":
+        50,
+        "max_out_len":
+        256,
+        "batch_size":
+        16,
+        "temperature":
+        0.5,
+        "top_k":
+        10,
+        "top_p":
+        0.7,
+        "repetition_penalty":
+        1.2,
+        "request_rate":
+        0,
+        "seed":
+        77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate*(e_num+pd_num),
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_1E2PD_shm_http_002",
         "threshold": 0.97
     }]
 
