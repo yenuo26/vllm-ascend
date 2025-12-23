@@ -368,7 +368,7 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
     pd_server_args = [[
         "--model", model, "--gpu-memory-utilization", "0.95",
        "--tensor-parallel-size",
-        str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+        str(tp_size), "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
         '{"ec_connector_extra_config":{"shared_storage_path":"' +
@@ -382,7 +382,7 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
-            str(tp_size), "--enforce-eager", "--max-model-len", "10000",
+            str(tp_size), "--max-model-len", "10000",
             "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
             "--kv-transfer-config",
             '{"kv_connector_extra_config": {"use_ascend_direct": true, '
