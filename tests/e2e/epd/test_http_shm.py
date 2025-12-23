@@ -347,13 +347,16 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
     env_dict = EnvManager()
     e_num = 1
     pd_num = 2
-    for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
-    for i in range(pd_num):
-        env_dict.add_env("pd",
-                         "ASCEND_RT_VISIBLE_DEVICES",
-                         str(i + e_num),
-                         index=i)
+
+
+    env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
+
+    env_dict.add_env("p",
+                     "ASCEND_RT_VISIBLE_DEVICES",
+                     "1")
+    env_dict.add_env("d",
+                     "ASCEND_RT_VISIBLE_DEVICES",
+                     "2")
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.01",
