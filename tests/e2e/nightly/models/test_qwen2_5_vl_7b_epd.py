@@ -81,8 +81,8 @@ async def test_models(model: str, tp_size: int) -> None:
     ]
     pd_server_args = [
         "--port",
-        str(pd_port), "--model", model, "--gpu-memory-utilization",
-        "0.95", "--tensor-parallel-size",
+        str(pd_port), "--model", model, "--gpu-memory-utilization", "0.95",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
