@@ -268,7 +268,7 @@ async def test_3e5pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
     e_num = 3
     pd_num = 5
     for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i))
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
     for i in range(pd_num):
         env_dict.add_env("pd",
                          "ASCEND_RT_VISIBLE_DEVICES",
@@ -821,14 +821,14 @@ async def test_2e3p3d_shm_http_001(model: str, tp_size: int, dataset_name: str,
     d_num = 3
 
     for i in range(e_num):
-        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), i)
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), index=i)
 
     for i in range(p_num):
-        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), i)
+        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), index=i)
 
     for i in range(d_num):
         env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES",
-                         str(i + e_num + p_num), i)
+                         str(i + e_num + p_num), index=i)
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.01",
