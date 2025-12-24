@@ -2,8 +2,7 @@ import os
 
 import pytest
 
-
-from tests.e2e.conftest import RemoteEPDServer,RemoteOpenAIServer,DisaggEpdProxy
+from tests.e2e.conftest import RemoteEPDServer, RemoteOpenAIServer, DisaggEpdProxy
 from tests.e2e.epd.conftest import load_config
 from tools.aisbench import run_aisbench_cases
 from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterManager, EnvManager
@@ -14,7 +13,6 @@ CONTAINER_NAME = load_config().get("container_name")
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
-
 
 TENSOR_PARALLELS = [1]
 PREFIX_CACHE = [True, False]
@@ -30,7 +28,7 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 async def test_1e1pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
-                                 request_rate: float):
+                                  request_rate: float):
     '''
     1E1PD 单机部署
     前缀缓存： 开启
@@ -123,7 +121,7 @@ async def test_1e1pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
             # aisbench test
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=pd_num+e_num,
+                               card_num=pd_num + e_num,
                                aisbench_cases=aisbench_cases)
 
 
@@ -136,8 +134,8 @@ DATASET_NAME = ["simulate_truth", "image_4"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e2pd_shm_http_001(model: str, tp_size: int,
-                                    dataset_name: str, request_rate: float):
+async def test_1e2pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
+                                  request_rate: float):
     '''
     1E2PD 单机部署
     前缀缓存： 开启
@@ -169,7 +167,7 @@ async def test_1e2pd_shm_http_001(model: str, tp_size: int,
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
-       "--tensor-parallel-size",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
@@ -217,7 +215,7 @@ async def test_1e2pd_shm_http_001(model: str, tp_size: int,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*(e_num+pd_num),
+        "request_rate": request_rate * (e_num + pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_1E2PD_shm_http_001",
@@ -246,7 +244,9 @@ async def test_1e2pd_shm_http_001(model: str, tp_size: int,
                                card_num=pd_num + e_num,
                                aisbench_cases=aisbench_cases)
 
+
 DATASET_NAME = ["simulate_truth"]
+
 
 @pytest.mark.asyncio
 @pytest.mark.perf
@@ -255,7 +255,7 @@ DATASET_NAME = ["simulate_truth"]
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 async def test_3e5pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
-                                 request_rate: float):
+                                  request_rate: float):
     '''
     3E5PD 单机部署
     前缀缓存： 开启
@@ -348,8 +348,9 @@ async def test_3e5pd_shm_http_001(model: str, tp_size: int, dataset_name: str,
             # aisbench test
             run_aisbench_cases(model=model,
                                port=api_port,
-                               card_num=pd_num+e_num,
+                               card_num=pd_num + e_num,
                                aisbench_cases=aisbench_cases)
+
 
 DATASET_NAME = ["simulate_truth_samereq"]
 
@@ -361,8 +362,8 @@ DATASET_NAME = ["simulate_truth_samereq"]
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
 @pytest.mark.parametrize("prefix", PREFIX_CACHE)
-async def test_1e2pd_shm_http_002(model: str, tp_size: int,
-                                    dataset_name: str, request_rate: float, prefix: bool):
+async def test_1e2pd_shm_http_002(model: str, tp_size: int, dataset_name: str,
+                                  request_rate: float, prefix: bool):
     '''
     1E2PD 单机部署
     前缀缓存： 开启、关闭
@@ -394,7 +395,7 @@ async def test_1e2pd_shm_http_002(model: str, tp_size: int,
     ]
     pd_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.95",
-       "--tensor-parallel-size",
+        "--tensor-parallel-size",
         str(tp_size), "--enforce-eager", "--max-model-len", "10000",
         "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
         "--ec-transfer-config",
@@ -446,7 +447,7 @@ async def test_1e2pd_shm_http_002(model: str, tp_size: int,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*(e_num+pd_num),
+        "request_rate": request_rate * (e_num + pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_1E2PD_shm_http_002",
@@ -484,8 +485,7 @@ DATASET_NAME = ["textvqa-subset"]
 @pytest.mark.parametrize("model", MODELS)
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
-async def test_1e2pd_shm_http_003(model: str, tp_size: int,
-                                 dataset_name: str):
+async def test_1e2pd_shm_http_003(model: str, tp_size: int, dataset_name: str):
     '''
     1E2PD 单机部署
     前缀缓存： 开启
@@ -556,11 +556,12 @@ async def test_1e2pd_shm_http_003(model: str, tp_size: int,
             run_aisbench_cases(model=model,
                                port=api_port,
                                card_num=pd_num + e_num,
-                               aisbench_cases=acc_cases, save=False)
-
+                               aisbench_cases=acc_cases,
+                               save=False)
 
 
 DATASET_NAME = ["simulate_truth", "image_4"]
+
 
 @pytest.mark.asyncio
 @pytest.mark.perf
@@ -568,8 +569,8 @@ DATASET_NAME = ["simulate_truth", "image_4"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 @pytest.mark.parametrize("request_rate", REQUEST_RATE)
-async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
-                                    dataset_name: str, request_rate: float):
+async def test_1e1p1d_shm_http_001(model: str, tp_size: int, dataset_name: str,
+                                   request_rate: float):
     '''
     1E1P1D 单机部署
     前缀缓存： 开启
@@ -582,15 +583,10 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
     e_num = 1
     pd_num = 2
 
-
     env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", "0")
 
-    env_dict.add_env("p",
-                     "ASCEND_RT_VISIBLE_DEVICES",
-                     "1")
-    env_dict.add_env("d",
-                     "ASCEND_RT_VISIBLE_DEVICES",
-                     "2")
+    env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", "1")
+    env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES", "2")
 
     e_server_args = [
         "--model", model, "--gpu-memory-utilization", "0.01",
@@ -602,20 +598,22 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
-    pd_server_args = [[
-        "--model", model, "--gpu-memory-utilization", "0.95",
-       "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "10000",
-        "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
-        "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
-        "--kv-transfer-config",
-        '{"kv_connector_extra_config": {"use_ascend_direct": true, '
-        '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
-        '"kv_role": "kv_producer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
-        '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'],
+    pd_server_args = [
+        [
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--ec-transfer-config",
+            '{"ec_connector_extra_config":{"shared_storage_path":"' +
+            SHARED_STORAGE_PATH +
+            '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
+            "--kv-transfer-config",
+            '{"kv_connector_extra_config": {"use_ascend_direct": true, '
+            '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
+            '"kv_role": "kv_producer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
+            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'
+        ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
@@ -625,8 +623,8 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
             '{"kv_connector_extra_config": {"use_ascend_direct": true, '
             '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
             '"kv_role": "kv_consumer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
-            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}']
-
+            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'
+        ]
     ]
     warmup_cases = [{
         "case_type":
@@ -668,7 +666,7 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
         "top_k": 10,
         "top_p": 0.7,
         "repetition_penalty": 1.2,
-        "request_rate": request_rate*(e_num+pd_num),
+        "request_rate": request_rate * (e_num + pd_num),
         "baseline": 1,
         "seed": 77,
         "result_file_name": f"{dataset_name}_1E1P1D_shm_http_001",
@@ -698,7 +696,6 @@ async def test_1e1p1d_shm_http_001(model: str, tp_size: int,
                                aisbench_cases=aisbench_cases)
 
 
-
 DATASET_NAME = ["textvqa-subset"]
 
 
@@ -708,7 +705,7 @@ DATASET_NAME = ["textvqa-subset"]
 @pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
 @pytest.mark.parametrize("dataset_name", DATASET_NAME)
 async def test_1e1p1d_shm_http_002(model: str, tp_size: int,
-                                 dataset_name: str):
+                                   dataset_name: str):
     '''
     1E1P1D 单机部署
     前缀缓存： 开启
@@ -735,20 +732,22 @@ async def test_1e1p1d_shm_http_002(model: str, tp_size: int,
         SHARED_STORAGE_PATH +
         '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
     ]
-    pd_server_args = [[
-        "--model", model, "--gpu-memory-utilization", "0.95",
-       "--tensor-parallel-size",
-        str(tp_size), "--max-model-len", "20000",
-        "--max-num-batched-tokens", "20000", "--max-num-seqs", "128",
-        "--ec-transfer-config",
-        '{"ec_connector_extra_config":{"shared_storage_path":"' +
-        SHARED_STORAGE_PATH +
-        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
-        "--kv-transfer-config",
-        '{"kv_connector_extra_config": {"use_ascend_direct": true, '
-        '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
-        '"kv_role": "kv_producer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
-        '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'],
+    pd_server_args = [
+        [
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--max-model-len", "20000",
+            "--max-num-batched-tokens", "20000", "--max-num-seqs", "128",
+            "--ec-transfer-config",
+            '{"ec_connector_extra_config":{"shared_storage_path":"' +
+            SHARED_STORAGE_PATH +
+            '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
+            "--kv-transfer-config",
+            '{"kv_connector_extra_config": {"use_ascend_direct": true, '
+            '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
+            '"kv_role": "kv_producer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
+            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'
+        ],
         [
             "--model", model, "--gpu-memory-utilization", "0.95",
             "--tensor-parallel-size",
@@ -758,7 +757,8 @@ async def test_1e1p1d_shm_http_002(model: str, tp_size: int,
             '{"kv_connector_extra_config": {"use_ascend_direct": true, '
             '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
             '"kv_role": "kv_consumer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
-            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}']
+            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'
+        ]
     ]
 
     acc_cases = [{
@@ -792,4 +792,151 @@ async def test_1e1p1d_shm_http_002(model: str, tp_size: int,
             run_aisbench_cases(model=model,
                                port=api_port,
                                card_num=pd_num + e_num,
-                               aisbench_cases=acc_cases, save=False)
+                               aisbench_cases=acc_cases,
+                               save=False)
+
+
+DATASET_NAME = ["simulate_truth"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.perf
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("tp_size", TENSOR_PARALLELS)
+@pytest.mark.parametrize("dataset_name", DATASET_NAME)
+@pytest.mark.parametrize("request_rate", REQUEST_RATE)
+async def test_2e3p3d_shm_http_001(model: str, tp_size: int, dataset_name: str,
+                                   request_rate: float):
+    '''
+    2E3P3D 单机部署
+    前缀缓存： 开启
+    数据集：模拟zj
+    ec transfer: shm
+    通信方式：http
+    '''
+
+    env_dict = EnvManager()
+    e_num = 2
+    p_num = 3
+    d_num = 3
+
+    for i in range(e_num):
+        env_dict.add_env("e", "ASCEND_RT_VISIBLE_DEVICES", str(i), i)
+
+    for i in range(p_num):
+        env_dict.add_env("p", "ASCEND_RT_VISIBLE_DEVICES", str(i + e_num), i)
+
+    for i in range(d_num):
+        env_dict.add_env("d", "ASCEND_RT_VISIBLE_DEVICES",
+                         str(i + e_num + p_num), i)
+
+    e_server_args = [
+        "--model", model, "--gpu-memory-utilization", "0.01",
+        "--tensor-parallel-size",
+        str(tp_size), "--enforce-eager", "--no-enable-prefix-caching",
+        "--max-model-len", "10000", "--max-num-batched-tokens", "10000",
+        "--max-num-seqs", "1", "--ec-transfer-config",
+        '{"ec_connector_extra_config":{"shared_storage_path":"' +
+        SHARED_STORAGE_PATH +
+        '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_producer"}'
+    ]
+
+    pd_server_args = []
+    for i in range(p_num):
+        pd_server_args.append([
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--ec-transfer-config",
+            '{"ec_connector_extra_config":{"shared_storage_path":"' +
+            SHARED_STORAGE_PATH +
+            '"},"ec_connector":"ECSharedStorageConnector","ec_role": "ec_consumer"}',
+            "--kv-transfer-config",
+            '{"kv_connector_extra_config": {"use_ascend_direct": true, '
+            '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
+            '"kv_role": "kv_producer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
+            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'
+        ])
+
+    for i in range(d_num):
+        pd_server_args.append([
+            "--model", model, "--gpu-memory-utilization", "0.95",
+            "--tensor-parallel-size",
+            str(tp_size), "--max-model-len", "10000",
+            "--max-num-batched-tokens", "10000", "--max-num-seqs", "128",
+            "--kv-transfer-config",
+            '{"kv_connector_extra_config": {"use_ascend_direct": true, '
+            '"prefill": {"dp_size": 1, "tp_size": 1}, "decode": {"dp_size": 1, "tp_size": 1}},"kv_connector": "MooncakeConnectorV1", '
+            '"kv_role": "kv_consumer", "kv_buffer_device": "npu", "kv_parallel_size": 1, "kv_port": "20001",'
+            '"engine_id":"0", "kv_rank": 0, "kv_connector_module_paht": "vllm_ascend.distriuted.mooncake_connector"}'
+        ])
+
+    warmup_cases = [{
+        "case_type":
+        "performance",
+        "dataset_path":
+        os.path.join(DATASET_PATH, "simulate_truth_samereq"),
+        "request_conf":
+        "vllm_api_stream_chat",
+        "dataset_conf":
+        "textvqa/textvqa_gen_base64",
+        "num_prompts":
+        50,
+        "max_out_len":
+        256,
+        "batch_size":
+        16,
+        "temperature":
+        0.5,
+        "top_k":
+        10,
+        "top_p":
+        0.7,
+        "repetition_penalty":
+        1.2,
+        "request_rate":
+        0,
+        "seed":
+        77,
+    }]
+
+    aisbench_cases = [{
+        "case_type": "performance",
+        "dataset_path": os.path.join(DATASET_PATH, dataset_name),
+        "request_conf": "vllm_api_stream_chat",
+        "dataset_conf": "textvqa/textvqa_gen_base64",
+        "num_prompts": 200,
+        "batch_size": 128,
+        "temperature": 0.5,
+        "top_k": 10,
+        "top_p": 0.7,
+        "repetition_penalty": 1.2,
+        "request_rate": request_rate * (e_num + p_num + d_num),
+        "baseline": 1,
+        "seed": 77,
+        "result_file_name": f"{dataset_name}_2E3P3D_shm_http_001",
+        "threshold": 0.97
+    }]
+
+    api_port = get_open_port()
+    async with RemoteEPDServer(run_mode="serve",
+                               store_type="storage",
+                               api_server_port=api_port,
+                               pd_num=p_num + d_num,
+                               e_num=e_num,
+                               env_dict=env_dict,
+                               e_serve_args=e_server_args,
+                               pd_serve_args=pd_server_args) as server:
+        async with DisaggEpdProxy(port=api_port, server=server) as proxy:
+            # warm up
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               aisbench_cases=warmup_cases,
+                               verify=False,
+                               save=False)
+            # aisbench test
+            run_aisbench_cases(model=model,
+                               port=api_port,
+                               card_num=p_num + e_num + d_num,
+                               aisbench_cases=aisbench_cases)
