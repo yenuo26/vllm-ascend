@@ -819,9 +819,9 @@ class RemoteEPDServer:
             self._share_info.add_addr_list(f"http://localhost:{e_serve_arg[index_e + 1]}", "e")
             self._run_server(e_serve_arg, env, f"[ENCODE_{i}] ")
 
+        current_d_num = -1
+        current_p_num = -1
         for i, pd_serve_arg in enumerate(self.pd_serve_args_list):
-            current_d_num = -1
-            current_p_num = -1
             if "--kv-transfer-config" in pd_serve_arg:
                 kv_index = pd_serve_arg.index("--kv-transfer-config")
                 if "kv_consumer" in pd_serve_arg[kv_index + 1]:
