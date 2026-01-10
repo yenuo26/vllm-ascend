@@ -100,8 +100,8 @@ async def test_models(model: str, tp_size: int) -> None:
         f"http://localhost:{pd_port}", "--prefill-servers-urls", "disable"
     ]
 
-    async with RemoteEPDServer(vllm_serve_args=vllm_server_args) as _:
-        async with DisaggEpdProxy(proxy_args=proxy_args) as _:
+    with RemoteEPDServer(vllm_serve_args=vllm_server_args) as _:
+        with DisaggEpdProxy(proxy_args=proxy_args) as _:
             # warm up
             run_aisbench_cases(model=model,
                                port=proxy_port,

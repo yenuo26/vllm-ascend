@@ -81,7 +81,7 @@ logger = logging.getLogger(__name__)
 
 _TEST_DIR = os.path.dirname(__file__)
 
-DISAGG_EPD_PROXY_SCRIPT = "../../../../examples/disaggregated_encoder/disagg_epd_proxy.py"
+DISAGG_EPD_PROXY_SCRIPT = "/vllm-workspace/vllm/examples/online_serving/disaggregated_encoder/disagg_epd_proxy.py"
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
@@ -328,7 +328,7 @@ class RemoteEPDServer(RemoteOpenAIServer):
                  vllm_serve_args: Union[list, list[list]],
                  server_host: str = '0.0.0.0',
                  env_dict: Optional[dict[str, str]] = None,
-                 max_wait_seconds: Optional[float] = None) -> None:
+                 max_wait_seconds: Optional[float] = 2800) -> None:
 
         self._proc_list = []
 
@@ -344,7 +344,7 @@ class RemoteEPDServer(RemoteOpenAIServer):
 
         self.vllm_serve_args_list = []
         self.health_url_list = []
-        self.server_host = server_host
+        self.host = server_host
 
         if isinstance(vllm_serve_args, list):
             if not all(isinstance(item, list) for item in vllm_serve_args):
@@ -373,6 +373,9 @@ class RemoteEPDServer(RemoteOpenAIServer):
         super()._wait_for_multiple_servers([(self.host, url)
                                             for url in self.health_url_list],
                                            timeout=max_wait_seconds)
+
+    def _poll(self) -> Optional[int]:
+        return None
 
     def _delete_shm(self) -> None:
         for i, arg in enumerate(self.vllm_serve_args_list):
@@ -461,7 +464,7 @@ class DisaggEpdProxy(RemoteEPDServer):
                  proxy_args: Union[list[str], str] = None,
                  env_dict: Optional[dict[str, str]] = None,
                  server_host: str = '0.0.0.0',
-                 max_wait_seconds: Optional[float] = None) -> None:
+                 max_wait_seconds: Optional[float] = 2800) -> None:
         self.proxy_args = proxy_args
         self.env_dict = env_dict
         self._proc_list = list()
