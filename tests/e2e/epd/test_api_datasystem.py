@@ -13,6 +13,7 @@ from tests.e2e.nightly.multi_node.config.multi_node_epd_config import ClusterMan
 
 model_path = load_config().get("model_path")
 CONTAINER_NAME = load_config().get("container_name")
+
 MODELS = [os.path.join(model_path, "Qwen2.5-VL-7B-Instruct")]
 DATASET_PATH = load_config().get("dataset_path")
 SHARED_STORAGE_PATH = "/dev/shm/epd/storage"
@@ -47,7 +48,8 @@ async def test_proxy1e1pd_datasystem_ipc_001(model: str, tp_size: int, dataset: 
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "ipc",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -81,7 +83,7 @@ async def test_proxy1e1pd_datasystem_ipc_001(model: str, tp_size: int, dataset: 
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "image_4"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -142,7 +144,7 @@ async def test_proxy1e1pd_datasystem_ipc_001(model: str, tp_size: int, dataset: 
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -169,7 +171,8 @@ async def test_proxy1e1pdmerge_datasystem_ipc_001(model: str, tp_size: int, data
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "ipc",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -202,7 +205,7 @@ async def test_proxy1e1pdmerge_datasystem_ipc_001(model: str, tp_size: int, data
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "image_4"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -263,7 +266,7 @@ async def test_proxy1e1pdmerge_datasystem_ipc_001(model: str, tp_size: int, data
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth","image_4"]
@@ -290,7 +293,8 @@ async def test_proxy1e2pd_datasystem_ipc_001(model: str, tp_size: int, dataset: 
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "ipc",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -322,7 +326,7 @@ async def test_proxy1e2pd_datasystem_ipc_001(model: str, tp_size: int, dataset: 
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -383,7 +387,7 @@ async def test_proxy1e2pd_datasystem_ipc_001(model: str, tp_size: int, dataset: 
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth","image_4"]
@@ -410,7 +414,8 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_001(model: str, tp_size: int, data
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -443,7 +448,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_001(model: str, tp_size: int, data
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -504,7 +509,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_001(model: str, tp_size: int, data
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth","image_4"]
@@ -531,7 +536,8 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_001(model: str, tp_size: int, data
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -564,7 +570,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_001(model: str, tp_size: int, data
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -625,7 +631,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_001(model: str, tp_size: int, data
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth_samereq"]
@@ -654,7 +660,8 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, data
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -750,7 +757,7 @@ async def test_proxy1e2pd_datasystem_tcp_ipv6_002(model: str, tp_size: int, data
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -780,7 +787,8 @@ async def test_proxy3e5pd_datasystem_tcp_ipv6_001(model: str, tp_size: int, data
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -814,7 +822,7 @@ async def test_proxy3e5pd_datasystem_tcp_ipv6_001(model: str, tp_size: int, data
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -876,7 +884,7 @@ async def test_proxy3e5pd_datasystem_tcp_ipv6_001(model: str, tp_size: int, data
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth","image_4"]
@@ -904,7 +912,8 @@ async def test_proxy1e1p1d_datasystem_ipc_001(model: str, tp_size: int, dataset:
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "ipc",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -950,7 +959,7 @@ async def test_proxy1e1p1d_datasystem_ipc_001(model: str, tp_size: int, dataset:
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -1012,7 +1021,7 @@ async def test_proxy1e1p1d_datasystem_ipc_001(model: str, tp_size: int, dataset:
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -1040,7 +1049,8 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1091,7 +1101,7 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -1153,7 +1163,7 @@ async def test_proxy2e3p3d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth_samereq"]
@@ -1183,7 +1193,8 @@ async def test_proxy1e1p1d_datasystem_ipc_002(model: str, tp_size: int, dataset:
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "ipc",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1294,7 +1305,7 @@ async def test_proxy1e1p1d_datasystem_ipc_002(model: str, tp_size: int, dataset:
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth","image_4"]
@@ -1322,7 +1333,8 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv4_001(model: str, tp_size: int, dat
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1368,7 +1380,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv4_001(model: str, tp_size: int, dat
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -1430,7 +1442,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv4_001(model: str, tp_size: int, dat
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
@@ -1459,7 +1471,8 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -1505,7 +1518,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -1567,7 +1580,7 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv6_001(model: str, tp_size: int, dat
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -1594,7 +1607,8 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips()
@@ -1640,7 +1654,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -1702,7 +1716,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_001(model: str, tp_size: i
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth_samereq"]
@@ -1731,7 +1745,8 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_002(model: str, tp_size: i
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips()
@@ -1841,7 +1856,7 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_002(model: str, tp_size: i
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -1868,10 +1883,11 @@ async def test_proxy1e_2pd_cross_datasystem_tcp_ipv6_001(model: str, tp_size: in
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
-    node_ips = get_cluster_ips()
+    node_ips = get_cluster_ips(family=socket.AF_INET6)
     env_dict.add_env("common", env_dict=env)
     env_dict.add_env("proxy", "MC_TCP_BIND_ADDRESS", f"{node_ips[0]}")
     env_dict.add_env("e", "MC_TCP_BIND_ADDRESS", f"{node_ips[0]}")
@@ -1910,7 +1926,7 @@ async def test_proxy1e_2pd_cross_datasystem_tcp_ipv6_001(model: str, tp_size: in
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -1972,7 +1988,7 @@ async def test_proxy1e_2pd_cross_datasystem_tcp_ipv6_001(model: str, tp_size: in
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -2000,7 +2016,8 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips(family=socket.AF_INET6)
@@ -2056,7 +2073,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -2119,7 +2136,7 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -2147,7 +2164,8 @@ async def test_proxy1e_1p_1d_cross_datasystem_tcp_ipv4_001(model: str, tp_size: 
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips()
@@ -2206,7 +2224,7 @@ async def test_proxy1e_1p_1d_cross_datasystem_tcp_ipv4_001(model: str, tp_size: 
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -2269,7 +2287,7 @@ async def test_proxy1e_1p_1d_cross_datasystem_tcp_ipv4_001(model: str, tp_size: 
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 REQUEST_RATE = [0.28, 0.56, 0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -2300,7 +2318,8 @@ async def test_proxy2e3p_3d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips(family=socket.AF_INET6)
@@ -2363,7 +2382,7 @@ async def test_proxy2e3p_3d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -2427,7 +2446,7 @@ async def test_proxy2e3p_3d_cross_datasystem_tcp_ipv6_001(model: str, tp_size: i
                                verify=False,
                                save=False)
         # test perf
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
 
 
 DATASET_NAME = ["textvqa_subset"]
@@ -2453,7 +2472,8 @@ async def test_proxy1e2pd_datasystem_ipc_acc_001(model: str, tp_size: int, datas
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "ipc",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -2571,7 +2591,8 @@ async def test_proxy1e2pd_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int, 
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -2691,7 +2712,8 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv4_acc_001(model: str, tp_size: int,
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -2825,7 +2847,8 @@ async def test_proxy1e1p1d_datasystem_tcp_ipv6_acc_001(model: str, tp_size: int,
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -2958,7 +2981,8 @@ async def test_proxy_1e_2pd_cross_datasystem_tcp_ipv4_acc_001(model: str, tp_siz
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -3094,7 +3118,8 @@ async def test_proxy1e1p_1d_cross_datasystem_tcp_ipv6_acc_001(model: str, tp_siz
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     env_dict.add_env("common", env_dict=env)
@@ -3243,7 +3268,8 @@ async def test_proxy1e_2pd_cross_datasystem_tcp_ipv6_stability_001(model: str, t
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "1",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips()
@@ -3285,7 +3311,7 @@ async def test_proxy1e_2pd_cross_datasystem_tcp_ipv6_stability_001(model: str, t
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -3347,7 +3373,7 @@ async def test_proxy1e_2pd_cross_datasystem_tcp_ipv6_stability_001(model: str, t
                                verify=False,
                                save=False)
         # test stability
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+pd_num)
 
 REQUEST_RATE = [0.84]
 DATASET_NAME = ["simulate_truth"]
@@ -3375,7 +3401,8 @@ async def test_proxy1e_1p_1d_cross_datasystem_tcp_ipv4_stability_001(model: str,
         "MC_MS_AUTO_DISC": "0",
         "MC_USE_IPV6": "0",
         "TRANSFER_PROTOCOL": "tcp",
-        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True"
+        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+        "TRANSFER_TIMEOUT": "20"
     }
     env_dict = EnvManager()
     node_ips = get_cluster_ips()
@@ -3434,7 +3461,7 @@ async def test_proxy1e_1p_1d_cross_datasystem_tcp_ipv4_stability_001(model: str,
         "case_type":
             "performance",
         "dataset_path":
-            os.path.join(DATASET_PATH, "simulate_truth"),
+            os.path.join(DATASET_PATH, "simulate_truth_samereq"),
         "request_conf":
             "vllm_api_stream_chat",
         "dataset_conf":
@@ -3498,4 +3525,4 @@ async def test_proxy1e_1p_1d_cross_datasystem_tcp_ipv4_stability_001(model: str,
                                verify=False,
                                save=False)
         # test stability
-        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases)
+        run_aisbench_cases(model=model, port=api_port, aisbench_cases=aisbench_cases, card_num=e_num+p_num+d_num)
