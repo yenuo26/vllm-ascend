@@ -148,6 +148,25 @@ wait_for_server $PROXY_PORT
 echo "All services are up!"
 
 ###############################################################################
+# Single request with local image
+###############################################################################
+echo "Running single request with local image (non-stream)..."
+base64_image=$(base64 -w 0 "${VLLM_ROOT}/tests/v1/ec_connector/integration/hato.jpg")
+
+curl http://127.0.0.1:${PROXY_PORT}/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "'"${MODEL}"'",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": "data:image/jpg;base64,'"${base64_image}"'"}},
+        {"type": "text", "text": "What is in this image?"}
+      ]}
+    ]
+  }'
+
+###############################################################################
 # Benchmark
 ###############################################################################
 echo "Running benchmark (stream)..."
@@ -161,24 +180,6 @@ vllm bench serve \
   --port                $PROXY_PORT
 
 PIDS+=($!)
-
-###############################################################################
-# Single request with local image
-###############################################################################
-echo "Running single request with local image (non-stream)..."
-curl http://127.0.0.1:${PROXY_PORT}/v1/chat/completions \
-    -H "Content-Type: application/json" \
-    -d '{
-    "model": "'${MODEL}'",
-    "messages": [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": [
-        {"type": "image_url", "image_url": {"url": "file://'"${VLLM_ROOT}"'/tests/v1/ec_connector/integration/hato.jpg"}},
-        {"type": "text", "text": "What is in this image?"}
-    ]}
-    ]
-    }'
-
 
 # cleanup
 echo "cleanup..."
