@@ -149,20 +149,42 @@ echo "All services are up!"
 # Single request with local image
 ###############################################################################
 echo "Running single request with local image (non-stream)..."
+echo "Running single request with local image (non-stream)..."
+
 base64_image=$(base64 -w 0 "${VLLM_ROOT}/tests/v1/ec_connector/integration/hato.jpg")
 
-curl http://127.0.0.1:${PROXY_PORT}/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "'"${MODEL}"'",
+cat > /tmp/request.json << EOF
+{
+    "model": "${MODEL}",
     "messages": [
-      {"role": "system", "content": "You are a helpful assistant."},
-      {"role": "user", "content": [
-        {"type": "image_url", "image_url": {"url": "data:image/jpg;base64,'"${base64_image}"'"}},
-        {"type": "text", "text": "What is in this image?"}
-      ]}
+        {
+            "role": "system",
+            "content": "You are a helpful assistant."
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "data:image/jpg;base64,${base64_image}"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "What is in this image?"
+                }
+            ]
+        }
     ]
-  }'
+}
+EOF
+
+curl http://127.0.0.1:${PROXY_PORT}/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d @/tmp/request.json
+
+rm -f /tmp/request.json
 
 ###############################################################################
 # Benchmark
