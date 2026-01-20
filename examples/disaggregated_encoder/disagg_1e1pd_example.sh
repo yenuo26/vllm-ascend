@@ -96,7 +96,7 @@ ASCEND_RT_VISIBLE_DEVICES="$CARD_E" vllm serve "$MODEL" \
     --max-num-seqs 128 \
     --allowed-local-media-path ${GIT_ROOT}/tests/v1/ec_connector/integration \
     --ec-transfer-config '{
-        "ec_connector": "ECExampleConnector",
+        "ec_connector": "ECSharedStorageConnector",
         "ec_role": "ec_producer",
         "ec_connector_extra_config": {
             "shared_storage_path": "'"$EC_SHARED_STORAGE_PATH"'"
@@ -110,14 +110,14 @@ PIDS+=($!)
 # Prefill+Decode worker
 ###############################################################################
 ASCEND_RT_VISIBLE_DEVICES="$CARD_PD" vllm serve "$MODEL" \
-    --gpu-memory-utilization 0.7 \
+    --gpu-memory-utilization 0.9 \
     --port "$PREFILL_DECODE_PORT" \
     --enforce-eager \
     --enable-request-id-headers \
     --max-num-seqs 128 \
     --allowed-local-media-path ${GIT_ROOT}/tests/v1/ec_connector/integration \
     --ec-transfer-config '{
-        "ec_connector": "ECExampleConnector",
+        "ec_connector": "ECSharedStorageConnector",
         "ec_role": "ec_consumer",
         "ec_connector_extra_config": {
             "shared_storage_path": "'"$EC_SHARED_STORAGE_PATH"'"
@@ -134,7 +134,7 @@ wait_for_server $PREFILL_DECODE_PORT
 ###############################################################################
 # Proxy
 ###############################################################################
-python /vllm-workspace/vllm/examples/online_serving/disaggregated_encoder/disagg_epd_proxy.py \
+python ./disagg_epd_proxy.py \
     --host "0.0.0.0" \
     --port "$PROXY_PORT" \
     --encode-servers-urls "http://localhost:$ENCODE_PORT" \
@@ -155,8 +155,7 @@ vllm bench serve \
   --model               $MODEL \
   --backend             openai-chat \
   --endpoint            /v1/chat/completions \
-  --dataset-name        hf \
-  --dataset-path        lmarena-ai/VisionArena-Chat \
+  --dataset-name        random-mm \
   --seed                0 \
   --num-prompts         $NUM_PROMPTS \
   --port                $PROXY_PORT

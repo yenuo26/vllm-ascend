@@ -84,7 +84,7 @@ _TEST_DIR = os.path.dirname(__file__)
 
 DISAGG_EPD_PROXY_SCRIPT = Path(
     __file__
-).parent.parent.parent.parent / "examples" / "online_serving" / "disaggregated_encoder" / "disagg_epd_proxy.py"
+).parent.parent.parent / "examples" / "disaggregated_encoder" / "disagg_epd_proxy.py"
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
