@@ -94,7 +94,6 @@ ASCEND_RT_VISIBLE_DEVICES="$CARD_E" vllm serve "$MODEL" \
     --no-enable-prefix-caching \
     --max-num-batched-tokens 114688 \
     --max-num-seqs 128 \
-    --allowed-local-media-path ${GIT_ROOT}/tests/v1/ec_connector/integration \
     --ec-transfer-config '{
         "ec_connector": "ECSharedStorageConnector",
         "ec_role": "ec_producer",
@@ -115,7 +114,6 @@ ASCEND_RT_VISIBLE_DEVICES="$CARD_PD" vllm serve "$MODEL" \
     --enforce-eager \
     --enable-request-id-headers \
     --max-num-seqs 128 \
-    --allowed-local-media-path ${GIT_ROOT}/tests/v1/ec_connector/integration \
     --ec-transfer-config '{
         "ec_connector": "ECSharedStorageConnector",
         "ec_role": "ec_consumer",
