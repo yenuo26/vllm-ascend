@@ -26,7 +26,7 @@ NUM_PROMPTS="${NUM_PROMPTS:-100}"    # number of prompts to send in benchmark
 # Helpers
 ###############################################################################
 # Find the git repository root directory
-GIT_ROOT=$(git rev-parse --show-toplevel)
+VLLM_ROOT="/vllm-workspace/vllm"
 
 START_TIME=$(date +"%Y%m%d_%H%M%S")
 ENC_LOG=$LOG_PATH/encoder_${START_TIME}.log
@@ -173,7 +173,7 @@ curl http://127.0.0.1:${PROXY_PORT}/v1/chat/completions \
     "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": [
-        {"type": "image_url", "image_url": {"url": "file://'"${GIT_ROOT}"'/tests/v1/ec_connector/integration/hato.jpg"}},
+        {"type": "image_url", "image_url": {"url": "file://'"${VLLM_ROOT}"'/tests/v1/ec_connector/integration/hato.jpg"}},
         {"type": "text", "text": "What is in this image?"}
     ]}
     ]
