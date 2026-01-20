@@ -29,6 +29,7 @@ import sys
 import threading
 import time
 import traceback
+from pathlib import Path
 from typing import Any, Optional, Tuple, TypeVar, Union
 
 import numpy as np
@@ -81,7 +82,9 @@ logger = logging.getLogger(__name__)
 
 _TEST_DIR = os.path.dirname(__file__)
 
-DISAGG_EPD_PROXY_SCRIPT = "/vllm-workspace/vllm/examples/online_serving/disaggregated_encoder/disagg_epd_proxy.py"
+DISAGG_EPD_PROXY_SCRIPT = Path(
+    __file__
+).parent.parent.parent.parent / "examples" / "online_serving" / "disaggregated_encoder" / "disagg_epd_proxy.py"
 
 
 def cleanup_dist_env_and_memory(shutdown_ray: bool = False):
