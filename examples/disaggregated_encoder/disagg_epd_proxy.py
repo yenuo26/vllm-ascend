@@ -38,9 +38,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 # FastAPI app & global state
 ###############################################################################
 
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s"
-)
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger("proxy")
 
 app = FastAPI()
@@ -114,6 +112,8 @@ async def _encode_fanout(
             "max_tokens": 1,
             "stream": False,
         }
+        if encode_session is None:
+            raise HTTPException(status_code=500, detail="Encode session not initialized")
         tasks.append(
             encode_session.post(
                 f"{target_url}/v1/chat/completions",
@@ -134,10 +134,13 @@ async def _encode_fanout(
                 r,
                 exc_info=r,
             )
-            raise HTTPException(
-                status_code=502, detail=f"Encoder request failed: {str(r)}"
-            )
-        if r.status != 200:
+            error_detail = str(r)
+            if hasattr(r, "status"):
+                error_detail = f"Status: {r.status}, Error: {error_detail}"
+            elif hasattr(r, "status_code"):
+                error_detail = f"Status: {r.status_code}, Error: {error_detail}"
+            raise HTTPException(status_code=502, detail=f"Encoder request failed: {error_detail}")
+        if hasattr(r, "status") and r.status != 200:
             try:
                 detail = await r.text()
             except Exception:
@@ -154,9 +157,7 @@ async def _encode_fanout(
                 detail=f"Encoder request failed: {detail}",
             )
 
-    logger.info(
-        "[%s] All %d encoder requests completed successfully", req_id, len(mm_items)
-    )
+    logger.info("[%s] All %d encoder requests completed successfully", req_id, len(mm_items))
 
 
 async def _encode_single_request(
@@ -180,9 +181,10 @@ async def _encode_single_request(
         request_data["max_completion_tokens"] = 1
 
     try:
-        encode_response = await encode_session.post(
-            f"{e_url}/v1/chat/completions", json=request_data, headers=headers
-        )
+        if encode_session is None:
+            raise HTTPException(status_code=500, detail="Encode session not initialized")
+
+        encode_response = await encode_session.post(f"{e_url}/v1/chat/completions", json=request_data, headers=headers)
         encode_response.raise_for_status()
 
         if encode_response.status != 200:
@@ -273,6 +275,9 @@ async def process_prefill_stage(
 
     headers = {"x-request-id": req_id}
     try:
+        if prefill_session is None:
+            raise HTTPException(status_code=500, detail="Prefill session not initialized")
+
         prefill_response = await prefill_session.post(
             f"{p_url}/v1/chat/completions", json=prefill_request, headers=headers
         )
@@ -392,9 +397,7 @@ async def on_shutdown() -> None:
 ###############################################################################
 
 
-async def forward_non_stream(
-    req_data: dict, req_id: str, p_url: str, d_url: str
-) -> dict:
+async def forward_non_stream(req_data: dict, req_id: str, p_url: str, d_url: str) -> dict:
     try:
         # Step 1: Process through Encoder instance (if has MM input)
         async def run_encoder():
@@ -415,9 +418,10 @@ async def forward_non_stream(
             headers = {"x-request-id": req_id}
 
             # Non-streaming response
-            async with decode_session.post(
-                f"{d_url}/v1/chat/completions", json=req_data, headers=headers
-            ) as resp:
+            if decode_session is None:
+                raise HTTPException(status_code=500, detail="Decode session not initialized")
+
+            async with decode_session.post(f"{d_url}/v1/chat/completions", json=req_data, headers=headers) as resp:
                 resp.raise_for_status()
                 return await resp.json()
 
@@ -455,9 +459,7 @@ async def stream_retry_wrap(forward_func, max_retries: int = 3, delay: float = 0
     raise RuntimeError(f"all {max_retries} retries failed.") from last_exc
 
 
-async def non_stream_retry_wrap(
-    forward_func, max_retries: int = 3, delay: float = 0.001
-):
+async def non_stream_retry_wrap(forward_func, max_retries: int = 3, delay: float = 0.001):
     last_exc = None
     for attempt in range(max_retries):
         try:
@@ -476,9 +478,7 @@ async def non_stream_retry_wrap(
     raise RuntimeError(f"all {max_retries} retries failed.") from last_exc
 
 
-async def forward_stream(
-    req_data: dict, req_id: str, p_url: str, d_url: str
-) -> AsyncIterator[str]:
+async def forward_stream(req_data: dict, req_id: str, p_url: str, d_url: str) -> AsyncIterator[str]:
     try:
         # Step 1: Process through Encoder instance (if has MM input)
         async def run_encoder():
@@ -499,6 +499,9 @@ async def forward_stream(
             headers = {"x-request-id": req_id}
 
             # Streaming response
+            if decode_session is None:
+                raise HTTPException(status_code=500, detail="Decode session not initialized")
+
             async with decode_session.post(
                 f"{d_url}/v1/chat/completions",
                 json=req_data,
@@ -519,9 +522,7 @@ async def forward_stream(
         raise
     except Exception as e:
         logger.exception("[%s] Error in forward_stream: %s", req_id, str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Proxy streaming error: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Proxy streaming error: {str(e)}") from e
 
 
 ###############################################################################
@@ -552,13 +553,13 @@ async def chat_completions(request: Request):
         raise
     except Exception as e:
         logger.exception("Error in chat_completions endpoint: %s", str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Request processing error: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Request processing error: {str(e)}") from e
 
 
 @app.get("/v1/models")
 async def list_models():
+    if decode_session is None:
+        raise HTTPException(status_code=500, detail="Decode session not initialized")
     async with decode_session.get(f"{app.state.d_urls[0]}/v1/models") as resp:
         resp.raise_for_status()
         return await resp.json()
@@ -566,11 +567,13 @@ async def list_models():
 
 @app.get("/health")
 async def health_check():
-    async def healthy(urls):
+    async def healthy(urls, session):
         if not urls:
             return "empty"
         for u in urls:
             try:
+                if session is None:
+                    return "unhealthy"
                 async with encode_session.get(f"{u}/health") as resp:
                     resp.raise_for_status()
             except Exception:
@@ -578,12 +581,12 @@ async def health_check():
         return "healthy"
 
     e_status, p_status, d_status = await asyncio.gather(
-        healthy(app.state.e_urls), healthy(app.state.p_urls), healthy(app.state.d_urls)
+        healthy(app.state.e_urls, encode_session),
+        healthy(app.state.p_urls, prefill_session),
+        healthy(app.state.d_urls, decode_session),
     )
 
-    overall_healthy = all(
-        status != "unhealthy" for status in (e_status, p_status, d_status)
-    )
+    overall_healthy = all(status != "unhealthy" for status in (e_status, p_status, d_status))
 
     status_code = 200 if overall_healthy else 503
 
@@ -619,6 +622,8 @@ async def _post_if_available(
     • Raises for anything else.
     """
     try:
+        if session is None:
+            return None
         resp = await session.post(url, json=payload, headers=headers)
         if resp.status == 404:  # profiling disabled on that server
             logger.warning("Profiling endpoint missing on %s", url)
@@ -642,21 +647,15 @@ async def _profile_cmd(cmd: str, payload: dict, e_url: str, p_url: str, d_url: s
     """
     headers = {"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY', '')}"}
 
-    encode_task = _post_if_available(
-        encode_session, f"{e_url}/{cmd}_profile", payload, headers
-    )
+    encode_task = _post_if_available(encode_session, f"{e_url}/{cmd}_profile", payload, headers)
     prefill_task = (
         _post_if_available(prefill_session, f"{p_url}/{cmd}_profile", payload, headers)
         if p_url is not None
         else asyncio.sleep(0)
     )
-    decode_task = _post_if_available(
-        decode_session, f"{d_url}/{cmd}_profile", payload, headers
-    )
+    decode_task = _post_if_available(decode_session, f"{d_url}/{cmd}_profile", payload, headers)
 
-    encode_res, prefill_res, decode_res = await asyncio.gather(
-        encode_task, prefill_task, decode_task
-    )
+    encode_res, prefill_res, decode_res = await asyncio.gather(encode_task, prefill_task, decode_task)
 
     # If *all* clusters said “I don’t have that route”, surface an error
     if encode_res is prefill_res is decode_res is None:
@@ -723,22 +722,14 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    app.state.e_urls = [
-        u.strip() for u in args.encode_servers_urls.split(",") if u.strip()
-    ]
-    app.state.d_urls = [
-        u.strip() for u in args.decode_servers_urls.split(",") if u.strip()
-    ]
+    app.state.e_urls = [u.strip() for u in args.encode_servers_urls.split(",") if u.strip()]
+    app.state.d_urls = [u.strip() for u in args.decode_servers_urls.split(",") if u.strip()]
     # handle prefill instances
     if args.prefill_servers_urls.lower() in ("disable", "none", ""):
         app.state.p_urls = []
-        logger.info(
-            "Disaggregated prefill phase explicitly disabled by user. Running E + PD..."
-        )
+        logger.info("Disaggregated prefill phase explicitly disabled by user. Running E + PD...")
     else:
-        app.state.p_urls = [
-            u.strip() for u in args.prefill_servers_urls.split(",") if u.strip()
-        ]
+        app.state.p_urls = [u.strip() for u in args.prefill_servers_urls.split(",") if u.strip()]
         logger.info("Disaggregated prefill phase is enabled. Running E + P + D...")
 
     app.state.encoder_dispatch_mode = EncoderDispatchMode(args.encoder_dispatch_mode)
